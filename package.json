@@ -5,8 +5,8 @@
 	"packageManager": "pnpm@10.18.0",
 	"scripts": {
 		"setup-project": "node scripts/setup-project.mjs",
-		"dev": "pnpm db:migrate && pnpm -r --parallel --filter api --filter marketing --filter dashboard dev",
-		"dev:api": "pnpm db:migrate && pnpm --filter api dev",
+		"dev": "pnpm setup:local && pnpm db:migrate && pnpm -r --parallel --filter api --filter marketing --filter dashboard dev",
+		"dev:api": "pnpm setup:local && pnpm db:migrate && pnpm --filter api dev",
 		"dev:marketing": "pnpm --filter marketing dev",
 		"dev:dashboard": "pnpm --filter dashboard dev",
 		"db:migrate": "pnpm --filter api db:migrate",
@@ -16,7 +16,7 @@
 		"build:dashboard": "pnpm --filter dashboard build",
 		"test": "node scripts/test-local.mjs",
 		"test:remote": "node scripts/test-remote.mjs",
-		"test:browser": "playwright test",
+		"test:browser": "node scripts/test-browser.mjs",
 		"typecheck": "pnpm -r --parallel run typecheck",
 		"lint": "oxlint",
 		"lint:all": "oxlint",
@@ -29,7 +29,8 @@
 		"deploy:marketing": "bash scripts/deploy.sh marketing",
 		"deploy:dashboard": "bash scripts/deploy.sh dashboard",
 		"hooks:install": "bash scripts/install-precommit-hook.sh",
-		"prepare": "pnpm run hooks:install"
+		"prepare": "pnpm run hooks:install",
+		"setup:local": "node scripts/setup-local.mjs"
 	},
 	"devDependencies": {
 		"oxfmt": "^0.58.0",

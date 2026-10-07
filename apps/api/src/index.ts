@@ -1,112 +1,95 @@
-export interface Env {
-	DB: D1Database
-	FILES: R2Bucket
-	ALLOWED_ORIGINS: string
-	REQUIRE_AUTH: string
-	API_TOKEN?: string
-}
+import type { Env } from './env'
+import { trustedProxyRequest } from './proxy'
+import { createAuth } from './auth'
+import { HttpError, json, readBody, readJson, textField, sha256, methodNotAllowed } from './http'
+import { rateLimit } from './rate-limit'
+import { apiKeyUser, keysRoute } from './keys'
 
-type TodoRow = { id: string; title: string; completed: number; created_at: string }
-const todo = (row: TodoRow) => ({ ...row, completed: row.completed === 1 })
-const json = (value: unknown, status = 200) => Response.json(value, { status })
-class HttpError extends Error {
-	constructor(
-		public status: number,
-		message: string,
-	) {
-		super(message)
-	}
-}
-
-async function readBody(request: Request, maxBytes: number) {
-	const reader = request.body?.getReader()
-	if (!reader) return new Uint8Array()
-	const chunks: Uint8Array[] = []
-	let size = 0
-	try {
-		while (true) {
-			const { done, value } = await reader.read()
-			if (done) break
-			size += value.byteLength
-			if (size > maxBytes) {
-				await reader.cancel()
-				throw new HttpError(413, `Body exceeds ${maxBytes} bytes`)
-			}
-			chunks.push(value)
-		}
-	} finally {
-		reader.releaseLock()
-	}
-	const bytes = new Uint8Array(size)
-	let offset = 0
-	for (const chunk of chunks) {
-		bytes.set(chunk, offset)
-		offset += chunk.length
-	}
-	return bytes
-}
-
-async function readJson(request: Request): Promise<Record<string, unknown>> {
-	if (request.headers.get('content-type')?.split(';')[0].trim() !== 'application/json') {
-		throw new HttpError(415, 'Use Content-Type: application/json')
-	}
-	const bytes = await readBody(request, 16 * 1024)
-	let value: unknown
-	try {
-		value = JSON.parse(new TextDecoder().decode(bytes))
-	} catch {
-		throw new HttpError(400, 'Invalid JSON')
-	}
-	if (!value || typeof value !== 'object' || Array.isArray(value))
-		throw new HttpError(400, 'Expected a JSON object')
-	return value as Record<string, unknown>
-}
-function title(value: unknown) {
-	if (typeof value !== 'string' || !value.trim() || value.trim().length > 200) {
-		throw new HttpError(400, 'title must contain 1–200 characters')
-	}
-	return value.trim()
-}
-function methodNotAllowed(allow: string) {
-	return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-		status: 405,
-		headers: { 'Content-Type': 'application/json', Allow: allow },
-	})
-}
+type TodoRow = { id: string; title: string; completed: number; created_at: string; user_id: string }
+const todo = ({ user_id: _owner, ...row }: TodoRow) => ({ ...row, completed: row.completed === 1 })
 
 async function route(request: Request, env: Env): Promise<Response> {
 	const url = new URL(request.url)
 	const path = url.pathname
 	const method = request.method
 	if (path === '/api/health') return method === 'GET' ? json({ ok: true }) : methodNotAllowed('GET')
-	if (!path.startsWith('/api/')) throw new HttpError(404, 'Not found')
-	if (env.REQUIRE_AUTH !== 'false') {
-		if (!env.API_TOKEN) throw new HttpError(503, 'Configure the API_TOKEN Worker secret')
-		// Compare fixed-length digests so token contents do not affect comparison time.
-		const expected = new Uint8Array(
-			await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`Bearer ${env.API_TOKEN}`)),
+	if (path === '/api/config')
+		return json({ googleEnabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) })
+	if (path.startsWith('/api/auth/')) {
+		if (!env.BETTER_AUTH_SECRET)
+			throw new HttpError(503, 'Run pnpm setup:local or configure the authentication secrets')
+		return createAuth(env).handler(request)
+	}
+	if (path === '/api/waitlist' && method === 'POST') {
+		const body = await readJson(request)
+		if (body.website) return json({ message: "You're on the list. Thanks for your interest!" }, 202)
+		const email = textField(body.email, 'email', 254).toLowerCase()
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+			throw new HttpError(400, 'Enter a valid email address')
+		if (body.consent !== true) throw new HttpError(400, 'Please agree to join the waitlist')
+		const name = typeof body.name === 'string' ? body.name.trim().slice(0, 100) : ''
+		const ip = request.headers.get('cf-connecting-ip') ?? 'local'
+		await rateLimit(env.DB, `waitlist-ip:${await sha256(ip)}`, 10, 3600)
+		await rateLimit(env.DB, `waitlist-email:${await sha256(email)}`, 3, 3600)
+		await env.DB.prepare(
+			'INSERT INTO waitlist (id, email, name, consent) VALUES (?, ?, ?, 1) ON CONFLICT(email) DO NOTHING',
 		)
-		const supplied = new Uint8Array(
-			await crypto.subtle.digest(
-				'SHA-256',
-				new TextEncoder().encode(request.headers.get('authorization') ?? ''),
-			),
+			.bind(crypto.randomUUID(), email, name)
+			.run()
+		return json({ message: "You're on the list. Thanks for your interest!" }, 202)
+	}
+	if (path === '/api/v1/todos') {
+		if (method !== 'GET') return methodNotAllowed('GET')
+		const { userId, headers } = await apiKeyUser(request, env)
+		const { results } = await env.DB.prepare(
+			'SELECT * FROM todos WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 100',
 		)
-		let difference = 0
-		for (let i = 0; i < expected.length; i++) difference |= expected[i] ^ supplied[i]
-		if (difference) throw new HttpError(401, 'Invalid or missing bearer token')
+			.bind(userId)
+			.all<TodoRow>()
+		const response = json({ todos: results.map(todo) })
+		for (const [name, value] of Object.entries(headers)) response.headers.set(name, value)
+		return response
+	}
+	if (!env.BETTER_AUTH_SECRET) throw new HttpError(503, 'Authentication is not configured')
+	const session = await createAuth(env).api.getSession({ headers: request.headers })
+	if (!session) throw new HttpError(401, 'Sign in to continue')
+	const userId = session.user.id
+	if (path === '/api/me' && method === 'GET') return json({ user: session.user })
+	// Cookie-authenticated mutations must originate from an explicitly trusted browser origin.
+	if (!['GET', 'HEAD'].includes(method)) {
+		const origin = request.headers.get('origin')
+		if (
+			!origin ||
+			!env.ALLOWED_ORIGINS.split(',')
+				.map((value) => value.trim())
+				.includes(origin)
+		)
+			throw new HttpError(403, 'A trusted Origin header is required')
+	}
+	if (path === '/api/keys' || path.startsWith('/api/keys/')) return keysRoute(request, env, userId)
+	if (path === '/api/waitlist/me' && method === 'GET') {
+		const entry = session.user.emailVerified
+			? await env.DB.prepare('SELECT created_at FROM waitlist WHERE email = ?')
+					.bind(session.user.email)
+					.first()
+			: null
+		return json({ joined: Boolean(entry), entry })
 	}
 	if (path === '/api/todos') {
 		if (method === 'GET') {
 			const { results } = await env.DB.prepare(
-				'SELECT * FROM todos ORDER BY created_at DESC, id DESC LIMIT 100',
-			).all<TodoRow>()
+				'SELECT * FROM todos WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 100',
+			)
+				.bind(userId)
+				.all<TodoRow>()
 			return json({ todos: results.map(todo) })
 		}
 		if (method === 'POST') {
 			const body = await readJson(request)
-			const row = await env.DB.prepare('INSERT INTO todos (id, title) VALUES (?, ?) RETURNING *')
-				.bind(crypto.randomUUID(), title(body.title))
+			const row = await env.DB.prepare(
+				'INSERT INTO todos (id, title, user_id) VALUES (?, ?, ?) RETURNING *',
+			)
+				.bind(crypto.randomUUID(), textField(body.title, 'title'), userId)
 				.first<TodoRow>()
 			return json({ todo: todo(row as TodoRow) }, 201)
 		}
@@ -116,7 +99,9 @@ async function route(request: Request, env: Env): Promise<Response> {
 	if (todoMatch) {
 		const id = todoMatch[1]
 		if (method === 'GET') {
-			const row = await env.DB.prepare('SELECT * FROM todos WHERE id = ?').bind(id).first<TodoRow>()
+			const row = await env.DB.prepare('SELECT * FROM todos WHERE id = ? AND user_id = ?')
+				.bind(id, userId)
+				.first<TodoRow>()
 			if (!row) throw new HttpError(404, 'Todo not found')
 			return json({ todo: todo(row) })
 		}
@@ -124,20 +109,22 @@ async function route(request: Request, env: Env): Promise<Response> {
 			const body = await readJson(request)
 			if (!('title' in body) && !('completed' in body))
 				throw new HttpError(400, 'Provide title or completed')
-			const nextTitle = 'title' in body ? title(body.title) : null
+			const nextTitle = 'title' in body ? textField(body.title, 'title') : null
 			if ('completed' in body && typeof body.completed !== 'boolean')
 				throw new HttpError(400, 'completed must be a boolean')
 			const completed = 'completed' in body ? Number(body.completed) : null
 			const row = await env.DB.prepare(
-				'UPDATE todos SET title = COALESCE(?, title), completed = COALESCE(?, completed) WHERE id = ? RETURNING *',
+				'UPDATE todos SET title = COALESCE(?, title), completed = COALESCE(?, completed) WHERE id = ? AND user_id = ? RETURNING *',
 			)
-				.bind(nextTitle, completed, id)
+				.bind(nextTitle, completed, id, userId)
 				.first<TodoRow>()
 			if (!row) throw new HttpError(404, 'Todo not found')
 			return json({ todo: todo(row) })
 		}
 		if (method === 'DELETE') {
-			const result = await env.DB.prepare('DELETE FROM todos WHERE id = ?').bind(id).run()
+			const result = await env.DB.prepare('DELETE FROM todos WHERE id = ? AND user_id = ?')
+				.bind(id, userId)
+				.run()
 			if (!result.meta.changes) throw new HttpError(404, 'Todo not found')
 			return new Response(null, { status: 204 })
 		}
@@ -150,11 +137,12 @@ async function route(request: Request, env: Env): Promise<Response> {
 			throw new HttpError(400, 'limit must be an integer from 1 to 1000')
 		const result = await env.FILES.list({
 			limit,
+			prefix: `${userId}/`,
 			cursor: url.searchParams.get('cursor') ?? undefined,
 		})
 		return json({
 			files: result.objects.map((object) => ({
-				key: object.key,
+				key: object.key.slice(userId.length + 1),
 				size: object.size,
 				etag: object.httpEtag,
 				uploaded: object.uploaded,
@@ -176,7 +164,7 @@ async function route(request: Request, env: Env): Promise<Response> {
 			)
 		if (method === 'PUT') {
 			const body = await readBody(request, 5 * 1024 * 1024)
-			const object = await env.FILES.put(key, body, {
+			const object = await env.FILES.put(`${userId}/${key}`, body, {
 				httpMetadata: {
 					contentType: request.headers.get('content-type') ?? 'application/octet-stream',
 				},
@@ -184,7 +172,10 @@ async function route(request: Request, env: Env): Promise<Response> {
 			return json({ file: { key, size: object.size, etag: object.httpEtag } }, 201)
 		}
 		if (method === 'GET' || method === 'HEAD') {
-			const object = method === 'HEAD' ? await env.FILES.head(key) : await env.FILES.get(key)
+			const object =
+				method === 'HEAD'
+					? await env.FILES.head(`${userId}/${key}`)
+					: await env.FILES.get(`${userId}/${key}`)
 			if (!object) throw new HttpError(404, 'File not found')
 			const headers = new Headers()
 			object.writeHttpMetadata(headers)
@@ -194,7 +185,7 @@ async function route(request: Request, env: Env): Promise<Response> {
 			return new Response('body' in object ? (object as R2ObjectBody).body : null, { headers })
 		}
 		if (method === 'DELETE') {
-			await env.FILES.delete(key)
+			await env.FILES.delete(`${userId}/${key}`)
 			return new Response(null, { status: 204 })
 		}
 		return methodNotAllowed('GET, HEAD, PUT, DELETE')
@@ -210,6 +201,7 @@ export default {
 			.includes(origin ?? '')
 		let response: Response
 		try {
+			request = await trustedProxyRequest(request, env)
 			if (origin && !allowed) throw new HttpError(403, 'Origin not allowed')
 			response =
 				request.method === 'OPTIONS'
@@ -221,18 +213,25 @@ export default {
 				{ error: error instanceof HttpError ? error.message : 'Internal server error' },
 				error instanceof HttpError ? error.status : 500,
 			)
+			if (error instanceof HttpError)
+				for (const [name, value] of Object.entries(error.headers)) response.headers.set(name, value)
 		}
+		response = new Response(response.body, response)
 		response.headers.set('Cache-Control', 'no-store')
 		response.headers.set('X-Content-Type-Options', 'nosniff')
 		response.headers.set('Vary', 'Origin')
 		if (origin && allowed) {
 			response.headers.set('Access-Control-Allow-Origin', origin)
+			response.headers.set('Access-Control-Allow-Credentials', 'true')
 			response.headers.set(
 				'Access-Control-Allow-Methods',
 				'GET, HEAD, POST, PATCH, PUT, DELETE, OPTIONS',
 			)
 			response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-			response.headers.set('Access-Control-Expose-Headers', 'ETag, Content-Disposition')
+			response.headers.set(
+				'Access-Control-Expose-Headers',
+				'ETag, Content-Disposition, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After',
+			)
 		}
 		return response
 	},

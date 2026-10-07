@@ -37,8 +37,10 @@ await writeFile(workerPath, `${JSON.stringify(worker, null, '\t')}\n`)
 console.log(`Initialized project as "${projectName}".`)
 console.log('Next steps:')
 console.log('1. pnpm install')
-console.log('2. pnpm dev (local D1 and R2 need no credentials)')
-console.log('3. Follow README.md to provision and deploy cloud resources')
+console.log(
+	'2. pnpm dev (waitlist works locally; add Google OAuth credentials for dashboard login)',
+)
+console.log('3. Customize marketing copy/SEO and follow README.md for Google and Cloudflare setup')
 
 async function promptForName() {
 	const rl = createInterface({ input, output })

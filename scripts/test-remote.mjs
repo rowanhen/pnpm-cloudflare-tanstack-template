@@ -1,16 +1,17 @@
 import { execFileSync } from 'node:child_process'
 import { mkdir, readFile, writeFile, rm } from 'node:fs/promises'
-import { randomUUID } from 'node:crypto'
+import { randomUUID, randomBytes } from 'node:crypto'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { testApi, waitForApi } from './test-api.mjs'
+import { fixtures } from './test-fixtures.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const account = process.env.CLOUDFLARE_ACCOUNT_ID
 const token = process.env.CLOUDFLARE_API_TOKEN
 if (!account || !token)
 	throw new Error(
-		'Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN (D1, R2, Workers Scripts edit permissions).',
+		'Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN (D1, R2, Workers Scripts and Pages edit permissions).',
 	)
 const cleanupPath = process.argv[2] === '--cleanup' ? resolve(process.argv[3]) : null
 const name = `template-e2e-${Date.now()}-${randomUUID().slice(0, 8)}`
@@ -27,12 +28,16 @@ let state = cleanupPath
 			workerAttempted: false,
 			bucketAttempted: false,
 			databaseAttempted: false,
+			pagesAttempted: [],
 		}
 if (
 	state.account !== account ||
 	!/^template-e2e-\d+-[a-f0-9]{8}$/.test(state.name) ||
 	state.databaseName !== `${state.name}-db` ||
 	state.bucket !== `${state.name}-files` ||
+	(state.pagesAttempted ?? []).some(
+		(project) => ![`${state.name}-dashboard`, `${state.name}-marketing`].includes(project),
+	) ||
 	directory !== resolve(root, '.wrangler', state.name)
 )
 	throw new Error('Invalid cleanup manifest or account mismatch')
@@ -76,13 +81,18 @@ function cleanup() {
 				}
 			}
 		}
+		for (const project of state.pagesAttempted ?? []) {
+			await attempt(`Pages project ${project}`, () =>
+				cf(`/pages/projects/${project}`, 'DELETE', undefined, true),
+			)
+		}
 		if (state.bucketAttempted) {
 			await attempt('R2 objects and bucket', async () => {
 				const buckets = await cf('/r2/buckets')
 				if (!buckets.buckets.some((bucket) => bucket.name === state.bucket)) return
 				// All keys this isolated test can write; remote object deletion works even if the Worker failed.
 				for (const key of ['e2e-file.txt', 'e2e-binary.bin', 'e2e-empty.txt', 'e2e-browser.txt']) {
-					wrangler(['r2', 'object', 'delete', `${state.bucket}/${key}`, '--remote'])
+					wrangler(['r2', 'object', 'delete', `${state.bucket}/e2e-alice/${key}`, '--remote'])
 				}
 				await cf(`/r2/buckets/${state.bucket}`, 'DELETE', undefined, true)
 			})
@@ -109,8 +119,12 @@ function cleanup() {
 			workers.some((item) => item.id === state.name)
 		)
 			throw new Error(`Resources remain; retain cleanup manifest: ${manifestPath}`)
+		for (const project of state.pagesAttempted ?? []) {
+			if (await cf(`/pages/projects/${project}`, 'GET', undefined, true))
+				throw new Error(`Pages project remains: ${project}`)
+		}
 		await rm(directory, { recursive: true, force: true })
-		console.log('Verified: temporary Worker, D1 database and R2 bucket are absent.')
+		console.log('Verified: temporary Pages projects, Worker, D1 database and R2 bucket are absent.')
 	})()
 	return cleaning
 }
@@ -123,6 +137,8 @@ if (cleanupPath) {
 } else {
 	try {
 		console.log(`Creating isolated cloud test resources: ${state.name}`)
+		const dashboardUrl = `https://${state.name}-dashboard.pages.dev`
+		const marketingUrl = `https://${state.name}-marketing.pages.dev`
 		state.databaseAttempted = true
 		await save()
 		const database = await cf('/d1/database', 'POST', { name: state.databaseName })
@@ -142,12 +158,29 @@ if (cleanupPath) {
 		}
 		config.r2_buckets[0].bucket_name = state.bucket
 		config.account_id = account
+		config.vars.AUTH_URL = dashboardUrl
+		config.vars.ALLOWED_ORIGINS += `,${dashboardUrl},${marketingUrl}`
 		const configPath = resolve(directory, 'wrangler.json')
 		await writeFile(configPath, JSON.stringify(config, null, 2))
-		const apiToken = randomUUID()
+		const authSecret = randomBytes(32).toString('hex')
+		const fixture = fixtures(authSecret, true)
+		const proxySecret = randomBytes(32).toString('hex')
 		const secretsPath = resolve(directory, 'secrets.json')
-		await writeFile(secretsPath, JSON.stringify({ API_TOKEN: apiToken }), { mode: 0o600 })
+		await writeFile(
+			secretsPath,
+			JSON.stringify({
+				BETTER_AUTH_SECRET: authSecret,
+				API_PROXY_SECRET: proxySecret,
+				GOOGLE_CLIENT_ID: 'e2e-client.apps.googleusercontent.com',
+				GOOGLE_CLIENT_SECRET: 'e2e-provider-not-a-real-secret',
+			}),
+			{ mode: 0o600 },
+		)
 		wrangler(['d1', 'migrations', 'apply', 'DB', '--remote', '--config', configPath])
+		const fixturePath = resolve(directory, 'fixtures.sql')
+		await writeFile(fixturePath, fixture.sql, { mode: 0o600 })
+		wrangler(['d1', 'execute', 'DB', '--remote', '--config', configPath, '--file', fixturePath])
+		await rm(fixturePath)
 		state.workerAttempted = true
 		await save()
 		wrangler(['deploy', '--config', configPath, '--secrets-file', secretsPath])
@@ -157,23 +190,78 @@ if (cleanupPath) {
 		await waitForApi(base)
 		// Workers routes can propagate after the first successful health response.
 		let ready = 0
-		for (let attempt = 0; attempt < 60 && ready < 5; attempt++) {
+		const propagationStarted = Date.now()
+		for (
+			let attempt = 0;
+			attempt < 120 && (ready < 10 || Date.now() - propagationStarted < 45000);
+			attempt++
+		) {
 			const response = await fetch(`${base}/api/todos`, {
-				headers: { Authorization: `Bearer ${apiToken}` },
+				headers: { Cookie: fixture.cookies[0] },
 				signal: AbortSignal.timeout(10000),
 			})
 			ready = response.ok ? ready + 1 : 0
 			if (!response.ok) console.log(`Waiting for API route propagation (${response.status})`)
 			await new Promise((done) => setTimeout(done, 1000))
 		}
-		if (ready < 5) throw new Error('Authenticated API route did not become ready')
-		await testApi(base, apiToken)
-		console.log('Testing production dashboard in Chromium against the live cloud API.')
+		if (ready < 10) throw new Error('Authenticated API route did not become ready')
+		await testApi(base, fixture.cookies, proxySecret, dashboardUrl)
+		for (const app of ['dashboard', 'marketing']) {
+			const project = `${state.name}-${app}`
+			state.pagesAttempted.push(project)
+			await save()
+			const deployment = {
+				compatibility_date: '2026-10-01',
+				env_vars: { API_PROXY_SECRET: { type: 'secret_text', value: proxySecret } },
+			}
+			await cf('/pages/projects', 'POST', {
+				name: project,
+				production_branch: 'main',
+				deployment_configs: { production: deployment, preview: deployment },
+			})
+			execFileSync('pnpm', ['--filter', app, 'build'], {
+				cwd: root,
+				stdio: 'inherit',
+				timeout: 180000,
+				env: {
+					...process.env,
+					VITE_API_URL: base,
+					VITE_SITE_URL: marketingUrl,
+					VITE_DASHBOARD_URL: dashboardUrl,
+					VITE_NOINDEX: 'true',
+				},
+			})
+			wrangler([
+				'pages',
+				'deploy',
+				resolve(root, `apps/${app}/dist`),
+				'--project-name',
+				project,
+				'--branch',
+				'main',
+				'--commit-dirty=true',
+			])
+		}
+		await waitForApi(dashboardUrl)
+		// Give newly created Pages aliases time to propagate before browser navigation.
+		for (let attempt = 0; attempt < 45; attempt++) {
+			await fetch(`${dashboardUrl}/api/health`, { signal: AbortSignal.timeout(15000) })
+			await new Promise((done) => setTimeout(done, 1000))
+		}
+		console.log('Testing live Cloudflare Pages, Worker, D1 and R2 in Chromium.')
 		execFileSync('pnpm', ['test:browser'], {
 			cwd: root,
 			stdio: 'inherit',
 			timeout: 180000,
-			env: { ...process.env, E2E_API_URL: base, E2E_API_TOKEN: apiToken },
+			env: {
+				...process.env,
+				E2E_API_URL: base,
+				E2E_DASHBOARD_URL: dashboardUrl,
+				E2E_MARKETING_URL: marketingUrl,
+				E2E_PROXY_SECRET: proxySecret,
+				E2E_COOKIE_ALICE: fixture.cookies[0],
+				E2E_COOKIE_BOB: fixture.cookies[1],
+			},
 		})
 	} finally {
 		await cleanup()

@@ -1,38 +1,38 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { AppShell, appCopy } from '@workspace/shared'
 
-export const Route = createFileRoute('/')({ component: DashboardHomePage })
+import { getSession } from '../lib/session'
+import { api } from '../lib/api'
+import { ApiKeys } from '../lib/api-keys'
+
+export const Route = createFileRoute('/')({
+	beforeLoad: async () => {
+		const user = await getSession()
+		if (!user) throw redirect({ to: '/login' })
+		return { user }
+	},
+	component: DashboardHomePage,
+})
 type Todo = { id: string; title: string; completed: boolean }
 type StoredFile = { key: string; size: number }
-const apiUrl = (import.meta.env.VITE_API_URL ?? 'http://localhost:8787').replace(/\/$/, '')
 
 function DashboardHomePage() {
 	const copy = appCopy('Dashboard', 'D1 and R2 example')
 	const [hydrated, setHydrated] = useState(false)
 	useEffect(() => setHydrated(true), [])
-	const [token, setToken] = useState('')
+	const { user } = Route.useRouteContext()
 	const [title, setTitle] = useState('')
 	const [file, setFile] = useState<File | null>(null)
 	const client = useQueryClient()
-	async function api(path: string, init: RequestInit = {}) {
-		const headers = new Headers(init.headers)
-		if (token) headers.set('Authorization', `Bearer ${token}`)
-		const response = await fetch(`${apiUrl}${path}`, { ...init, headers })
-		if (!response.ok) {
-			const body = (await response.json().catch(() => ({}))) as { error?: string }
-			throw new Error(body.error ?? `Request failed (${response.status})`)
-		}
-		return response
-	}
 	const todos = useQuery({
-		queryKey: ['todos', token],
+		queryKey: ['todos', user.id],
 		queryFn: async () => (await (await api('/api/todos')).json()) as { todos: Todo[] },
 		retry: false,
 	})
 	const files = useQuery({
-		queryKey: ['files', token],
+		queryKey: ['files', user.id],
 		queryFn: async () =>
 			(await (await api('/api/files')).json()) as { files: StoredFile[]; cursor: string | null },
 		retry: false,
@@ -49,18 +49,23 @@ function DashboardHomePage() {
 	return (
 		<AppShell title={copy.title} description={copy.description} accent="#38bdf8">
 			<p>
-				API: <code>{apiUrl}</code>
+				Signed in as <strong>{user.email}</strong>
 			</p>
-			<label>
-				API token (cloud deployments only){' '}
-				<input
-					type="password"
-					autoComplete="off"
-					value={token}
-					onChange={(event) => setToken(event.target.value)}
-				/>
-			</label>
-			<p>The token stays in memory. Local development does not require one.</p>
+			<button
+				onClick={async () => {
+					await api('/api/auth/sign-out', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: '{}',
+					})
+					client.clear()
+					window.location.assign('/login')
+				}}
+			>
+				Sign out
+			</button>
+			<ApiKeys />
+
 			{error && (
 				<p role="alert" style={{ color: '#fca5a5' }}>
 					{error.message}

@@ -1,8 +1,8 @@
 # pnpm-cloudflare-tanstack-template
 
-A pnpm monorepo with two TanStack Start apps, a Cloudflare Worker REST API, D1 SQL storage, and R2 object storage. The dashboard contains working todo and file examples. Local development needs no cloud credentials.
+A small starter for new ideas: a waitlist marketing site, Google sign-in, a protected TanStack Start dashboard, and a Cloudflare Worker REST API backed by D1 and R2. Users get private todos, files, and revocable API keys. No Convex, payment integration, or email delivery service is required.
 
-## Quick start
+## Start locally
 
 Requires Node.js 22.12+ (CI uses Node 24) and pnpm 10.18.0.
 
@@ -10,135 +10,183 @@ Requires Node.js 22.12+ (CI uses Node 24) and pnpm 10.18.0.
 git clone https://github.com/rowanhen/pnpm-cloudflare-tanstack-template.git
 cd pnpm-cloudflare-tanstack-template
 pnpm install
-# Optional: rename package, UI copy and Worker/D1/R2 names before provisioning.
-pnpm setup-project my-project
+pnpm setup-project my-project # optional, before creating cloud resources
 pnpm dev
 ```
 
-Open the dashboard at http://localhost:3001 to add, complete, and delete todos and upload, download, and delete files. Marketing runs on port 3000; the Worker runs on port 8787. `pnpm dev` applies D1 migrations before starting all three servers. D1 and R2 persist locally under `apps/api/.wrangler`; stopping development creates or deletes no cloud resources.
+Marketing runs at http://localhost:3000, the dashboard at http://localhost:3001, and the API at http://localhost:8787. `pnpm dev` generates a random local auth secret if absent, applies migrations, and starts all three apps. Local D1/R2 need no Cloudflare credentials and persist under `apps/api/.wrangler`.
 
-The apps default to `http://localhost:8787`. Copy an app's `.env.example` to `.env.local` to override `VITE_API_URL`. Vite reads these files per app. `VITE_` values are public and embedded at build time; never place tokens there.
+The waitlist works immediately. Dashboard sign-in requires your Google OAuth client; there is no development auth bypass. The login page explains when Google is unconfigured. Automated tests work without a Google account.
 
-## Layout
+### Google sign-in
+
+1. In [Google Auth Platform](https://console.cloud.google.com/auth/overview), configure branding and audience, then create an OAuth client of type **Web application**. For a project in Testing, add your Google account as a test user. Only basic identity scopes (`openid`, `email`, `profile`) are requested.
+2. Add the JavaScript origin `http://localhost:3001` and exact authorized redirect URI `http://localhost:3001/api/auth/callback/google`.
+3. Run `pnpm setup:local` if needed, then add these two values to the generated, gitignored `apps/api/.dev.vars`:
+
+   ```dotenv
+   GOOGLE_CLIENT_ID=your-client.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your-client-secret
+   ```
+
+   Keep the generated `BETTER_AUTH_SECRET`. `.dev.vars.example` documents all three values. Never put secrets in `VITE_` variables.
+
+4. Restart `pnpm dev`, open the dashboard, and choose **Continue with Google**. First sign-in creates a D1 user and account; subsequent sign-ins reuse that identity. Signing out deletes the server session.
+
+[Better Auth](https://www.better-auth.com/docs/authentication/google) handles OAuth state, PKCE, encrypted provider tokens, and signed HttpOnly session cookies. Sessions live in D1, expire after seven days, and use Secure cookies with HTTPS and SameSite=Lax. Password signup and automatic account linking are disabled. `AUTH_URL` is the **dashboard origin**, because its same-origin `/api/*` proxy handles the OAuth callback and cookies. It is not the API Worker's URL. Use one canonical dashboard origin per environment.
+
+## What is included
 
 ```text
-apps/api/           Worker REST API, Wrangler config and SQL migrations
-apps/dashboard/     Interactive D1 and R2 examples (TanStack Start)
-apps/marketing/     Starter marketing app (TanStack Start)
-packages/shared/    Shared UI and project metadata
-scripts/            Setup, deployment and isolated end-to-end tests
-tests/              Dashboard browser tests
+apps/api/           Worker REST API, auth, rate limiting, D1 migrations, R2 binding
+apps/dashboard/     Protected workspace, private todos/files, API key management
+apps/marketing/     Waitlist, privacy example, SEO metadata, sitemap and robots
+packages/shared/    Project metadata and shared UI
+scripts/            Setup/deploy commands and isolated local/cloud tests
 ```
 
-The browser calls the Worker using fetch and TanStack Query. The Worker uses prepared D1 statements and the R2 binding directly. Apps deploy to Cloudflare Pages; the API deploys as a Worker. Bindings and credentials stay on the server.
+Browsers call their own app's `/api` routes. The apps proxy to the configured Worker, keeping cookies on the dashboard domain and avoiding third-party cookies. In cloud deployments, they sign the original visitor IP with a separate shared `API_PROXY_SECRET`, so requests across Cloudflare zones retain individual rate limits. The Worker rejects forged or expired signatures. This secret grants no access to user data or sessions. Dashboard protection runs on the server before rendering, and the Worker independently authenticates and authorizes every private request. Private responses use `Cache-Control: no-store`.
 
-## REST examples
+The database contains users, linked Google accounts, sessions, OAuth verifications, todos, API key hashes, waitlist entries, and rate-limit counters. Todos are filtered by the authenticated user's ID on every operation. R2 stores objects under a user-ID prefix and never exposes a public bucket. SQL uses prepared statements.
 
-All resource routes return JSON errors as `{ "error": "..." }`. Cloud deployments require `Authorization: Bearer <API_TOKEN>`. Local `pnpm dev` explicitly disables authentication. `/api/health` is public. The API fails closed with HTTP 503 if authentication is enabled without a token.
+### REST API
 
-| Method     | Route                             | Behavior                                           |
-| ---------- | --------------------------------- | -------------------------------------------------- |
-| GET        | `/api/health`                     | Health check                                       |
-| GET        | `/api/todos`                      | Latest 100 todos                                   |
-| POST       | `/api/todos`                      | Create with `{ "title": "Buy milk" }`              |
-| GET        | `/api/todos/:id`                  | Read one todo                                      |
-| PATCH      | `/api/todos/:id`                  | Change `title` and/or boolean `completed`          |
-| DELETE     | `/api/todos/:id`                  | Delete; 204 or 404 if absent                       |
-| GET        | `/api/files?limit=100&cursor=...` | List metadata; follow returned `cursor` until null |
-| PUT        | `/api/files/:key`                 | Upload raw bytes; replace an existing key          |
-| GET / HEAD | `/api/files/:key`                 | Download / inspect metadata, ETag and content type |
-| DELETE     | `/api/files/:key`                 | Idempotent delete; 204                             |
+Use the dashboard for cookie-authenticated operations. Session mutations also require a trusted `Origin` header. Errors use `{ "error": "..." }`; auth endpoints use Better Auth's response format.
 
-Titles are trimmed and limited to 200 characters. JSON bodies are limited to 16 KiB. Files are limited to 5 MiB, including streamed uploads; this starter buffers uploads to enforce the limit. Filenames must start with a letter or number and contain only letters, numbers, dots, underscores or hyphens (maximum 200 characters). Downloads use attachment disposition and `nosniff`.
+| Method               | Route                             | Access / behavior                                             |
+| -------------------- | --------------------------------- | ------------------------------------------------------------- |
+| GET                  | `/api/health`                     | Public health check                                           |
+| GET                  | `/api/config`                     | Whether Google is configured; no credentials                  |
+| POST                 | `/api/waitlist`                   | Public email/name/consent signup; generic 202 for duplicates  |
+| GET / POST           | `/api/auth/*`                     | Better Auth sign-in, callback, session and sign-out handlers  |
+| GET                  | `/api/me`                         | Signed-in user's profile                                      |
+| GET                  | `/api/waitlist/me`                | Whether this user's verified email joined the waitlist        |
+| GET / POST           | `/api/todos`                      | List latest 100 own records / create `{ "title": "My idea" }` |
+| GET / PATCH / DELETE | `/api/todos/:id`                  | Read, edit title/completed, or delete own record              |
+| GET                  | `/api/files?limit=100&cursor=...` | Paginated own file metadata                                   |
+| PUT                  | `/api/files/:key`                 | Upload/replace raw bytes in own namespace                     |
+| GET / HEAD / DELETE  | `/api/files/:key`                 | Download, inspect metadata, or delete own file                |
+| GET / POST           | `/api/keys`                       | List own key metadata / create with `{ "name": "My script" }` |
+| DELETE               | `/api/keys/:id`                   | Revoke own API key immediately                                |
+| GET                  | `/api/v1/todos`                   | API key only: read that key owner's private records           |
+
+File limit: 5 MiB (buffered, including streamed uploads). Filenames: 1–200 letters, numbers, dots, underscores or hyphens, starting with a letter/number. Downloads use attachment disposition and `nosniff`. Titles: 200 characters. JSON limit: 16 KiB.
+
+### API keys and rate limiting
+
+Create a key in the signed-in dashboard and copy it once. Only its SHA-256 hash and display prefix are stored. Each user can have ten keys; keys do not expire automatically and can be deleted in the dashboard. Their only scope is reading their owner's todos through one endpoint:
 
 ```bash
-API=http://localhost:8787
-curl "$API/api/todos" -H 'Content-Type: application/json' \
-  -d '{"title":"Try D1"}'
-# Use the returned todo.id:
-curl "$API/api/todos/TODO_ID" -X PATCH -H 'Content-Type: application/json' \
-  -d '{"completed":true}'
-curl "$API/api/todos"
-curl "$API/api/todos/TODO_ID" -X DELETE
-
-printf 'Hello R2!\n' > /tmp/example.txt
-curl "$API/api/files/example.txt" -X PUT -H 'Content-Type: text/plain' \
-  --data-binary @/tmp/example.txt
-curl "$API/api/files"
-curl "$API/api/files/example.txt" -o /tmp/downloaded-example.txt
-cmp /tmp/example.txt /tmp/downloaded-example.txt
-curl "$API/api/files/example.txt" -X DELETE
-rm /tmp/example.txt /tmp/downloaded-example.txt
+export IDEA_API_KEY='paste-the-key-shown-once'
+curl http://localhost:3001/api/v1/todos \
+  -H "Authorization: Bearer $IDEA_API_KEY"
 ```
 
-For cloud requests, add `-H "Authorization: Bearer $API_TOKEN"` to each resource request. Enter the same token into the dashboard's token field; it is kept only in memory. This shared token is a basic demonstration, not a multi-user identity system. Replace it with your application's authorization before exposing private user data.
+API keys cannot create records, access files, manage keys, or read other users' data. The example uses one D1 database with explicit per-user isolation, rather than provisioning a database per user.
 
-## Deploy your own resources
+The API-key endpoint permits 30 requests per fixed minute per key and returns `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`. Excess requests return 429 and `Retry-After`. An atomic D1 upsert shares the counter across concurrent requests and Worker instances. Key creation permits ten attempts per minute per user. Public waitlist signup allows ten requests per hour per IP and three per email, with hashed limiter identifiers, a honeypot, validation, and explicit consent. Auth routes also use Better Auth's database-backed rate limiter. These are deliberately small example limits, configured in `apps/api/src/`.
 
-Authenticate with `pnpm exec wrangler login`, or export `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. The token needs account permissions for D1, Workers R2 Storage, and Workers Scripts (Edit); Pages deployment also needs Cloudflare Pages (Edit).
+### Waitlist and SEO
 
-1. Choose names with `pnpm setup-project my-project` before creating resources.
-2. Create D1 and R2:
+The marketing form saves a unique email, optional name, consent, and timestamp in D1. It sends no email and exposes no public subscriber listing. The dashboard's Google sign-in is open to the Google audience you configure; the waitlist does not grant or restrict access.
+
+Copy `apps/marketing/.env.example` to `.env.local` and customize:
+
+```dotenv
+VITE_API_URL=http://localhost:8787
+VITE_SITE_NAME=My Idea
+VITE_SITE_URL=http://localhost:3000
+VITE_DASHBOARD_URL=http://localhost:3001
+VITE_NOINDEX=true
+```
+
+Production builds need the final HTTPS URLs and `VITE_NOINDEX=false`. Localhost is always noindexed. Set `VITE_NOINDEX=true` explicitly for staging/preview builds; a production build copied to a preview URL still contains its production settings. `VITE_` values are public and embedded at build time.
+
+The marketing site renders titles, descriptions, canonical URLs, Open Graph/Twitter metadata, a 1200×630 social image, WebSite JSON-LD, `/robots.txt`, and `/sitemap.xml` on the server. The dashboard is always noindexed. Update page copy in `apps/marketing/src/routes/`, defaults in `src/lib/seo.ts`, and `public/og.png`/`favicon.svg` for each new idea. Add new public pages to the sitemap. The privacy page is example copy: replace its project/contact/retention details before collecting real signups.
+
+## Deploy
+
+Authenticate with `pnpm exec wrangler login`, or export `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. API provisioning needs D1, Workers R2 Storage, and Workers Scripts Edit permissions; app deployment also needs Cloudflare Pages Edit.
+
+1. Choose names (`pnpm setup-project my-project`), then provision:
 
    ```bash
    pnpm exec wrangler d1 create my-project-db --config apps/api/wrangler.json
    pnpm exec wrangler r2 bucket create my-project-files
+   pnpm exec wrangler pages project create my-project-marketing --production-branch main
+   pnpm exec wrangler pages project create my-project-dashboard --production-branch main
    ```
 
-3. Put the returned D1 UUID into `apps/api/wrangler.json` (`database_id`). Ensure the database and bucket names match your new resources. The committed all-zero UUID is for local development only.
-4. Set `ALLOWED_ORIGINS` in that config to the exact dashboard/marketing origins (comma separated, no trailing slash). Keep `REQUIRE_AUTH` set to `"true"`. Localhost origins can remain for local UI testing against your cloud API.
-5. Apply migrations, deploy the API, and set its secret:
+2. In `apps/api/wrangler.json`, set the returned D1 `database_id` and matching resource names. The all-zero UUID is local only. Set `AUTH_URL` to `https://my-project-dashboard.pages.dev` (or your custom dashboard domain), and `ALLOWED_ORIGINS` to the exact marketing/dashboard origins, comma separated, without trailing slashes.
+3. Add the production dashboard origin and `https://my-project-dashboard.pages.dev/api/auth/callback/google` redirect URI to Google. Use separate OAuth clients and Cloudflare resources for development and production.
+4. Apply migrations, deploy, then configure Worker secrets using the interactive prompts:
 
    ```bash
    pnpm db:migrate:remote
    pnpm deploy:api
-   pnpm exec wrangler secret put API_TOKEN --config apps/api/wrangler.json
+   pnpm exec wrangler secret put BETTER_AUTH_SECRET --config apps/api/wrangler.json
+   pnpm exec wrangler secret put GOOGLE_CLIENT_ID --config apps/api/wrangler.json
+   pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET --config apps/api/wrangler.json
    ```
 
-   Until the secret is set, resource requests return 503. The deployment output gives your `https://my-project-api.<subdomain>.workers.dev` URL.
+   Generate a fresh secret with `openssl rand -hex 32`; keep it in your password manager. Do not reuse the local secret. Auth fails closed until configured.
 
-6. Create the Pages projects using your infrastructure repo or the CLI:
+5. Generate another random secret for `API_PROXY_SECRET`. Set the **same value** on the API Worker and both Pages projects (production and corresponding preview settings if used):
 
    ```bash
-   pnpm exec wrangler pages project create my-project-marketing --production-branch main
-   pnpm exec wrangler pages project create my-project-dashboard --production-branch main
+   pnpm exec wrangler secret put API_PROXY_SECRET --config apps/api/wrangler.json
+   pnpm exec wrangler pages secret put API_PROXY_SECRET --project-name my-project-dashboard
+   pnpm exec wrangler pages secret put API_PROXY_SECRET --project-name my-project-marketing
+   ```
+
+   Keep this separate from `BETTER_AUTH_SECRET`. It is read from Pages runtime bindings, never from `VITE_` variables. Local development against localhost skips proxy signing; the isolated test runner supplies its own temporary secret.
+
+6. Export the build configuration and deploy both apps:
+
+   ```bash
    export VITE_API_URL=https://my-project-api.YOUR-SUBDOMAIN.workers.dev
+   export VITE_SITE_URL=https://my-project-marketing.pages.dev
+   export VITE_DASHBOARD_URL=https://my-project-dashboard.pages.dev
+   export VITE_SITE_NAME='My Idea'
+   export VITE_NOINDEX=false
    pnpm deploy
    ```
 
-`pnpm deploy` migrates/deploys the API, builds both apps with the exported API URL, and uploads them to Pages. `pnpm deploy:marketing` and `pnpm deploy:dashboard` deploy individual apps. Set CORS origins to `https://my-project-dashboard.pages.dev`, `https://my-project-marketing.pages.dev`, or your custom domains. Terraform can continue owning Pages project/domain/DNS resources; these scripts only upload app builds to existing projects.
+`pnpm deploy` migrates/deploys the API and uploads both app builds to Pages. `pnpm deploy:marketing` and `pnpm deploy:dashboard` deploy individual apps. The build output is `dist/`. Terraform can own Pages projects, domains, and DNS while these commands upload builds. Avoid wildcard trusted origins; each deployment should have its own OAuth callback and auth secret.
 
-The dashboard uses a standard TanStack Query provider for client-side REST requests. It does not stream query-cache functions into the HTML, keeping hydration compatible with the Pages bundler.
+After deployment, complete a real Google sign-in, confirm your profile/todo/file persist, create and revoke a key, and sign out. Automated tests below do not authenticate with Google's live consent screen.
 
-Add subsequent SQL changes as numbered files in `apps/api/migrations/`, then run `pnpm db:migrate` locally and `pnpm db:migrate:remote` when deploying. Keep development, staging and production resources separate.
+For schema changes, add numbered SQL files in `apps/api/migrations/`. The auth schema matches the installed Better Auth version; review its migration output when upgrading. Migration 0003 preserves old anonymous demo todos with no owner, making them inaccessible to signed-in users. Old unprefixed R2 objects are also inaccessible; deliberately migrate or delete that legacy demo data. D1 rate-limit rows are reused per identifier; periodically remove stale counters and expired auth records for a long-lived deployment.
 
-## Tests and cleanup
+## Verification and cleanup
 
 ```bash
-pnpm check                         # lint, formatting, REST E2E, types, production builds
+pnpm check                         # lint, formatting, API E2E, types, production builds
 pnpm exec playwright install chromium
-pnpm test:browser                  # real browser → Worker → local D1/R2
+pnpm test:browser                  # production Pages apps → Worker → local D1/R2
 CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... pnpm test:remote
 ```
 
-`pnpm test` starts a real local Workers runtime with isolated temporary storage and applies the migration. It tests D1 CRUD, R2 text/binary/empty uploads, replacement, download bytes and metadata, listing/pagination, deletion, body limits, invalid requests, missing records, CORS and bearer authentication. It stops the Worker and removes its temporary D1/R2 storage in `finally`.
+Local tests create isolated temporary storage, apply all migrations, and seed two test users and signed sessions directly in that test database. No fixture user or login bypass is deployed by the application. They cover expired/tampered sessions, OAuth initiation/PKCE and callback rejection, server-protected routing, sign-out, private D1/R2 CRUD, cross-user isolation, API-key reveal/revocation/scope, concurrent rate limiting, signed proxy IP isolation, waitlist submission, and rendered SEO. Browser tests use real production app builds in the Pages runtime. Local storage and child processes are cleaned up afterward.
 
-Browser tests build the dashboard and serve its production output with the Pages runtime alongside the local API, verify todo persistence across reload, compare downloaded file contents, and delete their own records/files afterward. Ports 8787, 3000 and 3001 must be free (the remote test only needs 3000 and 3001). The browser runner leaves only the reusable local schema/cache in `apps/api/.wrangler`; it creates no cloud resources.
+**Google test boundary:** tests use dummy OAuth client credentials and verify the redirect to Google. They do not complete Google's consent, code exchange, or first-user creation. Real sign-in needs your configured OAuth client and an interactive Google account. The manual deployment check above covers that final integration.
 
-`pnpm test:remote` requires API-token authentication and R2 enabled on the account. It creates uniquely named `template-e2e-*` resources, applies the migration, deploys a Worker with a random secret, and exercises the same REST suite over HTTPS. Cleanup runs on success, errors, SIGINT and SIGTERM, deletes test objects, the R2 bucket, D1 database and Worker, and verifies their absence. It also runs the production dashboard in Chromium against the live cloud API and checks the marketing page. Install Chromium first as shown above. It never uses the normal deployment's database/bucket names.
+`pnpm test:remote` creates uniquely named `template-e2e-*` Worker, D1, R2 and two Pages projects, seeds the same test sessions, and runs the API suite plus Chromium against the fully deployed HTTPS apps. It needs Pages Edit permission too. Temporary marketing deployments are noindexed. Local browser tests need ports 8787, 3000 and 3001 free. No persistent demo users, test keys, subscriptions, or cloud deployments are left by the tests.
 
-A cleanup manifest is saved before provisioning under `.wrangler/template-e2e-*/resources.json`. If the process is forcibly killed, the machine loses power, or cleanup fails, recover with the same account credentials:
+Cleanup runs in `finally` and on SIGINT/SIGTERM, deletes both Pages projects and test objects/bucket/database/Worker, and independently checks resource absence. A manifest is written before provisioning. If the machine loses power, the process is forcibly killed, or cleanup fails, recover with the same account credentials:
 
 ```bash
 pnpm test:remote --cleanup .wrangler/template-e2e-RUN-ID/resources.json
 ```
 
-The manifest is retained on incomplete cleanup and removed once absence is verified. Test resources may incur small Cloudflare usage charges while they exist.
+The manifest stays until cleanup is verified. Cloud resources can incur small usage charges while they exist. Remote tests never use the normal application's resource names.
 
-GitHub Actions runs `pnpm check` and the Chromium browser test on pushes to `main` and pull requests, with no cloud secrets required. Remote E2E is explicit to avoid creating billable resources on every commit. `pnpm install` installs the local pre-commit check hook.
+GitHub Actions runs `pnpm check` and Chromium tests on main and pull requests without cloud secrets. Remote testing is explicit. `pnpm install` installs the local pre-commit check hook.
 
 ## References
 
-- [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/)
-- [D1 prepared statements](https://developers.cloudflare.com/d1/worker-api/prepared-statements/)
+- [Better Auth Google provider](https://www.better-auth.com/docs/authentication/google)
+- [Cloudflare subrequest IP behavior](https://developers.cloudflare.com/fundamentals/reference/http-request-headers/#cf-connecting-ip-in-worker-subrequests)
+- [Cloudflare D1](https://developers.cloudflare.com/d1/)
 - [R2 Worker binding API](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/)
+- [TanStack Start authentication](https://tanstack.com/start/latest/docs/framework/react/guide/authentication)

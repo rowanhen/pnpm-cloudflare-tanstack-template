@@ -3,7 +3,8 @@
 	"private": true,
 	"type": "module",
 	"exports": {
-		".": "./src/index.tsx"
+		".": "./src/index.tsx",
+		"./server-proxy": "./src/server-proxy.ts"
 	},
 	"scripts": {
 		"typecheck": "tsc --noEmit"
