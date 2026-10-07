@@ -11,6 +11,8 @@
 		"lint": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@stripe/react-stripe-js": "^7.0.0",
+		"@stripe/stripe-js": "^10.0.0",
 		"@tanstack/react-query": "^5.99.0",
 		"@tanstack/react-router": "^1.168.18",
 		"@tanstack/react-start": "^1.167.31",
@@ -20,10 +22,12 @@
 		"react-dom": "^19.2.0"
 	},
 	"devDependencies": {
+		"@tailwindcss/vite": "^4.3.3",
 		"@types/node": "^25.6.0",
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^6.0.1",
+		"tailwindcss": "^4.3.3",
 		"typescript": "^6.0.2",
 		"vite": "^8.0.8"
 	}

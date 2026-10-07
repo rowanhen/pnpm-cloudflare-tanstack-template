@@ -10,7 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ErrorRouteImport } from './routes/error'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
+import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as ApiSplatRouteImport } from './routes/api.$'
 
 const LoginRoute = LoginRouteImport.update({
@@ -18,10 +22,30 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ErrorRoute = ErrorRouteImport.update({
+  id: '/error',
+  path: '/error',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutIndexRoute = CheckoutIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CheckoutRoute,
+} as any)
+const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
+  id: '/success',
+  path: '/success',
+  getParentRoute: () => CheckoutRoute,
 } as any)
 const ApiSplatRoute = ApiSplatRouteImport.update({
   id: '/api/$',
@@ -31,30 +55,58 @@ const ApiSplatRoute = ApiSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/checkout': typeof CheckoutRouteWithChildren
+  '/error': typeof ErrorRoute
   '/login': typeof LoginRoute
   '/api/$': typeof ApiSplatRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
+  '/checkout/': typeof CheckoutIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/error': typeof ErrorRoute
   '/login': typeof LoginRoute
   '/api/$': typeof ApiSplatRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
+  '/checkout': typeof CheckoutIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/checkout': typeof CheckoutRouteWithChildren
+  '/error': typeof ErrorRoute
   '/login': typeof LoginRoute
   '/api/$': typeof ApiSplatRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
+  '/checkout/': typeof CheckoutIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/api/$'
+  fullPaths:
+    | '/'
+    | '/checkout'
+    | '/error'
+    | '/login'
+    | '/api/$'
+    | '/checkout/success'
+    | '/checkout/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/api/$'
-  id: '__root__' | '/' | '/login' | '/api/$'
+  to: '/' | '/error' | '/login' | '/api/$' | '/checkout/success' | '/checkout'
+  id:
+    | '__root__'
+    | '/'
+    | '/checkout'
+    | '/error'
+    | '/login'
+    | '/api/$'
+    | '/checkout/success'
+    | '/checkout/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CheckoutRoute: typeof CheckoutRouteWithChildren
+  ErrorRoute: typeof ErrorRoute
   LoginRoute: typeof LoginRoute
   ApiSplatRoute: typeof ApiSplatRoute
 }
@@ -68,12 +120,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/error': {
+      id: '/error'
+      path: '/error'
+      fullPath: '/error'
+      preLoaderRoute: typeof ErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/checkout/': {
+      id: '/checkout/'
+      path: '/'
+      fullPath: '/checkout/'
+      preLoaderRoute: typeof CheckoutIndexRouteImport
+      parentRoute: typeof CheckoutRoute
+    }
+    '/checkout/success': {
+      id: '/checkout/success'
+      path: '/success'
+      fullPath: '/checkout/success'
+      preLoaderRoute: typeof CheckoutSuccessRouteImport
+      parentRoute: typeof CheckoutRoute
     }
     '/api/$': {
       id: '/api/$'
@@ -85,8 +165,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CheckoutRouteChildren {
+  CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+  CheckoutIndexRoute: typeof CheckoutIndexRoute
+}
+
+const CheckoutRouteChildren: CheckoutRouteChildren = {
+  CheckoutSuccessRoute: CheckoutSuccessRoute,
+  CheckoutIndexRoute: CheckoutIndexRoute,
+}
+
+const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
+  CheckoutRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CheckoutRoute: CheckoutRouteWithChildren,
+  ErrorRoute: ErrorRoute,
   LoginRoute: LoginRoute,
   ApiSplatRoute: ApiSplatRoute,
 }

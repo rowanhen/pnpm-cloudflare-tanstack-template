@@ -58,6 +58,8 @@ test('signed-in dashboard persists private D1/R2 data and manages scoped API key
 		const initial = await page.goto('/')
 		expect(initial?.headers()['cache-control']).toContain('no-store')
 		await expect(page.getByText('alice@example.test', { exact: true })).toBeVisible()
+		await expect(page.getByRole('button', { name: 'Create API key' })).toBeEnabled()
+		await page.screenshot({ path: 'test-results/dashboard-desktop.png', fullPage: true })
 		await page.getByLabel('Todo title', { exact: true }).fill(title)
 		await page.getByRole('button', { name: 'Add todo', exact: true }).click()
 		const checkbox = page.getByRole('checkbox', { name: title, exact: true })
@@ -137,7 +139,8 @@ test('waitlist signup persists and SEO is present in server-rendered HTML', asyn
 	await page.getByLabel('Email address', { exact: true }).fill('bob@example.test')
 	await page.getByRole('checkbox').check()
 	await page.getByRole('button', { name: 'Join the waitlist' }).click()
-	await expect(page.getByRole('status')).toContainText("You're on the list")
+	await expect(page).toHaveURL(/\/waitlist\/success$/)
+	await expect(page.getByRole('heading', { name: "You're on the list." })).toBeVisible()
 	const joined = await request.get(`${apiUrl}/api/waitlist/me`, { headers: { Cookie: bob } })
 	expect((await joined.json()).joined).toBe(true)
 	expect(await (await request.get(`${marketingUrl}/robots.txt`)).text()).toContain(

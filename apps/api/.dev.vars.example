@@ -5,3 +5,9 @@ GOOGLE_CLIENT_SECRET=
 
 # Cloud deployments only: set the same value on both Pages projects and the Worker.
 # API_PROXY_SECRET=separate-random-secret
+
+# Optional one-time Stripe test checkout. Run pnpm stripe:setup after adding test keys.
+STRIPE_SECRET_KEY=
+STRIPE_PUBLISHABLE_KEY=
+STRIPE_PRICE_ID=
+STRIPE_WEBHOOK_SECRET=

@@ -1,15 +1,28 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { AppShell } from '@workspace/shared'
+import {
+	AppShell,
+	Button,
+	Card,
+	CardHeader,
+	CardTitle,
+	CardContent,
+	Alert,
+	AlertDescription,
+} from '@workspace/shared'
 import { getSession } from '../lib/session'
 
 export const Route = createFileRoute('/login')({
-	beforeLoad: async () => {
-		if (await getSession()) throw redirect({ to: '/' })
+	validateSearch: (search: Record<string, unknown>): { next?: 'checkout' } => ({
+		next: search.next === 'checkout' ? 'checkout' : undefined,
+	}),
+	beforeLoad: async ({ search }) => {
+		if (await getSession()) throw redirect({ to: search.next === 'checkout' ? '/checkout' : '/' })
 	},
 	component: LoginPage,
 })
 function LoginPage() {
+	const { next } = Route.useSearch()
 	const [ready, setReady] = useState(false)
 	const [googleEnabled, setGoogleEnabled] = useState(false)
 	const [error, setError] = useState('')
@@ -32,7 +45,7 @@ function LoginPage() {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					provider: 'google',
-					callbackURL: window.location.origin + '/',
+					callbackURL: window.location.origin + (next === 'checkout' ? '/checkout' : '/'),
 					errorCallbackURL: window.location.origin + '/login',
 				}),
 			})
@@ -49,15 +62,27 @@ function LoginPage() {
 		<AppShell
 			title="Welcome back"
 			description="Sign in to your workspace. Your records, files and API keys stay private to your account."
-			accent="#38bdf8"
 		>
-			<button disabled={!ready || !googleEnabled || busy} onClick={signIn}>
-				{busy ? 'Redirecting…' : 'Continue with Google'}
-			</button>
-			{ready && !googleEnabled && (
-				<p>Google sign-in is not configured yet. Follow the Google OAuth setup in the README.</p>
-			)}
-			{error && <p role="alert">{error}</p>}
+			<Card className="max-w-md">
+				<CardHeader>
+					<CardTitle>Your next idea starts here.</CardTitle>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<Button className="w-full" disabled={!ready || !googleEnabled || busy} onClick={signIn}>
+						{busy ? 'Redirecting…' : 'Continue with Google'}
+					</Button>
+					{ready && !googleEnabled && (
+						<p>
+							Google sign-in is not configured yet. Follow the Google OAuth setup in the README.
+						</p>
+					)}
+					{error && (
+						<Alert variant="destructive">
+							<AlertDescription>{error}</AlertDescription>
+						</Alert>
+					)}
+				</CardContent>
+			</Card>
 		</AppShell>
 	)
 }

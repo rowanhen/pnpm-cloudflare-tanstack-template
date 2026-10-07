@@ -1,55 +1,68 @@
 import type { ReactNode } from 'react'
-import { PROJECT_NAME, appMetaDescription } from './project'
+import { ArrowUpRight, Layers3 } from 'lucide-react'
+import { Button } from './components/ui/button'
 
 export { PROJECT_NAME, appMetaDescription, appTitle } from './project'
+export { Button, buttonVariants } from './components/ui/button'
+export {
+	Card,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+	CardContent,
+	CardFooter,
+} from './components/ui/card'
+export { Input } from './components/ui/input'
+export { Label } from './components/ui/label'
+export { Checkbox } from './components/ui/checkbox'
+export { Badge } from './components/ui/badge'
+export { Alert, AlertTitle, AlertDescription } from './components/ui/alert'
+export { Separator } from './components/ui/separator'
+export { Skeleton } from './components/ui/skeleton'
+export { PageState, ErrorPage, NotFoundPage } from './components/page-state'
+export { useHydrated } from './hooks/use-hydrated'
+export { cn } from './lib/utils'
 
-export function appCopy(name: string, audience: string) {
-	return {
-		title: `${PROJECT_NAME} ${name}`,
-		description: appMetaDescription(audience),
-	}
-}
-
-export function AppShell(props: {
+export function AppShell({
+	title,
+	description,
+	children,
+	actions,
+}: {
 	title: string
 	description: string
-	accent: string
 	children: ReactNode
+	actions?: ReactNode
 }) {
-	const { title, description, accent, children } = props
-
 	return (
-		<div
-			style={{
-				minHeight: '100vh',
-				background:
-					'radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 30%), #0f172a',
-				color: '#e2e8f0',
-				fontFamily:
-					'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace',
-			}}
-		>
-			<div style={{ maxWidth: 960, margin: '0 auto', padding: '48px 24px 80px' }}>
-				<div
-					style={{
-						display: 'inline-block',
-						padding: '6px 10px',
-						border: `1px solid ${accent}`,
-						color: accent,
-						fontSize: 12,
-						letterSpacing: '0.08em',
-						textTransform: 'uppercase',
-						marginBottom: 24,
-					}}
-				>
-					{PROJECT_NAME}
+		<div className="min-h-svh">
+			<header className="border-b bg-card">
+				<div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
+					<a href="/" className="flex items-center gap-2 font-semibold tracking-tight">
+						<Layers3 className="size-5 text-primary" aria-hidden="true" />
+						Idea Starter
+					</a>
+					<nav aria-label="Workspace navigation" className="flex items-center gap-2">
+						<Button asChild variant="ghost" size="sm">
+							<a href="/checkout">
+								Test checkout
+								<ArrowUpRight aria-hidden="true" />
+							</a>
+						</Button>
+						{actions}
+					</nav>
 				</div>
-				<h1 style={{ fontSize: 48, lineHeight: 1.05, margin: 0 }}>{title}</h1>
-				<p style={{ maxWidth: 720, fontSize: 18, lineHeight: 1.7, color: '#cbd5e1' }}>
-					{description}
-				</p>
+			</header>
+			<main className="mx-auto max-w-6xl space-y-8 px-5 py-10 sm:px-8 sm:py-14">
+				<div className="max-w-2xl space-y-3">
+					<h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+					<p className="leading-7 text-muted-foreground">{description}</p>
+				</div>
 				{children}
-			</div>
+			</main>
+			<footer className="mx-auto max-w-6xl px-5 pb-8 text-xs text-muted-foreground sm:px-8">
+				A little less setup. A little more creating.
+			</footer>
 		</div>
 	)
 }

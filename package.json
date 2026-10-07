@@ -31,7 +31,9 @@
 		"hooks:install": "bash scripts/install-precommit-hook.sh",
 		"prepare": "pnpm run hooks:install",
 		"setup:local": "node scripts/setup-local.mjs",
-		"test:dev": "node scripts/test-browser.mjs --dev"
+		"test:dev": "node scripts/test-browser.mjs --dev",
+		"stripe:setup": "node scripts/stripe-demo.mjs setup",
+		"stripe:cleanup": "node scripts/stripe-demo.mjs cleanup"
 	},
 	"devDependencies": {
 		"oxfmt": "^0.58.0",

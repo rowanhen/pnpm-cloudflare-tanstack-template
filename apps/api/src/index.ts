@@ -4,6 +4,7 @@ import { createAuth } from './auth'
 import { HttpError, json, readBody, readJson, textField, sha256, methodNotAllowed } from './http'
 import { rateLimit } from './rate-limit'
 import { apiKeyUser, keysRoute } from './keys'
+import { checkoutEnabled, checkoutRoute, stripeWebhook } from './checkout'
 
 type TodoRow = { id: string; title: string; completed: number; created_at: string; user_id: string }
 const todo = ({ user_id: _owner, ...row }: TodoRow) => ({ ...row, completed: row.completed === 1 })
@@ -14,7 +15,11 @@ async function route(request: Request, env: Env): Promise<Response> {
 	const method = request.method
 	if (path === '/api/health') return method === 'GET' ? json({ ok: true }) : methodNotAllowed('GET')
 	if (path === '/api/config')
-		return json({ googleEnabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) })
+		return json({
+			googleEnabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
+			checkoutEnabled: checkoutEnabled(env),
+		})
+	if (path === '/api/stripe/webhook') return stripeWebhook(request, env)
 	if (path.startsWith('/api/auth/')) {
 		if (!env.BETTER_AUTH_SECRET)
 			throw new HttpError(503, 'Run pnpm setup:local or configure the authentication secrets')
@@ -67,6 +72,7 @@ async function route(request: Request, env: Env): Promise<Response> {
 			throw new HttpError(403, 'A trusted Origin header is required')
 	}
 	if (path === '/api/keys' || path.startsWith('/api/keys/')) return keysRoute(request, env, userId)
+	if (path.startsWith('/api/checkout/')) return checkoutRoute(request, env, session.user)
 	if (path === '/api/waitlist/me' && method === 'GET') {
 		const entry = session.user.emailVerified
 			? await env.DB.prepare('SELECT created_at FROM waitlist WHERE email = ?')

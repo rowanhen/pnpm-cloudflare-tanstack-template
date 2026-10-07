@@ -1,4 +1,6 @@
-import { appMetaDescription, appTitle } from '@workspace/shared'
+import type { ReactNode } from 'react'
+import { appMetaDescription, appTitle, ErrorPage, NotFoundPage } from '@workspace/shared'
+import styles from '@workspace/shared/styles.css?url'
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
 
@@ -6,6 +8,7 @@ export const Route = createRootRouteWithContext<{
 	queryClient: QueryClient
 }>()({
 	head: () => ({
+		links: [{ rel: 'stylesheet', href: styles }],
 		meta: [
 			{ charSet: 'utf-8' },
 			{ name: 'robots', content: 'noindex, nofollow' },
@@ -17,17 +20,20 @@ export const Route = createRootRouteWithContext<{
 			},
 		],
 	}),
-	component: RootComponent,
+	component: Outlet,
+	shellComponent: RootComponent,
+	notFoundComponent: NotFoundPage,
+	errorComponent: () => <ErrorPage />,
 })
 
-function RootComponent() {
+function RootComponent({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en">
 			<head>
 				<HeadContent />
 			</head>
-			<body style={{ margin: 0 }}>
-				<Outlet />
+			<body>
+				{children}
 				<Scripts />
 			</body>
 		</html>

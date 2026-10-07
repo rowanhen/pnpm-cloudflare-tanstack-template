@@ -9,6 +9,7 @@ try {
 				...process.env,
 				E2E_API_URL: worker.base,
 				E2E_PROXY_SECRET: worker.proxySecret,
+				E2E_STRIPE_FIXTURE: worker.stripeUrl,
 				E2E_DEV: String(development),
 				E2E_COOKIE_ALICE: worker.fixture.cookies[0],
 				E2E_COOKIE_BOB: worker.fixture.cookies[1],

@@ -1,5 +1,6 @@
 import { localWorker } from './local-worker.mjs'
 import { testApi } from './test-api.mjs'
+import { testCheckout } from './test-checkout.mjs'
 const worker = await localWorker(process.env.TEST_API_PORT ?? 8799)
 for (const signal of ['SIGINT', 'SIGTERM'])
 	process.once(signal, () => {
@@ -7,6 +8,7 @@ for (const signal of ['SIGINT', 'SIGTERM'])
 	})
 try {
 	await testApi(worker.base, worker.fixture.cookies, worker.proxySecret)
+	await testCheckout(worker)
 } finally {
 	await worker.stop()
 	console.log('Local Worker and isolated D1/R2 test storage removed.')

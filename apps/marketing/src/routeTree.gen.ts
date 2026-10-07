@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ErrorRouteImport } from './routes/error'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WaitlistSuccessRouteImport } from './routes/waitlist.success'
 import { Route as ApiWaitlistRouteImport } from './routes/api.waitlist'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -30,9 +32,19 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ErrorRoute = ErrorRouteImport.update({
+  id: '/error',
+  path: '/error',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WaitlistSuccessRoute = WaitlistSuccessRouteImport.update({
+  id: '/waitlist/success',
+  path: '/waitlist/success',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiWaitlistRoute = ApiWaitlistRouteImport.update({
@@ -43,46 +55,70 @@ const ApiWaitlistRoute = ApiWaitlistRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/waitlist': typeof ApiWaitlistRoute
+  '/waitlist/success': typeof WaitlistSuccessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/waitlist': typeof ApiWaitlistRoute
+  '/waitlist/success': typeof WaitlistSuccessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/error': typeof ErrorRoute
   '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/waitlist': typeof ApiWaitlistRoute
+  '/waitlist/success': typeof WaitlistSuccessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/privacy' | '/robots.txt' | '/sitemap.xml' | '/api/waitlist'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/privacy' | '/robots.txt' | '/sitemap.xml' | '/api/waitlist'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
+    | '/error'
     | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/api/waitlist'
+    | '/waitlist/success'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/error'
+    | '/privacy'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/api/waitlist'
+    | '/waitlist/success'
+  id:
+    | '__root__'
+    | '/'
+    | '/error'
+    | '/privacy'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/api/waitlist'
+    | '/waitlist/success'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ErrorRoute: typeof ErrorRoute
   PrivacyRoute: typeof PrivacyRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiWaitlistRoute: typeof ApiWaitlistRoute
+  WaitlistSuccessRoute: typeof WaitlistSuccessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -108,11 +144,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/error': {
+      id: '/error'
+      path: '/error'
+      fullPath: '/error'
+      preLoaderRoute: typeof ErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/waitlist/success': {
+      id: '/waitlist/success'
+      path: '/waitlist/success'
+      fullPath: '/waitlist/success'
+      preLoaderRoute: typeof WaitlistSuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/waitlist': {
@@ -127,10 +177,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ErrorRoute: ErrorRoute,
   PrivacyRoute: PrivacyRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiWaitlistRoute: ApiWaitlistRoute,
+  WaitlistSuccessRoute: WaitlistSuccessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
