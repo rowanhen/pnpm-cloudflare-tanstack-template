@@ -164,10 +164,11 @@ For schema changes, add numbered SQL files in `apps/api/migrations/`. The auth s
 pnpm check                         # lint, formatting, API E2E, types, production builds
 pnpm exec playwright install chromium
 pnpm test:browser                  # production Pages apps → Worker → local D1/R2
+pnpm test:dev                      # Vite development apps → Worker → local D1/R2
 CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... pnpm test:remote
 ```
 
-Local tests create isolated temporary storage, apply all migrations, and seed two test users and signed sessions directly in that test database. No fixture user or login bypass is deployed by the application. They cover expired/tampered sessions, OAuth initiation/PKCE and callback rejection, server-protected routing, sign-out, private D1/R2 CRUD, cross-user isolation, API-key reveal/revocation/scope, concurrent rate limiting, signed proxy IP isolation, waitlist submission, and rendered SEO. Browser tests use real production app builds in the Pages runtime. Local storage and child processes are cleaned up afterward.
+Local tests create isolated temporary storage, apply all migrations, and seed two test users and signed sessions directly in that test database. No fixture user or login bypass is deployed by the application. They cover expired/tampered sessions, OAuth initiation/PKCE and callback rejection, server-protected routing, sign-out, private D1/R2 CRUD, cross-user isolation, API-key reveal/revocation/scope, concurrent rate limiting, signed proxy IP isolation, waitlist submission, and rendered SEO. Browser tests cover both production app builds in the Pages runtime and Vite development servers, including compressed responses and streamed uploads. Local storage and child processes are cleaned up afterward.
 
 **Google test boundary:** tests use dummy OAuth client credentials and verify the redirect to Google. They do not complete Google's consent, code exchange, or first-user creation. Real sign-in needs your configured OAuth client and an interactive Google account. The manual deployment check above covers that final integration.
 

@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test'
 
 const remoteApi = process.env.E2E_API_URL
+const development = process.env.E2E_DEV === 'true'
 
 export default defineConfig({
 	testDir: './tests',
@@ -14,7 +15,9 @@ export default defineConfig({
 		? []
 		: [
 				{
-					command: 'pnpm --filter dashboard build && node scripts/preview.mjs dashboard 3001',
+					command: development
+						? 'pnpm --filter dashboard dev'
+						: 'pnpm --filter dashboard build && node scripts/preview.mjs dashboard 3001',
 					url: 'http://localhost:3001/api/health',
 					stdout: 'pipe',
 					env: {
@@ -24,7 +27,9 @@ export default defineConfig({
 					reuseExistingServer: false,
 				},
 				{
-					command: 'pnpm --filter marketing build && node scripts/preview.mjs marketing 3000',
+					command: development
+						? 'pnpm --filter marketing dev'
+						: 'pnpm --filter marketing build && node scripts/preview.mjs marketing 3000',
 					url: 'http://localhost:3000',
 					env: {
 						VITE_API_URL: remoteApi ?? 'http://localhost:8787',

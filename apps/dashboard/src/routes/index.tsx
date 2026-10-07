@@ -52,6 +52,7 @@ function DashboardHomePage() {
 				Signed in as <strong>{user.email}</strong>
 			</p>
 			<button
+				disabled={!hydrated}
 				onClick={async () => {
 					await api('/api/auth/sign-out', {
 						method: 'POST',

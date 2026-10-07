@@ -34,3 +34,6 @@ jobs:
 
       - name: Browser end-to-end tests
         run: pnpm test:browser
+
+      - name: Development server end-to-end tests
+        run: pnpm test:dev

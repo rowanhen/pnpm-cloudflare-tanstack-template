@@ -30,14 +30,21 @@ export async function backendHeaders(request: Request, base: string) {
 
 export async function proxyApi(request: Request, base: string) {
 	const url = new URL(request.url)
-	const response = await fetch(`${base}${url.pathname}${url.search}`, {
+	const init: RequestInit & { duplex: 'half' } = {
+		duplex: 'half', // Required by Node's fetch for streamed request bodies during Vite development.
 		method: request.method,
 		headers: await backendHeaders(request, base),
 		body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
 		redirect: 'manual',
 		signal: AbortSignal.timeout(15000),
-	})
+	}
+	const response = await fetch(`${base}${url.pathname}${url.search}`, init)
 	const result = new Response(response.body, response)
+	// fetch decodes upstream compression; stale encoding/length headers break Node/Vite responses.
+	if (result.headers.has('Content-Encoding')) {
+		result.headers.delete('Content-Encoding')
+		result.headers.delete('Content-Length')
+	}
 	result.headers.set('Cache-Control', 'no-store')
 	return result
 }

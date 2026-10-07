@@ -30,7 +30,8 @@
 		"deploy:dashboard": "bash scripts/deploy.sh dashboard",
 		"hooks:install": "bash scripts/install-precommit-hook.sh",
 		"prepare": "pnpm run hooks:install",
-		"setup:local": "node scripts/setup-local.mjs"
+		"setup:local": "node scripts/setup-local.mjs",
+		"test:dev": "node scripts/test-browser.mjs --dev"
 	},
 	"devDependencies": {
 		"oxfmt": "^0.58.0",
