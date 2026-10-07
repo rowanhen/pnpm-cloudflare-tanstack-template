@@ -5,8 +5,8 @@ import { stdin as input, stdout as output } from 'node:process'
 const rawName = process.argv[2] ?? (await promptForName())
 const projectName = normalizeProjectName(rawName)
 
-if (!projectName) {
-	console.error('Project name is required.')
+if (!projectName || projectName.length > 40) {
+	console.error('Project name must contain 1–40 characters after normalization.')
 	process.exit(1)
 }
 
@@ -27,11 +27,18 @@ await writeFile(
 	projectConfig.replace(/PROJECT_NAME = '.*'/, `PROJECT_NAME = '${projectName}'`),
 )
 
+const workerPath = new URL('../apps/api/wrangler.json', import.meta.url)
+const worker = JSON.parse(await readFile(workerPath, 'utf8'))
+worker.name = `${projectName}-api`
+worker.d1_databases[0].database_name = `${projectName}-db`
+worker.r2_buckets[0].bucket_name = `${projectName}-files`
+await writeFile(workerPath, `${JSON.stringify(worker, null, '\t')}\n`)
+
 console.log(`Initialized project as "${projectName}".`)
 console.log('Next steps:')
 console.log('1. pnpm install')
-console.log('2. Fill in .env.local, .env.convex, .env.prod, and .env.keys')
-console.log('3. pnpm dev')
+console.log('2. pnpm dev (local D1 and R2 need no credentials)')
+console.log('3. Follow README.md to provision and deploy cloud resources')
 
 async function promptForName() {
 	const rl = createInterface({ input, output })

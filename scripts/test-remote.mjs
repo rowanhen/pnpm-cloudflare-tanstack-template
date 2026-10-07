@@ -1,0 +1,181 @@
+import { execFileSync } from 'node:child_process'
+import { mkdir, readFile, writeFile, rm } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { testApi, waitForApi } from './test-api.mjs'
+
+const root = fileURLToPath(new URL('..', import.meta.url))
+const account = process.env.CLOUDFLARE_ACCOUNT_ID
+const token = process.env.CLOUDFLARE_API_TOKEN
+if (!account || !token)
+	throw new Error(
+		'Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN (D1, R2, Workers Scripts edit permissions).',
+	)
+const cleanupPath = process.argv[2] === '--cleanup' ? resolve(process.argv[3]) : null
+const name = `template-e2e-${Date.now()}-${randomUUID().slice(0, 8)}`
+const directory = cleanupPath ? resolve(cleanupPath, '..') : resolve(root, '.wrangler', name)
+await mkdir(directory, { recursive: true })
+const manifestPath = cleanupPath ?? resolve(directory, 'resources.json')
+let state = cleanupPath
+	? JSON.parse(await readFile(manifestPath, 'utf8'))
+	: {
+			account,
+			name,
+			databaseName: `${name}-db`,
+			bucket: `${name}-files`,
+			workerAttempted: false,
+			bucketAttempted: false,
+			databaseAttempted: false,
+		}
+if (
+	state.account !== account ||
+	!/^template-e2e-\d+-[a-f0-9]{8}$/.test(state.name) ||
+	state.databaseName !== `${state.name}-db` ||
+	state.bucket !== `${state.name}-files` ||
+	directory !== resolve(root, '.wrangler', state.name)
+)
+	throw new Error('Invalid cleanup manifest or account mismatch')
+const save = () => writeFile(manifestPath, JSON.stringify(state, null, 2), { mode: 0o600 })
+await save()
+async function cf(path, method = 'GET', body, missingOk = false) {
+	const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}${path}`, {
+		method,
+		headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+		...(body === undefined ? {} : { body: JSON.stringify(body) }),
+		signal: AbortSignal.timeout(30000),
+	})
+	if (missingOk && response.status === 404) return null
+	const result = await response.json()
+	if (!response.ok || result.success === false)
+		throw new Error(`${method} ${path}: ${JSON.stringify(result.errors ?? result)}`)
+	return result.result
+}
+function wrangler(args) {
+	return execFileSync('pnpm', ['exec', 'wrangler', ...args], {
+		cwd: root,
+		stdio: 'inherit',
+		env: { ...process.env, CI: 'true' },
+		timeout: 180000,
+	})
+}
+let cleaning
+function cleanup() {
+	if (cleaning) return cleaning
+	cleaning = (async () => {
+		const failures = []
+		async function attempt(label, action) {
+			for (let count = 0; count < 3; count++) {
+				try {
+					await action()
+					console.log(`Cleaned up ${label}`)
+					return
+				} catch (error) {
+					if (count === 2) failures.push(error)
+					else await new Promise((done) => setTimeout(done, 1500))
+				}
+			}
+		}
+		if (state.bucketAttempted) {
+			await attempt('R2 objects and bucket', async () => {
+				const buckets = await cf('/r2/buckets')
+				if (!buckets.buckets.some((bucket) => bucket.name === state.bucket)) return
+				// All keys this isolated test can write; remote object deletion works even if the Worker failed.
+				for (const key of ['e2e-file.txt', 'e2e-binary.bin', 'e2e-empty.txt', 'e2e-browser.txt']) {
+					wrangler(['r2', 'object', 'delete', `${state.bucket}/${key}`, '--remote'])
+				}
+				await cf(`/r2/buckets/${state.bucket}`, 'DELETE', undefined, true)
+			})
+		}
+		if (state.databaseAttempted)
+			await attempt('D1 database', async () => {
+				const databases = await cf('/d1/database?per_page=1000')
+				const database = databases.find((item) => item.name === state.databaseName)
+				if (database) await cf(`/d1/database/${database.uuid}`, 'DELETE', undefined, true)
+			})
+		if (state.workerAttempted)
+			await attempt('Worker', () => cf(`/workers/scripts/${state.name}`, 'DELETE', undefined, true))
+		if (failures.length) {
+			console.error(`Cleanup incomplete. Retry: pnpm test:remote --cleanup ${manifestPath}`)
+			throw new AggregateError(failures, 'Remote cleanup failed')
+		}
+		// Confirm resource absence, independently of the delete responses.
+		const databases = await cf('/d1/database?per_page=1000')
+		const buckets = await cf('/r2/buckets')
+		const workers = await cf('/workers/scripts')
+		if (
+			databases.some((item) => item.name === state.databaseName) ||
+			buckets.buckets.some((item) => item.name === state.bucket) ||
+			workers.some((item) => item.id === state.name)
+		)
+			throw new Error(`Resources remain; retain cleanup manifest: ${manifestPath}`)
+		await rm(directory, { recursive: true, force: true })
+		console.log('Verified: temporary Worker, D1 database and R2 bucket are absent.')
+	})()
+	return cleaning
+}
+for (const signal of ['SIGINT', 'SIGTERM'])
+	process.once(signal, () => {
+		void cleanup().finally(() => process.exit(1))
+	})
+if (cleanupPath) {
+	await cleanup()
+} else {
+	try {
+		console.log(`Creating isolated cloud test resources: ${state.name}`)
+		state.databaseAttempted = true
+		await save()
+		const database = await cf('/d1/database', 'POST', { name: state.databaseName })
+		state.databaseId = database.uuid
+		await save()
+		state.bucketAttempted = true
+		await save()
+		await cf('/r2/buckets', 'POST', { name: state.bucket })
+		const config = JSON.parse(await readFile(resolve(root, 'apps/api/wrangler.json'), 'utf8'))
+		config.name = state.name
+		config.main = resolve(root, 'apps/api/src/index.ts')
+		config.d1_databases[0] = {
+			binding: 'DB',
+			database_name: state.databaseName,
+			database_id: database.uuid,
+			migrations_dir: resolve(root, 'apps/api/migrations'),
+		}
+		config.r2_buckets[0].bucket_name = state.bucket
+		config.account_id = account
+		const configPath = resolve(directory, 'wrangler.json')
+		await writeFile(configPath, JSON.stringify(config, null, 2))
+		const apiToken = randomUUID()
+		const secretsPath = resolve(directory, 'secrets.json')
+		await writeFile(secretsPath, JSON.stringify({ API_TOKEN: apiToken }), { mode: 0o600 })
+		wrangler(['d1', 'migrations', 'apply', 'DB', '--remote', '--config', configPath])
+		state.workerAttempted = true
+		await save()
+		wrangler(['deploy', '--config', configPath, '--secrets-file', secretsPath])
+		await rm(secretsPath)
+		const { subdomain } = await cf('/workers/subdomain')
+		const base = `https://${state.name}.${subdomain}.workers.dev`
+		await waitForApi(base)
+		// Workers routes can propagate after the first successful health response.
+		let ready = 0
+		for (let attempt = 0; attempt < 60 && ready < 5; attempt++) {
+			const response = await fetch(`${base}/api/todos`, {
+				headers: { Authorization: `Bearer ${apiToken}` },
+				signal: AbortSignal.timeout(10000),
+			})
+			ready = response.ok ? ready + 1 : 0
+			if (!response.ok) console.log(`Waiting for API route propagation (${response.status})`)
+			await new Promise((done) => setTimeout(done, 1000))
+		}
+		if (ready < 5) throw new Error('Authenticated API route did not become ready')
+		await testApi(base, apiToken)
+		console.log('Testing production dashboard in Chromium against the live cloud API.')
+		execFileSync('pnpm', ['test:browser'], {
+			cwd: root,
+			stdio: 'inherit',
+			timeout: 180000,
+			env: { ...process.env, E2E_API_URL: base, E2E_API_TOKEN: apiToken },
+		})
+	} finally {
+		await cleanup()
+	}
+}

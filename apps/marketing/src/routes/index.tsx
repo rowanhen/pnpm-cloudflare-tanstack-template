@@ -19,11 +19,11 @@ function MarketingHomePage() {
 			>
 				<Card
 					title="Frontend"
-					body="TanStack Start on Cloudflare Pages, wired for dotenvx-backed builds."
+					body="TanStack Start on Cloudflare Pages, with a shared Cloudflare Worker REST API."
 				/>
 				<Card
 					title="Backend"
-					body="Shared Convex deployment at the workspace root for functions, schema, and env sync."
+					body="D1 SQL todo CRUD and R2 file storage, with working REST examples in the dashboard."
 				/>
 				<Card
 					title="Workspace"

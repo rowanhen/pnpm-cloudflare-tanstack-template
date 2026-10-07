@@ -1,40 +1,43 @@
 {
-	"name": "pnpm-convex-tanstack-template",
+	"name": "pnpm-cloudflare-tanstack-template",
 	"private": true,
 	"type": "module",
 	"packageManager": "pnpm@10.18.0",
 	"scripts": {
 		"setup-project": "node scripts/setup-project.mjs",
-		"dev": "dotenvx run -f .env.local -- sh -c 'npx convex dev --env-file .env.convex & pnpm --filter marketing dev & pnpm --filter dashboard dev'",
-		"dev:marketing": "dotenvx run -f .env.local -- sh -c 'npx convex dev --env-file .env.convex & pnpm --filter marketing dev'",
-		"dev:dashboard": "dotenvx run -f .env.local -- sh -c 'npx convex dev --env-file .env.convex & pnpm --filter dashboard dev'",
-		"codegen": "dotenvx run -f .env.local -f .env.convex -- sh -c 'if [ -n \"${CONVEX_DEPLOY_KEY:-}\" ] && [ \"${CONVEX_DEPLOY_KEY#replace-with-your-}\" = \"$CONVEX_DEPLOY_KEY\" ]; then npx convex codegen; else echo \"Skipping convex codegen (CONVEX_DEPLOY_KEY missing/placeholder).\"; fi'",
-		"build": "pnpm run codegen && pnpm --filter marketing build && pnpm --filter dashboard build",
-		"build:marketing": "pnpm run codegen && pnpm --filter marketing build",
-		"build:dashboard": "pnpm run codegen && pnpm --filter dashboard build",
-		"test": "pnpm --filter marketing test && pnpm --filter dashboard test",
+		"dev": "pnpm db:migrate && pnpm -r --parallel --filter api --filter marketing --filter dashboard dev",
+		"dev:api": "pnpm db:migrate && pnpm --filter api dev",
+		"dev:marketing": "pnpm --filter marketing dev",
+		"dev:dashboard": "pnpm --filter dashboard dev",
+		"db:migrate": "pnpm --filter api db:migrate",
+		"db:migrate:remote": "pnpm --filter api db:migrate:remote",
+		"build": "pnpm -r run build",
+		"build:marketing": "pnpm --filter marketing build",
+		"build:dashboard": "pnpm --filter dashboard build",
+		"test": "node scripts/test-local.mjs",
+		"test:remote": "node scripts/test-remote.mjs",
+		"test:browser": "playwright test",
 		"typecheck": "pnpm -r --parallel run typecheck",
 		"lint": "oxlint",
 		"lint:all": "oxlint",
 		"format": "oxfmt . --write",
 		"format:check": "oxfmt . --check",
 		"precommit:check": "bash scripts/precommit-check.sh",
-		"check": "pnpm run lint && pnpm run format:check && pnpm run test && pnpm run typecheck && pnpm run build",
+		"check": "pnpm lint && pnpm format:check && pnpm test && pnpm typecheck && pnpm build",
 		"deploy": "bash scripts/deploy.sh",
+		"deploy:api": "pnpm --filter api deploy",
 		"deploy:marketing": "bash scripts/deploy.sh marketing",
 		"deploy:dashboard": "bash scripts/deploy.sh dashboard",
-		"env:sync": "bash scripts/sync-env-to-convex.sh",
-		"env:sync:prod": "bash scripts/sync-env-to-convex.sh --prod",
 		"hooks:install": "bash scripts/install-precommit-hook.sh",
 		"prepare": "pnpm run hooks:install"
 	},
-	"dependencies": {
-		"convex": "^1.35.1"
-	},
 	"devDependencies": {
-		"@dotenvx/dotenvx": "^1.59.1",
 		"oxfmt": "^0.58.0",
 		"oxlint": "^1.73.0",
-		"wrangler": "^4.84.1"
+		"wrangler": "^4.148.0",
+		"@playwright/test": "^1.61.0"
+	},
+	"engines": {
+		"node": ">=22.12.0"
 	}
 }

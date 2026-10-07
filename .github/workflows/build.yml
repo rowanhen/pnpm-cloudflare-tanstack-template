@@ -1,6 +1,7 @@
 name: Build, Lint & Typecheck
 
 on:
+  pull_request:
   push:
     branches:
       - main
@@ -19,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       - name: Install dependencies
@@ -27,3 +28,9 @@ jobs:
 
       - name: Pre-commit parity checks
         run: pnpm run check
+
+      - name: Install browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Browser end-to-end tests
+        run: pnpm test:browser

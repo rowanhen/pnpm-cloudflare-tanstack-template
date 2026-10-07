@@ -14,5 +14,13 @@
 		"typescript/no-explicit-any": "warn",
 		"typescript/no-non-null-assertion": "warn"
 	},
-	"ignorePatterns": ["convex/_generated/**", "apps/*/src/routeTree.gen.ts", "node_modules", "dist"]
+	"ignorePatterns": [
+		"apps/*/src/routeTree.gen.ts",
+		"node_modules",
+		"dist",
+		"**/.output/**",
+		"**/.wrangler/**",
+		"playwright-report",
+		"test-results"
+	]
 }

@@ -1,0 +1,25 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "pnpm-cloudflare-tanstack-template-api",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-10-01",
+	"workers_dev": true,
+	"vars": {
+		"ALLOWED_ORIGINS": "http://localhost:3000,http://localhost:3001",
+		"REQUIRE_AUTH": "true"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "pnpm-cloudflare-tanstack-template-db",
+			"database_id": "00000000-0000-0000-0000-000000000000",
+			"migrations_dir": "migrations"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "FILES",
+			"bucket_name": "pnpm-cloudflare-tanstack-template-files"
+		}
+	]
+}

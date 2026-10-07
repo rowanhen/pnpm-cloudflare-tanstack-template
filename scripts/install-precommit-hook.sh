@@ -7,7 +7,7 @@ TARGET="$HOOKS_DIR/pre-commit"
 
 mkdir -p "$HOOKS_DIR"
 cat >"$TARGET" <<'EOF'
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 set -euo pipefail
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"

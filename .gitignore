@@ -13,10 +13,7 @@ node_modules
 dist
 dist-ssr
 *.local
-!.env.local
 
-# Convex
-# convex/_generated is committed when codegen is run
 
 # Nitro / TanStack output
 .output
@@ -30,3 +27,12 @@ dist-ssr
 !.vscode/extensions.json
 .vercel
 .wrangler
+
+.env
+.env.prod
+.dev.vars*
+!.dev.vars.example
+playwright-report/
+test-results/
+
+.githooks/
