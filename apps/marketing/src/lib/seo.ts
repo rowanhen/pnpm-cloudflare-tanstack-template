@@ -1,6 +1,9 @@
+import { APP_NAME } from '@workspace/shared'
+
 export const repository = 'https://github.com/rowanhen/pnpm-cloudflare-tanstack-template'
+
 export const site = {
-	name: import.meta.env.VITE_SITE_NAME ?? 'Cloudflare Starter',
+	name: import.meta.env.VITE_SITE_NAME ?? APP_NAME,
 	description:
 		'A TypeScript starter with Google auth, D1, R2, Stripe, API keys and email. Clone it, configure it, and build your next idea.',
 	url: (import.meta.env.VITE_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, ''),
@@ -28,7 +31,7 @@ export function seo(
 			{ property: 'og:image', content: `${site.url}/og.png` },
 			{ property: 'og:image:width', content: '1200' },
 			{ property: 'og:image:height', content: '630' },
-			{ property: 'og:image:alt', content: `${site.name} — Your next idea. Already started.` },
+			{ property: 'og:image:alt', content: `${site.name} — A TypeScript starter on Cloudflare` },
 			{ name: 'twitter:card', content: 'summary_large_image' },
 			{ name: 'twitter:title', content: title },
 			{ name: 'twitter:description', content: description },

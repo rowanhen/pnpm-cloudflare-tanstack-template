@@ -1,10 +1,16 @@
 import { observedFetch, resetUser } from '@workspace/observability/browser'
 import { createClient } from '@workspace/contracts/client'
+import { signInPath } from './login'
 export async function api(path: string, init: RequestInit = {}) {
 	const response = await observedFetch(path, { ...init, credentials: 'same-origin' })
 	if (response.status === 401) {
 		resetUser()
-		window.location.assign('/login')
+		window.location.assign(
+			signInPath(
+				window.location.pathname,
+				Object.fromEntries(new URLSearchParams(window.location.search)),
+			),
+		)
 		throw new Error('Your session expired. Please sign in again.')
 	}
 	if (!response.ok) {

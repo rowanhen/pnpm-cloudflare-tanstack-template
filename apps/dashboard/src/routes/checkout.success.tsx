@@ -1,14 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Button, PageState } from '@workspace/shared'
+import { Button, PageState, appTitle } from '@workspace/shared'
+import { checkoutSessionId } from '../lib/login'
 import { money, useOrderStatus } from '../hooks/use-checkout'
 export const Route = createFileRoute('/checkout/success')({
 	validateSearch: (search: Record<string, unknown>) => ({
-		session_id:
-			typeof search.session_id === 'string' && /^cs_test_[A-Za-z0-9]+$/.test(search.session_id)
-				? search.session_id
-				: '',
+		session_id: checkoutSessionId(search.session_id),
 	}),
-	head: () => ({ meta: [{ title: 'Your order — Idea Starter' }] }),
+	head: () => ({ meta: [{ title: appTitle('Your order') }] }),
 	component: CheckoutSuccess,
 })
 function CheckoutSuccess() {

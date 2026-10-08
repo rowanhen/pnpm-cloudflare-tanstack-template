@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import {
 	AppShell,
+	appTitle,
 	Alert,
 	Badge,
 	Button,
@@ -13,7 +14,7 @@ import {
 import { money, useCheckoutSession } from '../hooks/use-checkout'
 const PaymentForm = lazy(() => import('../components/payment-form'))
 export const Route = createFileRoute('/checkout/')({
-	head: () => ({ meta: [{ title: 'Test checkout — Idea Starter' }] }),
+	head: () => ({ meta: [{ title: appTitle('Test checkout') }] }),
 	component: CheckoutPage,
 })
 function CheckoutPage() {

@@ -1,9 +1,10 @@
 export const PROJECT_NAME = 'pnpm-cloudflare-tanstack-template'
+export const APP_NAME = 'Cloudflare Starter'
 
 export function appTitle(section: string) {
-	return `${section} | ${PROJECT_NAME}`
+	return `${section} | ${APP_NAME}`
 }
 
 export function appMetaDescription(audience: string) {
-	return `${PROJECT_NAME} ${audience} app powered by TanStack Start, Cloudflare D1, R2, and pnpm.`
+	return `${APP_NAME} ${audience}.`
 }

@@ -1,5 +1,7 @@
 # Set up and validate with an agent
 
+New to the repository? Start with [Getting started](getting-started.md). Use the [verification checklist](verification.md) to record which providers actually passed.
+
 The repository can create its Cloudflare infrastructure, generate application secrets, migrate D1, deploy both apps, create Stripe test products/prices/webhooks, and clean up its resources through commands. An agent can run these commands without asking you to create tables or configure application logic in a dashboard.
 
 Provider access comes first. Cloudflare needs an existing account and authorized API token. Google needs an OAuth web client with the exact callback registered. Stripe needs test secret and publishable keys from the same sandbox. The commands do not create provider accounts, accept terms, complete identity checks, or impersonate your Google account.
@@ -23,7 +25,7 @@ pnpm validate --cloud
 
 This additionally runs the existing deployed API/browser suite and the new sandbox provisioning lifecycle test. The lifecycle test provisions a sandbox, uploads an arbitrary nested R2 object, reruns setup, verifies stable resource IDs and secrets, then tears everything down. Each test environment is disposable. Cloud usage charges can apply while it exists.
 
-A passing result does **not** claim that Google's real consent/code exchange or a real Stripe sandbox card payment was completed. Those require the provider setup below and a final browser check.
+A passing result does **not** claim that Google's real consent/code exchange or a real Stripe sandbox card payment was completed. PostHog ingestion/playable replay and email inbox delivery also need the live checks in the [verification guide](verification.md).
 
 ## Check account readiness
 
@@ -68,11 +70,13 @@ State and secrets are stored under the ignored `.wrangler/sandboxes/my-demo/` di
 
 ### Finish provider access once per environment
 
-| Provider   | Agent can do                                                                                     | Owner/account prerequisite                                                            |
-| ---------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| Cloudflare | Provision resources, secrets, migrations, deploy, validate, delete                               | Account, billing if required, authorized token, workers.dev subdomain                 |
-| Google     | Reuse the client, configure the app, navigate the console after owner sign-in, test the callback | Google account access; exact web-client callback allowlist and any test-user settings |
-| Stripe     | Create test product/price/webhook, capture signing secret, verify orders and grants              | Same-sandbox test keys or owner-authorized account access to obtain them              |
+| Provider   | Agent can do                                                                                         | Owner/account prerequisite                                                             |
+| ---------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Cloudflare | Provision resources, secrets, migrations, deploy, validate, delete                                   | Account, billing if required, authorized token, workers.dev subdomain                  |
+| Google     | Reuse the client, configure the app, navigate the console after owner sign-in, test the callback     | Google account access; exact web-client callback allowlist and any test-user settings  |
+| Stripe     | Create test product/price/webhook, capture signing secret, verify orders and grants                  | Same-sandbox test keys or owner-authorized account access to obtain them               |
+| PostHog    | Create/configure a dedicated project, dashboards and insights; deploy public settings; query reports | Authenticated connection or scoped personal key; selected organization and region      |
+| Email      | Configure an authorized sender domain and restricted Worker binding                                  | Cloudflare Email Service access, verified sender domain and a permitted test recipient |
 
 Google's documented setup for a standard web OAuth client uses the [Google Auth Platform console](https://developers.google.com/identity/protocols/oauth2/web-server#creatingcred). The `gcloud iam oauth-clients` / `projects.locations.oauthClients` interface is [for Workforce Identity Federation](https://docs.cloud.google.com/iam/docs/workforce-oauth-app), not this starter's Google sign-in. A new dashboard hostname therefore still needs its exact callback registered. An agent can perform the configuration through an authenticated browser; it cannot bypass sign-in, MFA, or consent.
 
@@ -87,7 +91,7 @@ After those prerequisites are satisfied, open the printed dashboard URL and vali
 5. Delete the key and confirm it returns 401; sign out and confirm the dashboard is protected.
 6. Submit the marketing waitlist and check its success page. Visit an unknown URL and `/error` to inspect the recovery UI.
 
-Use a decline and a 3DS test card too; details are in the README's Stripe section. For repeated new projects without per-project Google console changes, a shared authentication service with a fixed Google callback is a possible future architecture. This repo currently uses direct Google authentication per environment.
+Use a decline and a 3DS test card too; details are in the [payment guide](payments.md). For repeated new projects without per-project Google console changes, a shared authentication service with a fixed Google callback is a possible future architecture. This repo currently uses direct Google authentication per environment.
 
 ## Tear down
 

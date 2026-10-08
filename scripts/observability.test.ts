@@ -1,4 +1,5 @@
 import { gunzipSync } from 'node:zlib'
+import { inspect } from 'node:util'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { safeError, safePath, safeUrl } from '../packages/observability/src/privacy.ts'
@@ -75,10 +76,18 @@ test('server SDK flushes operational events and sanitized exceptions, tolerating
 	assert.match(payload, /"duration_ms":13/)
 	assert.match(payload, /"\$process_person_profile":false/)
 	assert.doesNotMatch(payload, /private-name|private@example|sk_secret/)
+	const logs: string[] = []
+	t.mock.method(console, 'error', (...args: unknown[]) => logs.push(inspect(args)))
 	t.mock.method(globalThis, 'fetch', async () => {
 		throw new Error('provider secret')
 	})
 	await assert.doesNotReject(
 		reportRequest({ POSTHOG_KEY: 'phc_test', POSTHOG_HOST: 'https://eu.i.posthog.com' }, report),
 	)
+	t.mock.method(globalThis, 'fetch', async () => new Response('provider secret', { status: 400 }))
+	await assert.doesNotReject(
+		reportRequest({ POSTHOG_KEY: 'phc_test', POSTHOG_HOST: 'https://eu.i.posthog.com' }, report),
+	)
+	assert.ok(logs.length > 0)
+	assert.doesNotMatch(logs.join('\n'), /provider secret/)
 })

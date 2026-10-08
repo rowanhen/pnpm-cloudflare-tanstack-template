@@ -1,10 +1,11 @@
 import { useAnalyticsIdentity } from '@workspace/shared/components/analytics'
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { getSession } from '../lib/session'
+import { signInPath } from '../lib/login'
 export const Route = createFileRoute('/checkout')({
-	beforeLoad: async () => {
+	beforeLoad: async ({ location }) => {
 		const user = await getSession()
-		if (!user) throw redirect({ to: '/login', search: { next: 'checkout' } })
+		if (!user) throw redirect({ href: signInPath(location.pathname, location.search) })
 		return { user }
 	},
 	component: CheckoutLayout,

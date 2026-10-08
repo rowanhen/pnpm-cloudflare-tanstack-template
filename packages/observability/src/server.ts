@@ -24,6 +24,18 @@ export async function reportRequest(config: ServerConfig, report: RequestReport)
 		requestTimeout: 3000,
 		fetchRetryCount: 0,
 		disableGeoip: true,
+		// The SDK logs transport failures during shutdown. Remove provider bodies
+		// and network error causes before they can reach those logs.
+		fetch: async (url, options) => {
+			try {
+				const response = await fetch(url, options)
+				if (response.ok) return response
+				await response.body?.cancel()
+				return new Response('Telemetry request failed', { status: response.status })
+			} catch {
+				throw new Error('Telemetry request unavailable')
+			}
+		},
 		before_send: (event) => {
 			if (event?.properties?.$exception_list)
 				event.properties.$exception_list = scrubExceptionContext(event.properties.$exception_list)

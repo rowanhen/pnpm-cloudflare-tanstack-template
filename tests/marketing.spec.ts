@@ -9,9 +9,7 @@ test('starter landing offers copyable setup and links to the examples', async ({
 	const errors: string[] = []
 	page.on('pageerror', (error) => errors.push(error.message))
 	await page.goto(marketing)
-	await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-		'Your next idea.Already started.',
-	)
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('CloudflareStarter')
 	await expect(page.getByRole('link', { name: 'Use the template' })).toHaveAttribute(
 		'href',
 		/\/generate$/,

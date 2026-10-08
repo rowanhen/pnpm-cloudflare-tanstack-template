@@ -6,7 +6,7 @@ import type { Env } from './env'
 
 export function createAuth(env: Env) {
 	return betterAuth({
-		appName: 'Idea Starter',
+		appName: 'Cloudflare Starter',
 		database: drizzleAdapter(database(env.DB), {
 			provider: 'sqlite',
 			schema: { users, sessions, accounts, verifications, auth_rate_limits },
@@ -45,6 +45,8 @@ export function createAuth(env: Env) {
 			storage: 'database',
 			window: 60,
 			max: 30,
+			// Page guards read the session on every navigation; keep login attempts stricter.
+			customRules: { '/get-session': { window: 60, max: 120 } },
 			modelName: 'auth_rate_limits',
 		},
 		advanced: {
