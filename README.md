@@ -2,6 +2,14 @@
 
 A small starter for new ideas: a waitlist marketing site, Google sign-in, a protected TanStack Start dashboard, and a Cloudflare Worker REST API backed by D1 and R2. Users get private todos, files, revocable API keys, and prepaid API credits through an optional custom Stripe test checkout. A paid summary endpoint connects those examples into a reusable pay-per-request flow. Shared Composables and shadcn/ui components cover forms, loading/empty states, success, 404, and error pages. The waitlist needs no email delivery service.
 
+## Agent setup and validation
+
+Run `pnpm validate` to check the complete implementation locally without provider credentials. It runs API/setup tests, builds, and browser suites, using isolated auth/payment fixtures. Add `--cloud` for disposable Cloudflare E2E and provisioning/cleanup tests.
+
+For an online sandbox, use `pnpm setup:doctor --online`, then `pnpm cloud:up my-demo`. With authorized Cloudflare credentials, the command creates resources, secrets, migrations, and deployments. Stripe test keys also enable automatic product/price/webhook setup. `pnpm cloud:check my-demo` checks the deployment; `pnpm cloud:down my-demo` deletes it, including uploaded files. It keeps environment configuration out of the tracked template.
+
+[Agent setup guide](docs/agent-setup.md) covers credentials, repeatable commands, cleanup, and the remaining Google/Stripe owner-authentication steps. These commands cannot replace provider account signup, MFA, or Google's callback registration. A passing fixture test is separate from completing a real Google login or Stripe sandbox card payment.
+
 ## Start locally
 
 Requires Node.js 22.12+ (CI uses Node 24) and pnpm 10.18.0.

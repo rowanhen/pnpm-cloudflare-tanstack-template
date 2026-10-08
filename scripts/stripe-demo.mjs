@@ -7,7 +7,7 @@ import { join } from 'node:path'
 const require = createRequire(new URL('../apps/api/package.json', import.meta.url))
 const Stripe = require('stripe')
 const root = fileURLToPath(new URL('..', import.meta.url))
-const varsPath = join(root, 'apps/api/.dev.vars')
+const varsPath = process.env.STARTER_ENV_FILE ?? join(root, 'apps/api/.dev.vars')
 const original = await readFile(varsPath, 'utf8').catch(() => '')
 const env = { ...parseEnv(original), ...process.env }
 if (
@@ -15,7 +15,10 @@ if (
 	!env.STRIPE_PUBLISHABLE_KEY?.startsWith('pk_test_')
 )
 	throw new Error('Add Stripe test-mode secret and publishable keys to apps/api/.dev.vars first.')
-const stripe = new Stripe(env.STRIPE_SECRET_KEY, { maxNetworkRetries: 2 })
+const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+	maxNetworkRetries: 2,
+	httpClient: Stripe.createFetchHttpClient(),
+})
 const mode = process.argv[2] ?? 'setup'
 const hash = (value) => createHash('sha256').update(value).digest('hex')
 async function saveVars(values) {
@@ -69,7 +72,7 @@ if (mode === 'cleanup') {
 		'Demo price/product archived, webhook removed, and matching local bindings cleared. Existing test payment history is retained by Stripe.',
 	)
 } else if (mode === 'setup') {
-	if (env.STRIPE_PRICE_ID)
+	if (env.STRIPE_PRICE_ID && !process.argv.includes('--reuse-price'))
 		throw new Error(
 			'A Stripe price is already configured. Reuse it, or clean up the previous demo first.',
 		)
@@ -86,28 +89,43 @@ if (mode === 'cleanup') {
 			throw new Error('Use the public HTTPS API Worker URL ending in /api/stripe/webhook')
 	}
 	const id = randomUUID()
-	const path = join(root, '.wrangler', `stripe-demo-${id}.json`)
+	const path =
+		process.env.STARTER_STRIPE_MANIFEST ?? join(root, '.wrangler', `stripe-demo-${id}.json`)
+	if (
+		await readFile(path).then(
+			() => true,
+			(error) => {
+				if (error.code === 'ENOENT') return false
+				throw error
+			},
+		)
+	)
+		throw new Error(
+			'A Stripe manifest already exists; finish its cleanup before creating resources again.',
+		)
 	const manifest = { kind: 'starter-stripe-demo', id }
 	await mkdir(join(root, '.wrangler'), { recursive: true })
 	const save = () => writeFile(path, JSON.stringify(manifest, null, 2), { mode: 0o600 })
 	await save()
 	try {
-		const product = await stripe.products.create(
-			{
-				name: 'API credits',
-				metadata: { starter_demo: id },
-			},
-			{ idempotencyKey: `starter-product-${id}` },
-		)
-		manifest.product = product.id
-		await save()
-		const price = await stripe.prices.create(
-			{ product: product.id, unit_amount: 1200, currency: 'gbp', metadata: { starter_demo: id } },
-			{ idempotencyKey: `starter-price-${id}` },
-		)
-		manifest.price = price.id
-		await save()
-		const values = { STRIPE_PRICE_ID: price.id }
+		if (!env.STRIPE_PRICE_ID) {
+			const product = await stripe.products.create(
+				{
+					name: 'API credits',
+					metadata: { starter_demo: id },
+				},
+				{ idempotencyKey: `starter-product-${id}` },
+			)
+			manifest.product = product.id
+			await save()
+			const price = await stripe.prices.create(
+				{ product: product.id, unit_amount: 1200, currency: 'gbp', metadata: { starter_demo: id } },
+				{ idempotencyKey: `starter-price-${id}` },
+			)
+			manifest.price = price.id
+			await save()
+		}
+		const values = { STRIPE_PRICE_ID: manifest.price ?? env.STRIPE_PRICE_ID }
 		if (webhookUrl) {
 			const webhook = await stripe.webhookEndpoints.create(
 				{
@@ -130,7 +148,7 @@ if (mode === 'cleanup') {
 		}
 		await saveVars(values)
 		console.log(
-			`Test product and £12 price created. Local bindings saved without displaying secrets.\nResource manifest: ${path}`,
+			`Test price configured. Local bindings saved without displaying secrets.\nResource manifest: ${path}`,
 		)
 		if (!webhookUrl)
 			console.log(

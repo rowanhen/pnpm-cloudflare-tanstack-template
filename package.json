@@ -14,7 +14,7 @@
 		"build": "pnpm -r run build",
 		"build:marketing": "pnpm --filter marketing build",
 		"build:dashboard": "pnpm --filter dashboard build",
-		"test": "node scripts/test-local.mjs",
+		"test": "pnpm test:setup && node scripts/test-local.mjs",
 		"test:remote": "node scripts/test-remote.mjs",
 		"test:browser": "node scripts/test-browser.mjs",
 		"typecheck": "pnpm -r --parallel run typecheck",
@@ -33,7 +33,14 @@
 		"setup:local": "node scripts/setup-local.mjs",
 		"test:dev": "node scripts/test-browser.mjs --dev",
 		"stripe:setup": "node scripts/stripe-demo.mjs setup",
-		"stripe:cleanup": "node scripts/stripe-demo.mjs cleanup"
+		"stripe:cleanup": "node scripts/stripe-demo.mjs cleanup",
+		"setup:doctor": "node scripts/doctor.mjs",
+		"validate": "node scripts/validate.mjs",
+		"cloud:up": "node scripts/cloud.mjs up",
+		"cloud:check": "node scripts/cloud.mjs check",
+		"cloud:down": "node scripts/cloud.mjs down",
+		"test:cloud-setup": "node scripts/test-cloud-setup.mjs",
+		"test:setup": "node --test scripts/setup.test.mjs"
 	},
 	"devDependencies": {
 		"oxfmt": "^0.58.0",
