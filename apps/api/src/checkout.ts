@@ -1,18 +1,18 @@
+import { database } from '@workspace/data/client'
+import { orders, creditAccounts, creditGrants, stripeEvents, now } from '@workspace/data/schema'
+import { and, eq, sql } from 'drizzle-orm'
 import Stripe from 'stripe'
 import type { Env } from './env'
-import { HttpError, json, methodNotAllowed, readBody, readJson } from './http'
+import { HttpError, json, reply, input, methodNotAllowed, readBody } from './http'
 import { rateLimit } from './rate-limit'
 import { CREDIT_PACK } from './billing'
 
-type Order = {
-	id: string
-	user_id: string
-	stripe_session_id: string | null
-	amount: number
-	currency: string
-	credits: number
-	price_id: string | null
-	status: string
+function checkoutStatus(session: Stripe.Checkout.Session) {
+	const status = session.status
+	if (status === 'open') return 'open' as const
+	if (status === 'complete') return 'complete' as const
+	if (status === 'expired') return 'expired' as const
+	return null
 }
 
 export function checkoutEnabled(env: Env) {
@@ -57,9 +57,12 @@ async function offer(env: Env, stripe: Stripe) {
 }
 
 async function reconcile(env: Env, session: Stripe.Checkout.Session, eventId?: string) {
-	const order = await env.DB.prepare('SELECT * FROM orders WHERE id = ?')
-		.bind(session.metadata?.order_id ?? '')
-		.first<Order>()
+	const db = database(env.DB)
+	const order = await db
+		.select()
+		.from(orders)
+		.where(eq(orders.id, session.metadata?.order_id ?? ''))
+		.get()
 	// Other projects may share the Stripe account. Ignore their sessions.
 	if (!order) return
 	if (
@@ -77,31 +80,52 @@ async function reconcile(env: Env, session: Stripe.Checkout.Session, eventId?: s
 			: session.status === 'expired'
 				? 'expired'
 				: 'pending'
-	const update = env.DB.prepare(
-		"UPDATE orders SET stripe_session_id = ?, status = CASE WHEN status = 'paid' THEN 'paid' ELSE ? END, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?",
-	).bind(session.id, status, order.id)
 	const grantId = crypto.randomUUID()
-	// The paid state, immutable grant and balance commit together. A fresh grant ID
-	// prevents both duplicate webhooks and concurrent status polling from minting twice.
-	const statements = [
-		update,
-		env.DB.prepare('INSERT INTO credit_accounts(user_id) VALUES (?) ON CONFLICT DO NOTHING').bind(
-			order.user_id,
-		),
-		env.DB.prepare(`INSERT INTO credit_grants(id, user_id, order_id, credits)
-			SELECT ?, user_id, id, credits FROM orders WHERE id = ? AND status = 'paid' AND credits > 0
-			ON CONFLICT(order_id) DO NOTHING`).bind(grantId, order.id),
-		env.DB.prepare(`UPDATE credit_accounts SET balance = balance +
-			(SELECT credits FROM credit_grants WHERE id = ?) WHERE user_id = ?
-			AND EXISTS (SELECT 1 FROM credit_grants WHERE id = ?)`).bind(grantId, order.user_id, grantId),
-	]
-	if (eventId)
-		statements.push(
-			env.DB.prepare('INSERT INTO stripe_events(id) VALUES (?) ON CONFLICT(id) DO NOTHING').bind(
-				eventId,
+	// The order, immutable grant and credit balance commit in one D1 transaction.
+	const update = db
+		.update(orders)
+		.set({
+			stripe_session_id: session.id,
+			status: sql`CASE WHEN ${orders.status} = 'paid' THEN 'paid' ELSE ${status} END`,
+			updated_at: now,
+		})
+		.where(eq(orders.id, order.id))
+	const account = db.insert(creditAccounts).values({ user_id: order.user_id }).onConflictDoNothing()
+	const grant = db
+		.insert(creditGrants)
+		.select(
+			db
+				.select({
+					id: sql<string>`${grantId}`.as('id'),
+					user_id: orders.user_id,
+					order_id: orders.id,
+					credits: orders.credits,
+					created_at: now.as('created_at'),
+				})
+				.from(orders)
+				.where(and(eq(orders.id, order.id), eq(orders.status, 'paid'), sql`${orders.credits} > 0`)),
+		)
+		.onConflictDoNothing({ target: creditGrants.order_id })
+	const balance = db
+		.update(creditAccounts)
+		.set({
+			balance: sql`${creditAccounts.balance} + (select ${creditGrants.credits} from ${creditGrants} where ${creditGrants.id} = ${grantId})`,
+		})
+		.where(
+			and(
+				eq(creditAccounts.user_id, order.user_id),
+				sql`EXISTS (select 1 from ${creditGrants} where ${creditGrants.id} = ${grantId})`,
 			),
 		)
-	await env.DB.batch(statements)
+	if (eventId)
+		await db.batch([
+			update,
+			account,
+			grant,
+			balance,
+			db.insert(stripeEvents).values({ id: eventId }).onConflictDoNothing(),
+		])
+	else await db.batch([update, account, grant, balance])
 }
 
 export async function stripeWebhook(request: Request, env: Env) {
@@ -131,7 +155,13 @@ export async function stripeWebhook(request: Request, env: Env) {
 			'checkout.session.expired',
 		].includes(event.type)
 	) {
-		if (await env.DB.prepare('SELECT id FROM stripe_events WHERE id = ?').bind(event.id).first())
+		if (
+			await database(env.DB)
+				.select({ id: stripeEvents.id })
+				.from(stripeEvents)
+				.where(eq(stripeEvents.id, event.id))
+				.get()
+		)
 			return json({ received: true })
 		// Retrieve canonical Stripe state, so delayed/reordered events cannot undo a payment.
 		const session = await stripe.checkout.sessions.retrieve(
@@ -148,39 +178,37 @@ export async function checkoutRoute(
 	user: { id: string; email: string },
 ) {
 	const url = new URL(request.url)
+	const db = database(env.DB)
 	const stripe = stripeClient(env)
 	if (url.pathname === '/api/checkout/config') {
 		if (request.method !== 'GET') return methodNotAllowed('GET')
-		return json({ publishableKey: env.STRIPE_PUBLISHABLE_KEY, offer: await offer(env, stripe) })
+		return reply('checkoutConfig', {
+			publishableKey: env.STRIPE_PUBLISHABLE_KEY ?? '',
+			offer: await offer(env, stripe),
+		})
 	}
 	if (url.pathname === '/api/checkout/sessions') {
 		if (request.method !== 'POST') return methodNotAllowed('POST')
-		const body = await readJson(request)
-		if (
-			typeof body.requestId !== 'string' ||
-			!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/.test(body.requestId)
-		)
-			throw new HttpError(400, 'Provide a UUID requestId')
-		if (Object.keys(body).some((key) => key !== 'requestId'))
-			throw new HttpError(400, 'Only requestId is accepted; the server selects the price')
+		const body = await input(request, 'createCheckout')
 		await rateLimit(env.DB, `checkout:${user.id}`, 10, 60)
 		const product = await offer(env, stripe)
-		await env.DB.prepare(
-			'INSERT INTO orders(id, user_id, request_id, amount, currency, credits, price_id) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(user_id, request_id) DO NOTHING',
-		)
-			.bind(
-				crypto.randomUUID(),
-				user.id,
-				body.requestId,
-				product.amount,
-				product.currency,
-				product.credits,
-				product.priceId,
-			)
-			.run()
-		const order = await env.DB.prepare('SELECT * FROM orders WHERE user_id = ? AND request_id = ?')
-			.bind(user.id, body.requestId)
-			.first<Order>()
+		await db
+			.insert(orders)
+			.values({
+				id: crypto.randomUUID(),
+				user_id: user.id,
+				request_id: body.requestId,
+				amount: product.amount,
+				currency: product.currency,
+				credits: product.credits,
+				price_id: product.priceId,
+			})
+			.onConflictDoNothing({ target: [orders.user_id, orders.request_id] })
+		const order = await db
+			.select()
+			.from(orders)
+			.where(and(eq(orders.user_id, user.id), eq(orders.request_id, body.requestId)))
+			.get()
 		if (!order) throw new Error('Order could not be created')
 		const session = order.stripe_session_id
 			? await stripe.checkout.sessions.retrieve(order.stripe_session_id)
@@ -199,29 +227,41 @@ export async function checkoutRoute(
 					{ idempotencyKey: `starter-checkout-${order.id}` },
 				)
 		await reconcile(env, session)
-		return json(
-			{ clientSecret: session.client_secret, sessionId: session.id, status: session.status },
+		return reply(
+			'createCheckout',
+			{
+				clientSecret: session.client_secret,
+				sessionId: session.id,
+				status: checkoutStatus(session),
+			},
 			201,
 		)
 	}
 	const match = url.pathname.match(/^\/api\/checkout\/sessions\/(cs_test_[A-Za-z0-9]+)$/)
 	if (match) {
 		if (request.method !== 'GET') return methodNotAllowed('GET')
-		const order = await env.DB.prepare(
-			'SELECT * FROM orders WHERE stripe_session_id = ? AND user_id = ?',
-		)
-			.bind(match[1], user.id)
-			.first<Order>()
+		const order = await db
+			.select()
+			.from(orders)
+			.where(and(eq(orders.stripe_session_id, match[1]), eq(orders.user_id, user.id)))
+			.get()
 		if (!order) throw new HttpError(404, 'Checkout not found')
 		await rateLimit(env.DB, `checkout-status:${user.id}`, 60, 60)
 		const session = await stripe.checkout.sessions.retrieve(match[1])
 		await reconcile(env, session)
-		const saved = await env.DB.prepare(
-			'SELECT id, amount, currency, credits, status FROM orders WHERE id = ?',
-		)
-			.bind(order.id)
-			.first()
-		return json({ order: saved, checkoutStatus: session.status })
+		const saved = await db
+			.select({
+				id: orders.id,
+				amount: orders.amount,
+				currency: orders.currency,
+				credits: orders.credits,
+				status: orders.status,
+			})
+			.from(orders)
+			.where(eq(orders.id, order.id))
+			.get()
+		if (!saved) throw new HttpError(404, 'Checkout not found')
+		return reply('order', { order: saved, checkoutStatus: checkoutStatus(session) })
 	}
 	throw new HttpError(404, 'Checkout not found')
 }

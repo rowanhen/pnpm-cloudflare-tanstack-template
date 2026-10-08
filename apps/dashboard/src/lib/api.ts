@@ -1,3 +1,4 @@
+import { createClient } from '@workspace/contracts/client'
 export async function api(path: string, init: RequestInit = {}) {
 	const response = await fetch(path, { ...init, credentials: 'same-origin' })
 	if (response.status === 401) {
@@ -10,3 +11,5 @@ export async function api(path: string, init: RequestInit = {}) {
 	}
 	return response
 }
+
+export const client = createClient(api)

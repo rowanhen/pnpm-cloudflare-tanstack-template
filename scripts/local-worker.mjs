@@ -51,6 +51,8 @@ globalThis.fetch = (input, init) => {
 };
 export default { fetch(request, env, context) {
  if (new URL(request.url).pathname === '/api/auth/get-session' && request.headers.get('x-test-session-failure') === 'true') return new Response('Test upstream unavailable', { status: 503 });
+ if (request.headers.get('x-test-email-failure') === 'true') env = {...env, EMAIL: {send: async () => {throw new Error('E_DELIVERY_FAILED test fixture')}}};
+ if (request.headers.get('x-test-email-disabled') === 'true') env = {...env, EMAIL_FROM: undefined};
  return worker.fetch(request, env, context);
 }};`,
 		)
@@ -80,12 +82,40 @@ export default { fetch(request, env, context) {
 				'STRIPE_PRICE_ID:price_fixture',
 				'--var',
 				'STRIPE_WEBHOOK_SECRET:whsec_fixture',
+				'--var',
+				'EMAIL_FROM:starter@example.test',
 			],
 			{ cwd: root, stdio: 'inherit', detached: true },
 		)
 		const base = `http://localhost:${port}`
 		await waitForApi(base, child)
-		return { base, fixture, proxySecret, stripeUrl: stripe.url, stop }
+		return {
+			base,
+			fixture,
+			proxySecret,
+			stripeUrl: stripe.url,
+			stop,
+			query(statement) {
+				return JSON.parse(
+					execFileSync(
+						'pnpm',
+						[
+							'exec',
+							'wrangler',
+							'd1',
+							'execute',
+							'DB',
+							'--local',
+							...common,
+							'--command',
+							statement,
+							'--json',
+						],
+						{ cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+					),
+				)[0].results
+			},
+		}
 	} catch (error) {
 		await stop()
 		throw error

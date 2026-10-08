@@ -16,7 +16,10 @@
 		"wrangler": "^4.148.0"
 	},
 	"dependencies": {
+		"@workspace/contracts": "workspace:*",
+		"@workspace/data": "workspace:*",
 		"better-auth": "^1.7.7",
+		"drizzle-orm": "0.45.4",
 		"stripe": "^23.0.0"
 	}
 }

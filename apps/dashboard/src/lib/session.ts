@@ -2,13 +2,8 @@ import { backendHeaders } from '@workspace/shared/server-proxy'
 import { createServerFn } from '@tanstack/react-start'
 import { getRequest, setResponseHeader } from '@tanstack/react-start/server'
 
-export type User = {
-	id: string
-	name: string
-	email: string
-	emailVerified: boolean
-	image?: string | null
-}
+import type { User } from '@workspace/contracts'
+export type { User } from '@workspace/contracts'
 export const getSession = createServerFn({ method: 'GET' }).handler(async () => {
 	setResponseHeader('Cache-Control', 'private, no-store')
 	const request = getRequest()

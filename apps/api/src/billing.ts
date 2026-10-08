@@ -1,20 +1,14 @@
-import { HttpError, json } from './http'
+import { database } from '@workspace/data/client'
+import { creditAccounts, creditGrants, paidRequests, now } from '@workspace/data/schema'
+import { and, desc, eq, sql, type SQL } from 'drizzle-orm'
+import { HttpError, reply } from './http'
 
-// Server-owned pricing. Orders snapshot the pack size before contacting Stripe.
 export const CREDIT_PACK = 1_000
 export const SUMMARY_COST = 1
 
-type PaidRequest = {
-	id: string
-	operation: string
-	input_hash: string
-	response: string
-	credits: number
-}
-
 /** For operations whose result lives entirely in D1. No network calls here. */
 export async function chargeForResult(
-	db: D1Database,
+	binding: D1Database,
 	options: {
 		userId: string
 		keyId: string
@@ -22,55 +16,59 @@ export async function chargeForResult(
 		operation: string
 		inputHash: string
 		cost: number
-		// Application-owned SQL yielding one JSON value; never accept SQL from a caller.
-		resultSql: string
-		resultParams: unknown[]
+		// Application-owned, parameterized SQL yielding one JSON value.
+		result: SQL<string>
 	},
 ) {
-	const { userId, keyId, idempotencyKey, operation, inputHash, cost, resultSql, resultParams } =
-		options
+	const db = database(binding)
+	const { userId, keyId, idempotencyKey, operation, inputHash, cost, result } = options
 	if (!Number.isSafeInteger(cost) || cost <= 0) throw new Error('Invalid request cost')
 	const attemptId = crypto.randomUUID()
-	// D1 executes a batch as one transaction. Only the insertion with this fresh
-	// attempt ID can debit the account. Retries and competing requests cannot debit it twice.
+	// D1 batch is one transaction. Only this attempt's fresh receipt can debit it.
+	const receipt = and(
+		eq(paidRequests.user_id, userId),
+		eq(paidRequests.idempotency_key, idempotencyKey),
+	)
 	const results = await db.batch([
+		db.insert(creditAccounts).values({ user_id: userId }).onConflictDoNothing(),
 		db
-			.prepare('INSERT INTO credit_accounts(user_id) VALUES (?) ON CONFLICT DO NOTHING')
-			.bind(userId),
-		db
-			.prepare(`INSERT INTO paid_requests
-			(id, user_id, key_id, idempotency_key, operation, input_hash, credits, response)
-			SELECT ?, ?, ?, ?, ?, ?, ?, (${resultSql})
-			WHERE (SELECT balance FROM credit_accounts WHERE user_id = ?) >= ?
-			AND NOT EXISTS (SELECT 1 FROM paid_requests WHERE user_id = ? AND idempotency_key = ?)
-			ON CONFLICT(user_id, idempotency_key) DO NOTHING`)
-			.bind(
-				attemptId,
-				userId,
-				keyId,
-				idempotencyKey,
-				operation,
-				inputHash,
-				cost,
-				...resultParams,
-				userId,
-				cost,
-				userId,
-				idempotencyKey,
-			),
-		db
-			.prepare(`UPDATE credit_accounts SET balance = balance - ? WHERE user_id = ?
-			AND EXISTS (SELECT 1 FROM paid_requests WHERE id = ?)`)
-			.bind(cost, userId, attemptId),
-		db
-			.prepare(
-				'SELECT id, operation, input_hash, response, credits FROM paid_requests WHERE user_id = ? AND idempotency_key = ?',
+			.insert(paidRequests)
+			.select(
+				db
+					.select({
+						id: sql<string>`${attemptId}`.as('id'),
+						user_id: sql<string>`${userId}`.as('user_id'),
+						key_id: sql<string>`${keyId}`.as('key_id'),
+						idempotency_key: sql<string>`${idempotencyKey}`.as('idempotency_key'),
+						operation: sql<string>`${operation}`.as('operation'),
+						input_hash: sql<string>`${inputHash}`.as('input_hash'),
+						credits: sql<number>`${cost}`.as('credits'),
+						response: sql<string>`(${result})`.as('response'),
+						created_at: now.as('created_at'),
+					})
+					.from(sql`(select 1)`)
+					.where(
+						sql`(select ${creditAccounts.balance} from ${creditAccounts} where ${creditAccounts.user_id} = ${userId}) >= ${cost} AND NOT EXISTS (select 1 from ${paidRequests} where ${receipt})`,
+					),
 			)
-			.bind(userId, idempotencyKey),
-		db.prepare('SELECT balance FROM credit_accounts WHERE user_id = ?').bind(userId),
+			.onConflictDoNothing({ target: [paidRequests.user_id, paidRequests.idempotency_key] }),
+		db
+			.update(creditAccounts)
+			.set({ balance: sql`${creditAccounts.balance} - ${cost}` })
+			.where(
+				and(
+					eq(creditAccounts.user_id, userId),
+					sql`EXISTS (select 1 from ${paidRequests} where ${paidRequests.id} = ${attemptId})`,
+				),
+			),
+		db.select().from(paidRequests).where(receipt),
+		db
+			.select({ balance: creditAccounts.balance })
+			.from(creditAccounts)
+			.where(eq(creditAccounts.user_id, userId)),
 	])
-	const saved = results[3].results[0] as PaidRequest | undefined
-	const balance = Number((results[4].results[0] as { balance: number }).balance)
+	const saved = results[3][0]
+	const balance = results[4][0].balance
 	if (!saved)
 		throw new HttpError(402, 'Add credits to make this request', {
 			'X-Credits-Required': String(cost),
@@ -89,19 +87,41 @@ export async function chargeForResult(
 	})
 }
 
-export async function billingStatus(db: D1Database, userId: string) {
+export async function billingStatus(binding: D1Database, userId: string) {
+	const db = database(binding)
+	const activity = db
+		.select({
+			id: creditGrants.id,
+			type: sql<string>`'topup'`.as('type'),
+			credits: creditGrants.credits,
+			created_at: creditGrants.created_at,
+		})
+		.from(creditGrants)
+		.where(eq(creditGrants.user_id, userId))
+		.unionAll(
+			db
+				.select({
+					id: paidRequests.id,
+					type: paidRequests.operation,
+					credits: sql<number>`-${paidRequests.credits}`.as('credits'),
+					created_at: paidRequests.created_at,
+				})
+				.from(paidRequests)
+				.where(eq(paidRequests.user_id, userId)),
+		)
+		.orderBy(desc(sql`created_at`), desc(sql`id`))
+		.limit(10)
 	const results = await db.batch([
-		db.prepare('SELECT balance FROM credit_accounts WHERE user_id = ?').bind(userId),
 		db
-			.prepare(`SELECT id, 'topup' AS type, credits, created_at FROM credit_grants WHERE user_id = ?
-			UNION ALL SELECT id, operation AS type, -credits AS credits, created_at FROM paid_requests WHERE user_id = ?
-			ORDER BY created_at DESC, id DESC LIMIT 10`)
-			.bind(userId, userId),
+			.select({ balance: creditAccounts.balance })
+			.from(creditAccounts)
+			.where(eq(creditAccounts.user_id, userId)),
+		activity,
 	])
-	return json({
-		balance: Number((results[0].results[0] as { balance: number } | undefined)?.balance ?? 0),
+	return reply('billing', {
+		balance: results[0][0]?.balance ?? 0,
 		summaryCost: SUMMARY_COST,
 		packCredits: CREDIT_PACK,
-		activity: results[1].results,
+		activity: results[1],
 	})
 }

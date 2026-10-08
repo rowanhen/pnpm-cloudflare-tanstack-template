@@ -1,3 +1,4 @@
+import { inputs, type Responses, type Output } from '@workspace/contracts'
 export class HttpError extends Error {
 	constructor(
 		public status: number,
@@ -6,6 +7,14 @@ export class HttpError extends Error {
 	) {
 		super(message)
 	}
+}
+export const reply = <K extends keyof Responses>(_route: K, value: Responses[K], status = 200) =>
+	Response.json(value, { status })
+export async function input<K extends keyof typeof inputs>(request: Request, route: K) {
+	const parsed = inputs[route].safeParse(await readJson(request))
+	if (!parsed.success)
+		throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join('; '))
+	return parsed.data as Output<K>
 }
 export const json = (value: unknown, status = 200) => Response.json(value, { status })
 export function methodNotAllowed(allow: string) {
@@ -54,11 +63,6 @@ export async function readJson(request: Request): Promise<Record<string, unknown
 	if (!value || typeof value !== 'object' || Array.isArray(value))
 		throw new HttpError(400, 'Expected a JSON object')
 	return value as Record<string, unknown>
-}
-export function textField(value: unknown, name: string, max = 200) {
-	if (typeof value !== 'string' || !value.trim() || value.trim().length > max)
-		throw new HttpError(400, `${name} must contain 1–${max} characters`)
-	return value.trim()
 }
 export async function sha256(value: string) {
 	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))

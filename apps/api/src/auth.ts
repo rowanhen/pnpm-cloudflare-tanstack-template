@@ -1,10 +1,16 @@
 import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { database } from '@workspace/data/client'
+import { users, sessions, accounts, verifications, auth_rate_limits } from '@workspace/data/schema'
 import type { Env } from './env'
 
 export function createAuth(env: Env) {
 	return betterAuth({
 		appName: 'Idea Starter',
-		database: env.DB,
+		database: drizzleAdapter(database(env.DB), {
+			provider: 'sqlite',
+			schema: { users, sessions, accounts, verifications, auth_rate_limits },
+		}),
 		secret: env.BETTER_AUTH_SECRET,
 		baseURL: env.AUTH_URL,
 		trustedOrigins: env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()),

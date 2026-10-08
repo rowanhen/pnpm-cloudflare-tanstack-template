@@ -14,5 +14,5 @@ for (const args of commands) {
 	if (result.status !== 0) process.exit(result.status ?? 1)
 }
 console.log(
-	'Validation passed. Google consent/code exchange and real Stripe card completion remain separate provider checks.',
+	'Validation passed. Google consent/code exchange and real Stripe card completion and email inbox delivery remain separate provider checks.',
 )

@@ -11,27 +11,20 @@ import {
 } from '@workspace/shared'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from './api'
+import { client as apiClient } from './api'
 
-type Key = {
-	id: string
-	name: string
-	prefix: string
-	scope: string
-	created_at: string
-	last_used_at: string | null
-}
+import { keyScope, type KeyScope } from '@workspace/contracts'
 export function ApiKeys() {
 	const hydrated = useHydrated()
 	const [name, setName] = useState('')
 	const [newToken, setNewToken] = useState('')
-	const [scope, setScope] = useState('todos:read')
-	const [newScope, setNewScope] = useState('todos:read')
+	const [scope, setScope] = useState<KeyScope>('todos:read')
+	const [newScope, setNewScope] = useState<KeyScope>('todos:read')
 	const [exampleId, setExampleId] = useState('')
 	const client = useQueryClient()
 	const keys = useQuery({
 		queryKey: ['keys'],
-		queryFn: async () => (await (await api('/api/keys')).json()) as { keys: Key[] },
+		queryFn: () => apiClient.get('keys'),
 	})
 	const mutation = useMutation({
 		mutationFn: async (action: () => Promise<unknown>) => action(),
@@ -45,13 +38,7 @@ export function ApiKeys() {
 					onSubmit={(event) => {
 						event.preventDefault()
 						mutation.mutate(async () => {
-							const result = await (
-								await api('/api/keys', {
-									method: 'POST',
-									headers: { 'Content-Type': 'application/json' },
-									body: JSON.stringify({ name, scope }),
-								})
-							).json()
+							const result = await apiClient.mutate('createKey', { name, scope })
 							setNewToken(result.key.token)
 							setNewScope(result.key.scope)
 							setExampleId(crypto.randomUUID())
@@ -76,7 +63,7 @@ export function ApiKeys() {
 							size="sm"
 							disabled={!hydrated || mutation.isPending}
 							value={scope}
-							onValueChange={setScope}
+							onValueChange={(value) => setScope(keyScope.parse(value))}
 							options={[
 								{ value: 'todos:read', label: 'Todos · free' },
 								{ value: 'summary:read', label: 'Summary · 1 credit' },
@@ -124,7 +111,7 @@ export function ApiKeys() {
 								aria-label={`Delete API key ${key.name}`}
 								onClick={() =>
 									mutation.mutate(async () => {
-										await api(`/api/keys/${key.id}`, { method: 'DELETE' })
+										await apiClient.deleteKey(key.id)
 										setNewToken('')
 									})
 								}

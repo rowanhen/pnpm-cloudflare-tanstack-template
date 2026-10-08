@@ -135,8 +135,10 @@ async function check() {
 				checks: 'health, app proxy, private API, dashboard protection, 404, noindex passed',
 				googleConfigured: config.googleEnabled,
 				stripeConfigured: config.checkoutEnabled,
+				emailConfigured: config.emailEnabled,
 				googleSignInVerified: false,
 				stripeCardPaymentVerified: false,
+				emailDeliveryVerified: false,
 				googleCallback: `${state.dashboard}/api/auth/callback/google`,
 				cleanup: `pnpm cloud:down ${slug}`,
 			},
@@ -235,6 +237,7 @@ async function up() {
 	config.vars = {
 		AUTH_URL: state.dashboard,
 		ALLOWED_ORIGINS: `${state.marketing},${state.dashboard}`,
+		...(env.EMAIL_FROM ? { EMAIL_FROM: env.EMAIL_FROM } : {}),
 	}
 	config.d1_databases = [
 		{
@@ -244,6 +247,9 @@ async function up() {
 			migrations_dir: resolve(root, 'apps/api/migrations'),
 		},
 	]
+	config.send_email = env.EMAIL_FROM
+		? [{ name: 'EMAIL', allowed_sender_addresses: [env.EMAIL_FROM] }]
+		: []
 	config.r2_buckets = [{ binding: 'FILES', bucket_name: state.bucket }]
 	await saveJson(configPath, config)
 	wrangler(['d1', 'migrations', 'apply', 'DB', '--remote', '--config', configPath])

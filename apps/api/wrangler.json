@@ -22,5 +22,10 @@
 			"bucket_name": "pnpm-cloudflare-tanstack-template-files"
 		}
 	],
-	"compatibility_flags": ["nodejs_compat"]
+	"compatibility_flags": ["nodejs_compat"],
+	"send_email": [
+		{
+			"name": "EMAIL"
+		}
+	]
 }

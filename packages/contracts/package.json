@@ -1,0 +1,19 @@
+{
+	"name": "@workspace/contracts",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./client": "./src/client.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@workspace/data": "workspace:*",
+		"zod": "4.6.5"
+	},
+	"devDependencies": {
+		"typescript": "^6.0.2"
+	}
+}

@@ -1,3 +1,4 @@
+import { Email } from '../components/email'
 import { useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import {
@@ -13,7 +14,7 @@ import {
 	useHydrated,
 } from '@workspace/shared'
 import { getSession } from '../lib/session'
-import { api } from '../lib/api'
+import { api, client } from '../lib/api'
 import { ApiKeys } from '../lib/api-keys'
 import { Billing } from '../components/billing'
 import { useSignOut, useWorkspace } from '../hooks/use-workspace'
@@ -59,11 +60,7 @@ function DashboardHomePage() {
 							onSubmit={(event) => {
 								event.preventDefault()
 								mutation.mutate(async () => {
-									await api('/api/todos', {
-										method: 'POST',
-										headers: { 'Content-Type': 'application/json' },
-										body: JSON.stringify({ title }),
-									})
+									await client.mutate('createTodo', { title })
 									setTitle('')
 								})
 							}}
@@ -97,11 +94,7 @@ function DashboardHomePage() {
 											disabled={busy}
 											onCheckedChange={() =>
 												mutation.mutate(() =>
-													api(`/api/todos/${item.id}`, {
-														method: 'PATCH',
-														headers: { 'Content-Type': 'application/json' },
-														body: JSON.stringify({ completed: !item.completed }),
-													}),
+													client.updateTodo(item.id, { completed: !item.completed }),
 												)
 											}
 										/>
@@ -116,9 +109,7 @@ function DashboardHomePage() {
 										variant="ghost"
 										size="sm"
 										disabled={busy}
-										onClick={() =>
-											mutation.mutate(() => api(`/api/todos/${item.id}`, { method: 'DELETE' }))
-										}
+										onClick={() => mutation.mutate(() => client.deleteTodo(item.id))}
 										aria-label={`Delete todo ${item.title}`}
 									>
 										Delete
@@ -227,6 +218,7 @@ function DashboardHomePage() {
 			</div>
 			<Billing />
 			<ApiKeys />
+			<Email />
 		</AppShell>
 	)
 }

@@ -1,6 +1,6 @@
 # pnpm-cloudflare-tanstack-template
 
-A small starter for new ideas: a waitlist marketing site, Google sign-in, a protected TanStack Start dashboard, and a Cloudflare Worker REST API backed by D1 and R2. Users get private todos, files, revocable API keys, and prepaid API credits through an optional custom Stripe test checkout. A paid summary endpoint connects those examples into a reusable pay-per-request flow. Shared Composables and shadcn/ui components cover forms, loading/empty states, success, 404, and error pages. The waitlist needs no email delivery service.
+A small starter for new ideas: a waitlist marketing site, Google sign-in, a protected TanStack Start dashboard, and a Cloudflare Worker REST API backed by D1 and R2. Users get private todos, files, revocable API keys, and prepaid API credits through an optional custom Stripe test checkout. A paid summary endpoint connects those examples into a reusable pay-per-request flow. Shared Composables and shadcn/ui components cover forms, loading/empty states, success, 404, and error pages. Drizzle owns the D1 schema and shares public types across the stack. Optional Cloudflare email sends waitlist confirmations and signed-in test emails.
 
 ## Agent setup and validation
 
@@ -8,7 +8,7 @@ Run `pnpm validate` to check the complete implementation locally without provide
 
 For an online sandbox, use `pnpm setup:doctor --online`, then `pnpm cloud:up my-demo`. With authorized Cloudflare credentials, the command creates resources, secrets, migrations, and deployments. Stripe test keys also enable automatic product/price/webhook setup. `pnpm cloud:check my-demo` checks the deployment; `pnpm cloud:down my-demo` deletes it, including uploaded files. It keeps environment configuration out of the tracked template.
 
-[Agent setup guide](docs/agent-setup.md) covers credentials, repeatable commands, cleanup, and the remaining Google/Stripe owner-authentication steps. These commands cannot replace provider account signup, MFA, or Google's callback registration. A passing fixture test is separate from completing a real Google login or Stripe sandbox card payment.
+[Agent setup guide](docs/agent-setup.md) covers credentials, repeatable commands, cleanup, and the remaining Google/Stripe/email account prerequisites. These commands cannot replace provider account signup, MFA, or Google's callback registration. A passing fixture test is separate from completing a real Google login or Stripe sandbox card payment.
 
 ## Start locally
 
@@ -85,6 +85,12 @@ The dashboard's **Add credits** checkout funds `POST /api/v1/summary`: a private
 
 See [the pay-per-request guide](docs/pay-per-request.md) for a working curl example, the backend flow, pricing, retry semantics, Cloudflare infrastructure costs, and how to adapt the endpoint for another project.
 
+### Drizzle and Cloudflare email
+
+All D1 queries, including Better Auth, use Drizzle. `@workspace/data` exports the schema and inferred row/insert types; `@workspace/contracts` shares validated request schemas, public response types and a typed REST client with both frontends. Run `pnpm db:generate --name my_change` after changing the schema.
+
+Email uses a native Worker binding, server-owned templates, D1 attempt records and duplicate-send protection. Set `EMAIL_FROM` for local simulation; `pnpm email:setup` and `pnpm cloud:up my-demo` configure live sending when your Cloudflare account/domain are ready. See [data, migration and email setup](docs/data-and-email.md).
+
 ### Shared frontend and reusable hooks
 
 Both apps use [`@leitware/composables`](https://www.npmjs.com/package/@leitware/composables), pinned to 1.3.2, with Tailwind CSS v4. Cards, inputs, labels, native selects, checkboxes, badges, alerts, separators, skeletons, stacks and typography come from the package's public entrypoint. The shared [shadcn/ui](https://ui.shadcn.com/docs/installation/tanstack) button remains source-owned for `asChild` link composition. Its styles use the same Composables semantic tokens and focus treatment. The MIT attribution is retained in `packages/shared/LICENSE.shadcn`.
@@ -95,7 +101,7 @@ Import UI from `@workspace/shared`; it re-exports the selected Composables compo
 
 Keep UI copy brief: labels identify fields, actions describe outcomes, and supporting text adds information needed to make a decision. Preserve consent, permissions, limits, one-time key warnings, and payment status. Put setup instructions and explanations of the backend in this README.
 
-Compose pages with `AppShell`, `MarketingShell`, and `PageState`. Reusable React hooks separate state from UI: `useHydrated`, `useWorkspace`, `useSignOut`, `useWaitlist`, `useCheckoutSession`, `useOrderStatus`, and `useBilling`.
+Compose pages with `AppShell`, `MarketingShell`, and `PageState`. Reusable React hooks separate state from UI: `useHydrated`, `useWorkspace`, `useSignOut`, `useWaitlist`, `useCheckoutSession`, `useOrderStatus`, `useBilling`, and `useEmail`.
 
 - Marketing `/waitlist/success` follows a successful database save, without exposing an email in the URL.
 - Both apps return a custom **HTTP 404** for unknown paths.
@@ -108,6 +114,8 @@ Compose pages with `AppShell`, `MarketingShell`, and `PageState`. Reusable React
 apps/api/           Worker REST API, auth, rate limiting, D1 migrations, R2 binding
 apps/dashboard/     Protected workspace, private todos/files, API key management
 apps/marketing/     Waitlist, privacy example, SEO metadata, sitemap and robots
+packages/data/      Drizzle schema, inferred database types and server-only D1 client
+packages/contracts/ Shared Zod inputs, public DTOs and typed REST client
 packages/shared/    Composables exports, shadcn button, theme, page states and shared hooks
 scripts/            Setup/deploy commands and isolated local/cloud tests
 ```

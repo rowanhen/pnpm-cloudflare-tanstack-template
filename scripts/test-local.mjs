@@ -1,3 +1,4 @@
+import { testEmail } from './test-email.mjs'
 import { localWorker } from './local-worker.mjs'
 import { testApi } from './test-api.mjs'
 import { testMetering } from './test-metering.mjs'
@@ -11,6 +12,7 @@ try {
 	await testApi(worker.base, worker.fixture.cookies, worker.proxySecret)
 	await testMetering(worker.base, worker.fixture.cookies)
 	await testCheckout(worker)
+	await testEmail(worker)
 } finally {
 	await worker.stop()
 	console.log('Local Worker and isolated D1/R2 test storage removed.')

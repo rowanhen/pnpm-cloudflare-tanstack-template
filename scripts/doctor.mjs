@@ -32,6 +32,11 @@ add(
 		: 'missing',
 	'Stripe test secret + publishable key; cloud:up can create the product, price and webhook',
 )
+add(
+	'email',
+	env.EMAIL_FROM ? 'configured' : 'missing',
+	'EMAIL_FROM on a Cloudflare Email Service domain; configuration is not proof of inbox delivery',
+)
 if (process.argv.includes('--online')) {
 	if (env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_API_TOKEN) {
 		try {
@@ -70,7 +75,16 @@ if (process.argv.includes('--online')) {
 }
 if (process.argv.includes('--json'))
 	console.log(
-		JSON.stringify({ checks, providerSignInVerified: false, cardPaymentVerified: false }, null, 2),
+		JSON.stringify(
+			{
+				checks,
+				providerSignInVerified: false,
+				cardPaymentVerified: false,
+				emailDeliveryVerified: false,
+			},
+			null,
+			2,
+		),
 	)
 else {
 	for (const check of checks)

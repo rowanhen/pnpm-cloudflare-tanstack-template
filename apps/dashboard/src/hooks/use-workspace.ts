@@ -1,21 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useHydrated } from '@workspace/shared'
-import { api } from '../lib/api'
+import { api, client as apiClient } from '../lib/api'
 
-type Todo = { id: string; title: string; completed: boolean }
-type StoredFile = { key: string; size: number }
 export function useWorkspace(userId: string) {
 	const hydrated = useHydrated()
 	const client = useQueryClient()
 	const todos = useQuery({
 		queryKey: ['todos', userId],
-		queryFn: async () => (await (await api('/api/todos')).json()) as { todos: Todo[] },
+		queryFn: () => apiClient.get('todos'),
 		retry: false,
 	})
 	const files = useQuery({
 		queryKey: ['files', userId],
-		queryFn: async () =>
-			(await (await api('/api/files')).json()) as { files: StoredFile[]; cursor: string | null },
+		queryFn: () => apiClient.get('files'),
 		retry: false,
 	})
 	const mutation = useMutation({

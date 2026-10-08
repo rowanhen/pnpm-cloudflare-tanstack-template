@@ -1,5 +1,7 @@
 export interface Env {
 	API_PROXY_SECRET?: string
+	EMAIL?: SendEmail
+	EMAIL_FROM?: string
 	DB: D1Database
 	FILES: R2Bucket
 	ALLOWED_ORIGINS: string

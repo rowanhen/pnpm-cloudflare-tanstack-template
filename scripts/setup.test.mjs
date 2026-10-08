@@ -34,7 +34,7 @@ test('doctor reports missing provider credentials without claiming live validati
 		const output = JSON.parse(result.output)
 		assert.equal(output.providerSignInVerified, false)
 		assert.equal(output.cardPaymentVerified, false)
-		assert.equal(output.checks.filter((entry) => entry.status === 'missing').length, 3)
+		assert.equal(output.checks.filter((entry) => entry.status === 'missing').length, 4)
 	} finally {
 		await rm(directory, { recursive: true, force: true })
 	}
@@ -176,6 +176,46 @@ for (const mode of ['new', 'reuse', 'webhook-failure']) {
 			await assert.rejects(readFile(manifestFile), { code: 'ENOENT' })
 		} finally {
 			await new Promise((done) => server.close(done))
+			await rm(directory, { recursive: true, force: true })
+		}
+	})
+}
+
+for (const mode of ['new', 'existing', 'wrong-zone', 'denied']) {
+	test(`Email domain API setup: ${mode}`, async () => {
+		const directory = await mkdtemp(join(tmpdir(), 'starter-email-setup-'))
+		try {
+			const preload = join(directory, 'transport.mjs')
+			await writeFile(
+				preload,
+				`globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(input);
+    if(url.hostname !== 'api.cloudflare.com' || init.headers.Authorization !== 'Bearer email-fixture-token') throw new Error('Unexpected provider request');
+    const ok = value => Response.json({success:true,result:value});
+    if(url.pathname.endsWith('/zones/${'a'.repeat(32)}')) return ok({name:'example.test',account:{id:'${'b'.repeat(32)}'}});
+    if(!url.pathname.endsWith('/email/sending/subdomains')) throw new Error('Unexpected path');
+    if(${JSON.stringify(mode)} === 'denied') return Response.json({success:false,errors:[{code:10000,message:'Authentication error'}]},{status:403});
+    if((init.method ?? 'GET') === 'GET') return ok(${JSON.stringify(mode)} === 'existing' ? [{name:'mail.example.test',enabled:true,dkim_selector:'fixture'}] : []);
+    if(${JSON.stringify(mode)} !== 'new' || JSON.parse(init.body).name !== 'mail.example.test') throw new Error('Unexpected domain mutation');
+    return ok({name:'mail.example.test',enabled:true,dkim_selector:'fixture',return_path_domain:'cf-bounce.mail.example.test'});
+   };`,
+			)
+			const result = await child(['--import', preload, 'scripts/email-domain.mjs', 'setup'], {
+				PATH: process.env.PATH,
+				STARTER_ENV_FILE: join(directory, 'missing.env'),
+				CLOUDFLARE_API_TOKEN: 'email-fixture-token',
+				CLOUDFLARE_ZONE_ID: 'a'.repeat(32),
+				CLOUDFLARE_ACCOUNT_ID: 'b'.repeat(32),
+				EMAIL_FROM: mode === 'wrong-zone' ? 'hello@other.test' : 'hello@mail.example.test',
+			})
+			assert.equal(result.code, ['new', 'existing'].includes(mode) ? 0 : 1, result.output)
+			assert.ok(!result.output.includes('email-fixture-token'))
+			if (result.code === 0) {
+				const data = JSON.parse(result.output)
+				assert.equal(data.enabled, true)
+				assert.equal(data.inboxDeliveryVerified, false)
+			}
+		} finally {
 			await rm(directory, { recursive: true, force: true })
 		}
 	})

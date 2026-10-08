@@ -104,3 +104,9 @@ For a disposable test of this lifecycle alone:
 ```bash
 pnpm test:cloud-setup
 ```
+
+## Drizzle and email
+
+Schema changes live in `packages/data/src/schema.ts`; run `pnpm db:generate --name my_change` and review the migration before deployment. `pnpm validate` includes schema drift, upgrade preservation and email tests.
+
+For email, choose the sender domain/address, authorize its Cloudflare zone, and set `EMAIL_FROM` plus `CLOUDFLARE_ZONE_ID`. `pnpm email:setup` uses the domain API; `pnpm email:check` checks that configuration. `cloud:up` enables the sender-restricted binding. Without a sender, the dashboard shows that email is disconnected and waitlist signups still save. [The data/email guide](data-and-email.md) explains permissions, DNS, local simulation, delivery status and cleanup. Real inbox delivery requires a chosen recipient and a separate live test.

@@ -1,15 +1,17 @@
+import { emailEnabled, emailRoute } from './email'
+import { database } from '@workspace/data/client'
+import { waitlist } from '@workspace/data/schema'
+import { eq } from 'drizzle-orm'
+import { listTodos, todosRoute } from './todos'
+import { waitlistRoute } from './waitlist'
 import type { Env } from './env'
 import { trustedProxyRequest } from './proxy'
 import { createAuth } from './auth'
-import { HttpError, json, readBody, readJson, textField, sha256, methodNotAllowed } from './http'
-import { rateLimit } from './rate-limit'
+import { HttpError, json, reply, readBody, methodNotAllowed } from './http'
 import { apiKeyUser, keysRoute } from './keys'
 import { checkoutEnabled, checkoutRoute, stripeWebhook } from './checkout'
 import { billingStatus } from './billing'
 import { summaryRoute } from './summary'
-
-type TodoRow = { id: string; title: string; completed: number; created_at: string; user_id: string }
-const todo = ({ user_id: _owner, ...row }: TodoRow) => ({ ...row, completed: row.completed === 1 })
 
 async function route(request: Request, env: Env): Promise<Response> {
 	const url = new URL(request.url)
@@ -17,7 +19,8 @@ async function route(request: Request, env: Env): Promise<Response> {
 	const method = request.method
 	if (path === '/api/health') return method === 'GET' ? json({ ok: true }) : methodNotAllowed('GET')
 	if (path === '/api/config')
-		return json({
+		return reply('config', {
+			emailEnabled: emailEnabled(env),
 			googleEnabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
 			checkoutEnabled: checkoutEnabled(env),
 		})
@@ -27,34 +30,12 @@ async function route(request: Request, env: Env): Promise<Response> {
 			throw new HttpError(503, 'Run pnpm setup:local or configure the authentication secrets')
 		return createAuth(env).handler(request)
 	}
-	if (path === '/api/waitlist' && method === 'POST') {
-		const body = await readJson(request)
-		if (body.website) return json({ message: "You're on the list. Thanks for your interest!" }, 202)
-		const email = textField(body.email, 'email', 254).toLowerCase()
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-			throw new HttpError(400, 'Enter a valid email address')
-		if (body.consent !== true) throw new HttpError(400, 'Please agree to join the waitlist')
-		const name = typeof body.name === 'string' ? body.name.trim().slice(0, 100) : ''
-		const ip = request.headers.get('cf-connecting-ip') ?? 'local'
-		await rateLimit(env.DB, `waitlist-ip:${await sha256(ip)}`, 10, 3600)
-		await rateLimit(env.DB, `waitlist-email:${await sha256(email)}`, 3, 3600)
-		await env.DB.prepare(
-			'INSERT INTO waitlist (id, email, name, consent) VALUES (?, ?, ?, 1) ON CONFLICT(email) DO NOTHING',
-		)
-			.bind(crypto.randomUUID(), email, name)
-			.run()
-		return json({ message: "You're on the list. Thanks for your interest!" }, 202)
-	}
+	if (path === '/api/waitlist' && method === 'POST') return waitlistRoute(request, env)
 	if (path === '/api/v1/summary') return summaryRoute(request, env)
 	if (path === '/api/v1/todos') {
 		if (method !== 'GET') return methodNotAllowed('GET')
 		const { userId, headers } = await apiKeyUser(request, env)
-		const { results } = await env.DB.prepare(
-			'SELECT * FROM todos WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 100',
-		)
-			.bind(userId)
-			.all<TodoRow>()
-		const response = json({ todos: results.map(todo) })
+		const response = reply('todos', { todos: await listTodos(env.DB, userId) })
 		for (const [name, value] of Object.entries(headers)) response.headers.set(name, value)
 		return response
 	}
@@ -64,7 +45,16 @@ async function route(request: Request, env: Env): Promise<Response> {
 	const userId = session.user.id
 	if (path === '/api/billing')
 		return method === 'GET' ? billingStatus(env.DB, userId) : methodNotAllowed('GET')
-	if (path === '/api/me' && method === 'GET') return json({ user: session.user })
+	if (path === '/api/me' && method === 'GET')
+		return reply('me', {
+			user: {
+				id: session.user.id,
+				name: session.user.name,
+				email: session.user.email,
+				emailVerified: session.user.emailVerified,
+				image: session.user.image ?? null,
+			},
+		})
 	// Cookie-authenticated mutations must originate from an explicitly trusted browser origin.
 	if (!['GET', 'HEAD'].includes(method)) {
 		const origin = request.headers.get('origin')
@@ -76,71 +66,22 @@ async function route(request: Request, env: Env): Promise<Response> {
 		)
 			throw new HttpError(403, 'A trusted Origin header is required')
 	}
+	if (path === '/api/email')
+		return emailRoute(request, env, { ...session.user, image: session.user.image ?? null })
 	if (path === '/api/keys' || path.startsWith('/api/keys/')) return keysRoute(request, env, userId)
 	if (path.startsWith('/api/checkout/')) return checkoutRoute(request, env, session.user)
 	if (path === '/api/waitlist/me' && method === 'GET') {
 		const entry = session.user.emailVerified
-			? await env.DB.prepare('SELECT created_at FROM waitlist WHERE email = ?')
-					.bind(session.user.email)
-					.first()
+			? ((await database(env.DB)
+					.select({ created_at: waitlist.created_at })
+					.from(waitlist)
+					.where(eq(waitlist.email, session.user.email))
+					.get()) ?? null)
 			: null
-		return json({ joined: Boolean(entry), entry })
+		return reply('waitlistStatus', { joined: Boolean(entry), entry })
 	}
-	if (path === '/api/todos') {
-		if (method === 'GET') {
-			const { results } = await env.DB.prepare(
-				'SELECT * FROM todos WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 100',
-			)
-				.bind(userId)
-				.all<TodoRow>()
-			return json({ todos: results.map(todo) })
-		}
-		if (method === 'POST') {
-			const body = await readJson(request)
-			const row = await env.DB.prepare(
-				'INSERT INTO todos (id, title, user_id) VALUES (?, ?, ?) RETURNING *',
-			)
-				.bind(crypto.randomUUID(), textField(body.title, 'title'), userId)
-				.first<TodoRow>()
-			return json({ todo: todo(row as TodoRow) }, 201)
-		}
-		return methodNotAllowed('GET, POST')
-	}
-	const todoMatch = path.match(/^\/api\/todos\/([^/]+)$/)
-	if (todoMatch) {
-		const id = todoMatch[1]
-		if (method === 'GET') {
-			const row = await env.DB.prepare('SELECT * FROM todos WHERE id = ? AND user_id = ?')
-				.bind(id, userId)
-				.first<TodoRow>()
-			if (!row) throw new HttpError(404, 'Todo not found')
-			return json({ todo: todo(row) })
-		}
-		if (method === 'PATCH') {
-			const body = await readJson(request)
-			if (!('title' in body) && !('completed' in body))
-				throw new HttpError(400, 'Provide title or completed')
-			const nextTitle = 'title' in body ? textField(body.title, 'title') : null
-			if ('completed' in body && typeof body.completed !== 'boolean')
-				throw new HttpError(400, 'completed must be a boolean')
-			const completed = 'completed' in body ? Number(body.completed) : null
-			const row = await env.DB.prepare(
-				'UPDATE todos SET title = COALESCE(?, title), completed = COALESCE(?, completed) WHERE id = ? AND user_id = ? RETURNING *',
-			)
-				.bind(nextTitle, completed, id, userId)
-				.first<TodoRow>()
-			if (!row) throw new HttpError(404, 'Todo not found')
-			return json({ todo: todo(row) })
-		}
-		if (method === 'DELETE') {
-			const result = await env.DB.prepare('DELETE FROM todos WHERE id = ? AND user_id = ?')
-				.bind(id, userId)
-				.run()
-			if (!result.meta.changes) throw new HttpError(404, 'Todo not found')
-			return new Response(null, { status: 204 })
-		}
-		return methodNotAllowed('GET, PATCH, DELETE')
-	}
+	if (path === '/api/todos' || path.startsWith('/api/todos/'))
+		return todosRoute(request, env, userId)
 	if (path === '/api/files') {
 		if (method !== 'GET') return methodNotAllowed('GET')
 		const limit = Number(url.searchParams.get('limit') ?? 100)
@@ -151,12 +92,12 @@ async function route(request: Request, env: Env): Promise<Response> {
 			prefix: `${userId}/`,
 			cursor: url.searchParams.get('cursor') ?? undefined,
 		})
-		return json({
+		return reply('files', {
 			files: result.objects.map((object) => ({
 				key: object.key.slice(userId.length + 1),
 				size: object.size,
 				etag: object.httpEtag,
-				uploaded: object.uploaded,
+				uploaded: object.uploaded.toISOString(),
 			})),
 			cursor: result.truncated ? result.cursor : null,
 		})
@@ -180,7 +121,7 @@ async function route(request: Request, env: Env): Promise<Response> {
 					contentType: request.headers.get('content-type') ?? 'application/octet-stream',
 				},
 			})
-			return json({ file: { key, size: object.size, etag: object.httpEtag } }, 201)
+			return reply('file', { file: { key, size: object.size, etag: object.httpEtag } }, 201)
 		}
 		if (method === 'GET' || method === 'HEAD') {
 			const object =

@@ -1,3 +1,4 @@
+import { client } from '../lib/api'
 import { useEffect, useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { AppShell, Button, Card, Stack, Alert } from '@workspace/shared'
@@ -19,8 +20,8 @@ function LoginPage() {
 	const [error, setError] = useState('')
 	const [busy, setBusy] = useState(false)
 	useEffect(() => {
-		fetch('/api/config')
-			.then((response) => response.json())
+		client
+			.get('config')
 			.then((data) => {
 				setGoogleEnabled(data.googleEnabled)
 				setReady(true)
