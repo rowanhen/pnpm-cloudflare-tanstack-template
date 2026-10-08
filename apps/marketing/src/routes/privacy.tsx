@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@workspace/shared'
+import { Card, Stack } from '@workspace/shared'
 import { MarketingShell } from '../components/marketing-shell'
 import { createFileRoute } from '@tanstack/react-router'
 import { seo, site } from '../lib/seo'
@@ -11,7 +11,7 @@ function Privacy() {
 	return (
 		<MarketingShell>
 			<Card className="mx-auto my-12 max-w-2xl">
-				<CardContent className="space-y-6 leading-7">
+				<Stack gap={6} className="text-sm leading-7">
 					<a href="/">← {site.name}</a>
 					<h1 className="text-3xl font-semibold tracking-tight">Privacy in this demo</h1>
 					<p>
@@ -35,7 +35,7 @@ function Privacy() {
 						This is example copy for a starter project. Before a public launch, the project owner
 						must replace it with their actual contact, retention and deletion information.
 					</p>
-				</CardContent>
+				</Stack>
 			</Card>
 		</MarketingShell>
 	)

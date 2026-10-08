@@ -1,7 +1,6 @@
 export const site = {
 	name: import.meta.env.VITE_SITE_NAME ?? 'Idea Starter',
-	description:
-		'A small idea, ready to grow. Join the waitlist for early access and be part of what comes next.',
+	description: 'A private workspace for your next idea. Join the waitlist for early access.',
 	url: (import.meta.env.VITE_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, ''),
 	dashboard: import.meta.env.VITE_DASHBOARD_URL ?? 'http://localhost:3001',
 }

@@ -95,7 +95,6 @@ if (mode === 'cleanup') {
 		const product = await stripe.products.create(
 			{
 				name: 'Starter pass',
-				description: 'A one-time test purchase for your next idea.',
 				metadata: { starter_demo: id },
 			},
 			{ idempotencyKey: `starter-product-${id}` },

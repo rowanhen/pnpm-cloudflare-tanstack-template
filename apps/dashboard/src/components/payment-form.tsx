@@ -5,7 +5,7 @@ import {
 	PaymentElement,
 	useCheckoutElements,
 } from '@stripe/react-stripe-js/checkout'
-import { Alert, AlertDescription, Button, Skeleton } from '@workspace/shared'
+import { Alert, Button, Skeleton } from '@workspace/shared'
 
 const clients = new Map<string, ReturnType<typeof loadStripe>>()
 function stripeClient(key: string) {
@@ -24,6 +24,18 @@ export default function PaymentForm({
 	clientSecret: string
 	sessionId: string
 }) {
+	const [appearance] = useState(() => {
+		if (typeof document === 'undefined') return undefined
+		const theme = getComputedStyle(document.documentElement)
+		return {
+			colorPrimary: theme.getPropertyValue('--bg-fill-primary').trim(),
+			colorText: theme.getPropertyValue('--text-default').trim(),
+			colorBackground: theme.getPropertyValue('--bg-surface-default').trim(),
+			fontFamily: theme.fontFamily,
+			borderRadius: theme.getPropertyValue('--radius').trim(),
+		}
+	})
+
 	return (
 		<CheckoutElementsProvider
 			stripe={stripeClient(publishableKey)}
@@ -32,12 +44,7 @@ export default function PaymentForm({
 				elementsOptions: {
 					appearance: {
 						theme: 'stripe',
-						variables: {
-							colorPrimary: '#185c43',
-							colorText: '#172c29',
-							borderRadius: '8px',
-							fontFamily: 'system-ui, sans-serif',
-						},
+						variables: appearance,
 					},
 				},
 			}}
@@ -54,11 +61,7 @@ function Form({ sessionId }: { sessionId: string }) {
 		return <Skeleton className="h-60" aria-label="Loading payment form" />
 	if (checkout.type === 'error')
 		return (
-			<Alert variant="destructive">
-				<AlertDescription>
-					Unable to load the payment form. Please refresh and try again.
-				</AlertDescription>
-			</Alert>
+			<Alert type="negative">Unable to load the payment form. Please refresh and try again.</Alert>
 		)
 	return (
 		<form
@@ -81,16 +84,12 @@ function Form({ sessionId }: { sessionId: string }) {
 			}}
 		>
 			<PaymentElement options={{ layout: 'tabs' }} />
-			{error && (
-				<Alert variant="destructive">
-					<AlertDescription>{error}</AlertDescription>
-				</Alert>
-			)}
+			{error && <Alert type="negative">{error}</Alert>}
 			<Button className="w-full" size="lg" disabled={busy} type="submit">
 				{busy ? 'Confirming…' : `Pay ${checkout.checkout.total.total.amount}`}
 			</Button>
-			<p className="text-center text-xs leading-5 text-muted-foreground">
-				Test mode · No real money is collected. Payment details are handled securely by Stripe.
+			<p className="text-center text-xs leading-5 text-content-secondary">
+				Test mode · No real charge.
 			</p>
 		</form>
 	)

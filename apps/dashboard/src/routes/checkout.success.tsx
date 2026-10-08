@@ -16,34 +16,25 @@ function CheckoutSuccess() {
 	const status = useOrderStatus(session_id)
 	if (!session_id || status.isError)
 		return (
-			<PageState
-				kind="error"
-				title="We couldn't find that order."
-				description="Open checkout from your workspace, or try checking this order again."
-			>
+			<PageState kind="error" title="We couldn't find that order.">
 				{session_id && <Button onClick={() => void status.refetch()}>Check again</Button>}
 				<Button variant="outline" asChild>
 					<a href="/checkout">Back to checkout</a>
 				</Button>
 			</PageState>
 		)
-	if (status.isPending)
-		return (
-			<PageState
-				kind="loading"
-				title="Checking your payment…"
-				description="We're confirming the order with Stripe."
-			/>
-		)
+	if (status.isPending) return <PageState kind="loading" title="Checking your payment…" />
 	const order = status.data.order
 	if (order.status === 'paid')
 		return (
 			<PageState
 				kind="success"
 				title="Payment successful."
-				description={`Your test payment of ${money(order.amount, order.currency)} is confirmed. Your order has been saved to your account.`}
+				description={`Test payment of ${money(order.amount, order.currency)} confirmed.`}
 			>
-				<p className="w-full break-all font-mono text-xs text-muted-foreground">Order {order.id}</p>
+				<p className="w-full break-all font-mono text-xs text-content-secondary">
+					Order {order.id}
+				</p>
 				<Button asChild>
 					<a href="/">Back to workspace</a>
 				</Button>
@@ -54,7 +45,7 @@ function CheckoutSuccess() {
 			<PageState
 				kind="error"
 				title="This checkout has expired."
-				description="No payment was confirmed for this order. Start a fresh checkout whenever you're ready."
+				description="No payment was confirmed."
 			>
 				<Button asChild>
 					<a href="/checkout">Start a new checkout</a>
@@ -69,7 +60,6 @@ function CheckoutSuccess() {
 					? 'Your checkout is incomplete.'
 					: 'Your payment is processing.'
 			}
-			description="We haven't confirmed a payment yet. You can check the status again or return to checkout."
 		>
 			<Button onClick={() => void status.refetch()} disabled={status.isFetching}>
 				Check payment status

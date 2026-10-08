@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react'
 import { AlertCircle, Check, Compass, LoaderCircle } from 'lucide-react'
+import { Card, Stack, Typography } from '@leitware/composables'
 import { Button } from './ui/button'
-import { Card, CardContent } from './ui/card'
-import { Badge } from './ui/badge'
 
 export function PageState({
 	kind,
@@ -12,7 +11,7 @@ export function PageState({
 }: {
 	kind: 'success' | 'error' | 'not-found' | 'loading'
 	title: string
-	description: string
+	description?: string
 	children?: ReactNode
 }) {
 	const Icon = { success: Check, error: AlertCircle, 'not-found': Compass, loading: LoaderCircle }[
@@ -20,29 +19,30 @@ export function PageState({
 	]
 	return (
 		<main className="flex min-h-svh items-center justify-center px-5 py-16">
-			<Card className="w-full max-w-lg text-center shadow-sm">
-				<CardContent className="space-y-6 py-6">
-					<div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-secondary text-primary">
+			<Card className="w-full max-w-lg text-center">
+				<Stack gap={6} className="py-6">
+					<div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-surface-brand text-icon-brand">
 						<Icon
 							aria-hidden="true"
 							className={kind === 'loading' ? 'size-6 animate-spin' : 'size-6'}
 						/>
 					</div>
-					<Badge variant="outline">
-						{kind === 'not-found'
-							? '404 · Page not found'
-							: kind === 'error'
-								? 'Something went wrong'
-								: kind === 'loading'
-									? 'One moment'
-									: 'All set'}
-					</Badge>
-					<div className="space-y-3">
-						<h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-						<p className="text-sm leading-6 text-muted-foreground">{description}</p>
-					</div>
-					<div className="flex flex-wrap justify-center gap-3">{children}</div>
-				</CardContent>
+					<Stack gap={3}>
+						<Typography as="h1" variant="heading-500">
+							{title}
+						</Typography>
+						{description && (
+							<Typography variant="body-100" className="text-content-secondary">
+								{description}
+							</Typography>
+						)}
+					</Stack>
+					{children && (
+						<Stack direction="horizontal" wrap justify="center" gap={3}>
+							{children}
+						</Stack>
+					)}
+				</Stack>
 			</Card>
 		</main>
 	)
@@ -50,11 +50,7 @@ export function PageState({
 
 export function NotFoundPage() {
 	return (
-		<PageState
-			kind="not-found"
-			title="A little off the map."
-			description="This page may have moved, or the link might be incomplete. Let's get you back to familiar ground."
-		>
+		<PageState kind="not-found" title="Page not found" description="404">
 			<Button asChild>
 				<a href="/">Back to home</a>
 			</Button>
@@ -64,11 +60,7 @@ export function NotFoundPage() {
 
 export function ErrorPage({ retry }: { retry?: () => void }) {
 	return (
-		<PageState
-			kind="error"
-			title="Let's try that again."
-			description="We couldn't load this page. Please try again in a moment."
-		>
+		<PageState kind="error" title="Couldn't load this page">
 			<Button onClick={retry ?? (() => window.location.reload())}>Try again</Button>
 			<Button variant="outline" asChild>
 				<a href="/">Back to home</a>

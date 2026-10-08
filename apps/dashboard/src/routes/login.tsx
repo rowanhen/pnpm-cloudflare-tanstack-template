@@ -1,15 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import {
-	AppShell,
-	Button,
-	Card,
-	CardHeader,
-	CardTitle,
-	CardContent,
-	Alert,
-	AlertDescription,
-} from '@workspace/shared'
+import { AppShell, Button, Card, Stack, Alert } from '@workspace/shared'
 import { getSession } from '../lib/session'
 
 export const Route = createFileRoute('/login')({
@@ -59,29 +50,15 @@ function LoginPage() {
 		}
 	}
 	return (
-		<AppShell
-			title="Welcome back"
-			description="Sign in to your workspace. Your records, files and API keys stay private to your account."
-		>
+		<AppShell title="Sign in">
 			<Card className="max-w-md">
-				<CardHeader>
-					<CardTitle>Your next idea starts here.</CardTitle>
-				</CardHeader>
-				<CardContent className="space-y-4">
+				<Stack gap={4}>
 					<Button className="w-full" disabled={!ready || !googleEnabled || busy} onClick={signIn}>
 						{busy ? 'Redirecting…' : 'Continue with Google'}
 					</Button>
-					{ready && !googleEnabled && (
-						<p>
-							Google sign-in is not configured yet. Follow the Google OAuth setup in the README.
-						</p>
-					)}
-					{error && (
-						<Alert variant="destructive">
-							<AlertDescription>{error}</AlertDescription>
-						</Alert>
-					)}
-				</CardContent>
+					{ready && !googleEnabled && <p>Google sign-in is unavailable.</p>}
+					{error && <Alert type="negative">{error}</Alert>}
+				</Stack>
 			</Card>
 		</AppShell>
 	)

@@ -29,8 +29,8 @@ test('signed-out requests are redirected on the server and Google starts OAuth',
 	expect(response.headers().location).toBe('/login')
 	await page.goto('/')
 	await expect(page).toHaveURL(/\/login$/)
-	await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
-	await expect(page.getByRole('heading', { name: 'D1 todos' })).toHaveCount(0)
+	await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
+	await expect(page.getByRole('heading', { name: 'Todos' })).toHaveCount(0)
 	await page.route('https://accounts.google.com/**', (route) =>
 		route.fulfill({ status: 200, body: 'Google OAuth handoff' }),
 	)
@@ -59,7 +59,20 @@ test('signed-in dashboard persists private D1/R2 data and manages scoped API key
 		expect(initial?.headers()['cache-control']).toContain('no-store')
 		await expect(page.getByText('alice@example.test', { exact: true })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Create API key' })).toBeEnabled()
-		await page.screenshot({ path: 'test-results/dashboard-desktop.png', fullPage: true })
+		await page.screenshot({
+			path: 'test-results/dashboard-desktop.png',
+			fullPage: true,
+			animations: 'disabled',
+		})
+		await page.setViewportSize({ width: 390, height: 844 })
+		expect(
+			await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+		).toBe(true)
+		await page.screenshot({
+			path: 'test-results/dashboard-mobile.png',
+			fullPage: true,
+			animations: 'disabled',
+		})
 		await page.getByLabel('Todo title', { exact: true }).fill(title)
 		await page.getByRole('button', { name: 'Add todo', exact: true }).click()
 		const checkbox = page.getByRole('checkbox', { name: title, exact: true })

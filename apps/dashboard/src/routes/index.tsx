@@ -4,16 +4,11 @@ import {
 	AppShell,
 	Button,
 	Card,
-	CardHeader,
-	CardTitle,
-	CardDescription,
-	CardContent,
+	Stack,
 	Input,
 	Label,
 	Checkbox,
 	Alert,
-	AlertDescription,
-	Badge,
 	Skeleton,
 	useHydrated,
 } from '@workspace/shared'
@@ -40,7 +35,6 @@ function DashboardHomePage() {
 	return (
 		<AppShell
 			title="Your workspace"
-			description="A home for your ideas, files, and the little things that make them work."
 			actions={
 				<Button
 					disabled={!hydrated || signOut.isPending}
@@ -52,26 +46,13 @@ function DashboardHomePage() {
 				</Button>
 			}
 		>
-			<div className="flex flex-wrap items-center gap-3">
-				<Badge variant="outline">Private workspace</Badge>
-				<p className="text-sm text-muted-foreground">
-					Signed in as <strong className="text-foreground">{user.email}</strong>
-				</p>
-			</div>
+			<p className="text-sm text-content-secondary">{user.email}</p>
 			{(error || signOut.error) && (
-				<Alert variant="destructive">
-					<AlertDescription>{(error ?? signOut.error)?.message}</AlertDescription>
-				</Alert>
+				<Alert type="negative">{(error ?? signOut.error)?.message}</Alert>
 			)}
 			<div className="grid items-start gap-6 lg:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>
-							<h2>D1 todos</h2>
-						</CardTitle>
-						<CardDescription>Your own small list. Saved across devices.</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-6">
+				<Card title={<h2>Todos</h2>}>
+					<Stack gap={6}>
 						<form
 							className="flex items-end gap-3"
 							onSubmit={(event) => {
@@ -87,7 +68,9 @@ function DashboardHomePage() {
 							}}
 						>
 							<div className="flex-1 space-y-2">
-								<Label htmlFor="todo-title">Todo title</Label>
+								<Label htmlFor="todo-title" className="sr-only">
+									Todo title
+								</Label>
 								<Input
 									id="todo-title"
 									disabled={busy}
@@ -95,7 +78,7 @@ function DashboardHomePage() {
 									onChange={(event) => setTitle(event.target.value)}
 									required
 									maxLength={200}
-									placeholder="What are you working on?"
+									placeholder="New todo"
 								/>
 							</div>
 							<Button disabled={busy} type="submit">
@@ -123,7 +106,7 @@ function DashboardHomePage() {
 										/>
 										<Label
 											htmlFor={`todo-${item.id}`}
-											className={`break-all leading-5 ${item.completed ? 'text-muted-foreground line-through' : ''}`}
+											className={`break-all leading-5 ${item.completed ? 'text-content-secondary line-through' : ''}`}
 										>
 											{item.title}
 										</Label>
@@ -143,20 +126,14 @@ function DashboardHomePage() {
 							))}
 						</ul>
 						{todos.data?.todos.length === 0 && (
-							<p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-								No todos yet. A good idea starts with one small step.
+							<p className="rounded-lg border border-dashed p-6 text-center text-sm text-content-secondary">
+								No todos yet.
 							</p>
 						)}
-					</CardContent>
+					</Stack>
 				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>
-							<h2>R2 files</h2>
-						</CardTitle>
-						<CardDescription>Private file storage. Up to 5 MiB per file.</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-6">
+				<Card title={<h2>Files</h2>} description="Up to 5 MiB per file.">
+					<Stack gap={6}>
 						<form
 							className="space-y-3"
 							onSubmit={(event) => {
@@ -180,9 +157,8 @@ function DashboardHomePage() {
 									disabled={busy}
 									onChange={(event) => setFile(event.target.files?.[0] ?? null)}
 								/>
-								<p className="text-xs text-muted-foreground">
-									Letters, numbers, dots, underscores and hyphens. The same filename replaces the
-									existing file.
+								<p className="text-xs text-content-secondary">
+									Filenames: letters, numbers, . _ - only. Matching names replace existing files.
 								</p>
 							</div>
 							<Button disabled={busy || !file} type="submit" variant="secondary">
@@ -198,7 +174,7 @@ function DashboardHomePage() {
 								>
 									<div className="min-w-0">
 										<p className="break-all text-sm font-medium">{item.key}</p>
-										<p className="text-xs text-muted-foreground">{item.size} bytes</p>
+										<p className="text-xs text-content-secondary">{item.size} bytes</p>
 									</div>
 									<div className="flex gap-1">
 										<Button
@@ -238,32 +214,17 @@ function DashboardHomePage() {
 							))}
 						</ul>
 						{files.data?.files.length === 0 && (
-							<p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-								No files yet. Give your ideas a place to live.
+							<p className="rounded-lg border border-dashed p-6 text-center text-sm text-content-secondary">
+								No files yet.
 							</p>
 						)}
 						{files.data?.cursor && (
-							<p className="text-sm text-muted-foreground">
-								Showing the first 100 files. Use the REST API cursor to fetch more.
-							</p>
+							<p className="text-sm text-content-secondary">Showing the first 100 files.</p>
 						)}
-					</CardContent>
+					</Stack>
 				</Card>
 			</div>
 			<ApiKeys />
-			<Card>
-				<CardContent className="flex flex-wrap items-center justify-between gap-6">
-					<div className="space-y-2">
-						<h2 className="font-semibold">Take the checkout for a spin.</h2>
-						<p className="text-sm text-muted-foreground">
-							A custom payment form, order confirmation, and a real backend. All in test mode.
-						</p>
-					</div>
-					<Button asChild variant="outline">
-						<a href="/checkout">Try test checkout</a>
-					</Button>
-				</CardContent>
-			</Card>
 		</AppShell>
 	)
 }

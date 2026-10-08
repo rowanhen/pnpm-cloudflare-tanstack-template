@@ -1,16 +1,4 @@
-import {
-	Button,
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-	CardDescription,
-	Label,
-	Input,
-	Alert,
-	AlertDescription,
-	useHydrated,
-} from '@workspace/shared'
+import { Button, Card, Stack, Label, Input, Alert, useHydrated } from '@workspace/shared'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
@@ -36,18 +24,11 @@ export function ApiKeys() {
 		onSuccess: () => client.invalidateQueries({ queryKey: ['keys'] }),
 	})
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>
-					<h2>API keys</h2>
-				</CardTitle>
-				<CardDescription>Connect your own tools to your workspace.</CardDescription>
-			</CardHeader>
-			<CardContent className="space-y-5">
-				<p>
-					Read your private todos from a script. Each key can only call{' '}
-					<code>GET /api/v1/todos</code>, up to 30 times per minute.
-				</p>
+		<Card
+			title={<h2>API keys</h2>}
+			description="Read-only access to your todos · 30 requests/minute."
+		>
+			<Stack gap={5}>
 				<form
 					className="flex flex-wrap items-end gap-3"
 					onSubmit={(event) => {
@@ -80,19 +61,17 @@ export function ApiKeys() {
 					</Button>
 				</form>
 				{newToken && (
-					<div aria-live="polite" className="space-y-3 rounded-lg border bg-secondary p-5">
+					<div aria-live="polite" className="space-y-3 rounded-lg border bg-muted p-5">
 						<p>Copy this key now. It will not be shown again.</p>
 						<Label className="grid gap-2">
 							New API key <Input readOnly value={newToken} className="w-full font-mono text-xs" />
 						</Label>
-						<pre className="whitespace-pre-wrap break-all rounded-md bg-background p-4 text-xs">{`curl ${typeof window === 'undefined' ? '' : window.location.origin}/api/v1/todos \\\n  -H 'Authorization: Bearer ${newToken}'`}</pre>
-						<Button onClick={() => setNewToken('')}>Done, hide key</Button>
+						<pre className="whitespace-pre-wrap break-all rounded-md bg-default p-4 text-xs">{`curl ${typeof window === 'undefined' ? '' : window.location.origin}/api/v1/todos \\\n  -H 'Authorization: Bearer ${newToken}'`}</pre>
+						<Button onClick={() => setNewToken('')}>Hide key</Button>
 					</div>
 				)}
 				{(mutation.error || keys.error) && (
-					<Alert variant="destructive">
-						<AlertDescription>{(mutation.error ?? keys.error)?.message}</AlertDescription>
-					</Alert>
+					<Alert type="negative">{(mutation.error ?? keys.error)?.message}</Alert>
 				)}
 				<ul>
 					{keys.data?.keys.map((key) => (
@@ -113,7 +92,7 @@ export function ApiKeys() {
 						</li>
 					))}
 				</ul>
-			</CardContent>
+			</Stack>
 		</Card>
 	)
 }

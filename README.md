@@ -1,6 +1,6 @@
 # pnpm-cloudflare-tanstack-template
 
-A small starter for new ideas: a waitlist marketing site, Google sign-in, a protected TanStack Start dashboard, and a Cloudflare Worker REST API backed by D1 and R2. Users get private todos, files, revocable API keys, and an optional custom Stripe test checkout. Shared shadcn/ui components cover forms, loading/empty states, success, 404, and error pages. The waitlist needs no email delivery service.
+A small starter for new ideas: a waitlist marketing site, Google sign-in, a protected TanStack Start dashboard, and a Cloudflare Worker REST API backed by D1 and R2. Users get private todos, files, revocable API keys, and an optional custom Stripe test checkout. Shared Composables and shadcn/ui components cover forms, loading/empty states, success, 404, and error pages. The waitlist needs no email delivery service.
 
 ## Start locally
 
@@ -37,7 +37,7 @@ The waitlist works immediately. Dashboard sign-in requires your Google OAuth cli
 
 ### Stripe test checkout
 
-The signed-in dashboard has `/checkout` with a custom [Stripe Payment Element](https://docs.stripe.com/payments/quickstart?client=react) inside the app's shadcn layout. It uses Checkout Sessions (`ui_mode: elements`) for a **one-time test purchase**. `/checkout/success?session_id=...` checks the session on the server; visiting that URL alone never marks an order paid. It handles pending, incomplete, expired, missing, and confirmed orders.
+The signed-in dashboard has `/checkout` with a custom [Stripe Payment Element](https://docs.stripe.com/payments/quickstart?client=react) inside the app's shared UI. It uses Checkout Sessions (`ui_mode: elements`) for a **one-time test purchase**. `/checkout/success?session_id=...` checks the session on the server; visiting that URL alone never marks an order paid. It handles pending, incomplete, expired, missing, and confirmed orders.
 
 1. In a dedicated Stripe sandbox, copy its **test** secret and publishable keys into the ignored `apps/api/.dev.vars`:
 
@@ -73,9 +73,15 @@ It archives the demo price/product, removes its webhook, and clears matching loc
 
 ### Shared frontend and reusable hooks
 
-Both apps use Tailwind CSS v4 and source-owned [shadcn/ui](https://ui.shadcn.com/docs/installation/tanstack) components in `packages/shared/src/components/ui`. Buttons, cards, inputs, labels, checkboxes, badges, alerts, separators and skeletons share one theme in `packages/shared/src/styles.css`. `components.json` is configured for both apps and the shared package; add components with `pnpm dlx shadcn@latest add COMPONENT -c apps/dashboard`. The MIT attribution is retained in `packages/shared/LICENSE.shadcn`.
+Both apps use [`@leitware/composables`](https://www.npmjs.com/package/@leitware/composables), pinned to 1.3.2, with Tailwind CSS v4. Cards, inputs, labels, checkboxes, badges, alerts, separators, skeletons, stacks and typography come from the package's public entrypoint. The shared [shadcn/ui](https://ui.shadcn.com/docs/installation/tanstack) button remains source-owned for `asChild` link composition. Its styles use the same Composables semantic tokens and focus treatment. The MIT attribution is retained in `packages/shared/LICENSE.shadcn`.
 
-Import primitives from `@workspace/shared` or `@workspace/shared/components/ui/button`. Compose larger pieces with `AppShell`, `MarketingShell`, and `PageState`. Reusable React hooks separate state from UI: `useHydrated`, `useWorkspace`, `useSignOut`, `useWaitlist`, `useCheckoutSession`, and `useOrderStatus`. Stripe's secure iframe is themed through its Appearance API.
+Import UI from `@workspace/shared`; it re-exports the selected Composables components and the local button. Prefer public Composables components when extending the starter. Its `Card` owns its header and body: use `title`, `description`, `action`, and `footer` props, with `Stack` for body layout. Do not wrap children in another `CardContent`. The package includes a consumer guide at `node_modules/@leitware/composables/skills/use-composables/SKILL.md` relative to `packages/shared`.
+
+`packages/shared/src/styles.css` imports the Tailwind adapter and compiled Composables stylesheet once, followed by product theme overrides. Keep colours at this theme boundary and use the package's public semantic utilities in components. Light and dark token overrides are colocated; the starter opens in light mode. Preset fonts are optional and use system fallbacks here. Stripe's Appearance API reads the same theme. The existing `components.json` files support adding a source-owned shadcn component when needed; align any generated styles with this theme.
+
+Keep UI copy brief: labels identify fields, actions describe outcomes, and supporting text adds information needed to make a decision. Preserve consent, permissions, limits, one-time key warnings, and payment status. Put setup instructions and explanations of the backend in this README.
+
+Compose pages with `AppShell`, `MarketingShell`, and `PageState`. Reusable React hooks separate state from UI: `useHydrated`, `useWorkspace`, `useSignOut`, `useWaitlist`, `useCheckoutSession`, and `useOrderStatus`.
 
 - Marketing `/waitlist/success` follows a successful database save, without exposing an email in the URL.
 - Both apps return a custom **HTTP 404** for unknown paths.
@@ -88,7 +94,7 @@ Import primitives from `@workspace/shared` or `@workspace/shared/components/ui/b
 apps/api/           Worker REST API, auth, rate limiting, D1 migrations, R2 binding
 apps/dashboard/     Protected workspace, private todos/files, API key management
 apps/marketing/     Waitlist, privacy example, SEO metadata, sitemap and robots
-packages/shared/    shadcn primitives, theme, page states, hydration hook, project metadata
+packages/shared/    Composables exports, shadcn button, theme, page states and shared hooks
 scripts/            Setup/deploy commands and isolated local/cloud tests
 ```
 

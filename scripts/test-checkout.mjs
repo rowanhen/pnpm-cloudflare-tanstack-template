@@ -50,7 +50,7 @@ export async function testCheckout(worker) {
 	assert.equal(config.status, 200, await config.clone().text())
 	assert.deepEqual((await config.json()).offer, {
 		name: 'Starter pass',
-		description: 'A little beginning for your next big idea.',
+		description: null,
 		amount: 1200,
 		currency: 'gbp',
 	})

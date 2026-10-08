@@ -18,19 +18,24 @@ function cookie() {
 	}
 }
 
-test('custom 404s return 404 and recovery pages render with shared UI', async ({ page }) => {
-	for (const base of [marketingUrl, dashboardUrl]) {
+// Each dev app has its own HMR lifecycle. Use a fresh page per origin so a
+// first-load dependency reload cannot interrupt navigation to the other app.
+for (const [app, base] of [
+	['marketing', marketingUrl],
+	['dashboard', dashboardUrl],
+]) {
+	test(`${app} custom 404 returns 404 and recovery page renders`, async ({ page }) => {
 		const response = await page.goto(`${base}/this-page-does-not-exist`)
 		expect(response?.status()).toBe(404)
-		await expect(page.getByRole('heading', { name: 'A little off the map.' })).toBeVisible()
+		await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
 		await expect(page.getByRole('link', { name: 'Back to home' })).toBeVisible()
 		await expect(page.locator('[data-slot="card"]')).toBeVisible()
 		await page.goto(`${base}/error`)
-		await expect(page.getByRole('heading', { name: "Let's try that again." })).toBeVisible()
+		await expect(page.getByRole('heading', { name: "Couldn't load this page" })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
 		expect(await page.locator('body').innerText()).not.toContain('stack trace')
-	}
-})
+	})
+}
 
 test('checkout is protected and handles unavailable payment configuration', async ({
 	page,
@@ -43,7 +48,7 @@ test('checkout is protected and handles unavailable payment configuration', asyn
 		route.fulfill({ status: 503, json: { error: 'Unconfigured' } }),
 	)
 	await page.goto('/checkout')
-	await expect(page.getByText("Test checkout isn't available yet.")).toBeVisible()
+	await expect(page.getByText('Checkout is unavailable.')).toBeVisible()
 	await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
 	await expect(page.getByRole('button', { name: 'Continue to payment' })).toHaveCount(0)
 })
@@ -58,7 +63,20 @@ test('checkout confirms only a backend-verified order and isolates accounts', as
 	await page.goto('/checkout')
 	await expect(page.getByRole('heading', { name: 'Starter pass' })).toBeVisible()
 	await expect(page.getByRole('button', { name: 'Continue to payment' })).toBeEnabled()
-	await page.screenshot({ path: 'test-results/checkout-desktop.png', fullPage: true })
+	await page.screenshot({
+		path: 'test-results/checkout-desktop.png',
+		fullPage: true,
+		animations: 'disabled',
+	})
+	await page.setViewportSize({ width: 390, height: 844 })
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+		true,
+	)
+	await page.screenshot({
+		path: 'test-results/checkout-mobile.png',
+		fullPage: true,
+		animations: 'disabled',
+	})
 	const result = await request.post(`${apiUrl}/api/checkout/sessions`, {
 		headers,
 		data: { requestId: randomUUID() },
@@ -73,10 +91,14 @@ test('checkout confirms only a backend-verified order and isolates accounts', as
 	})
 	await page.getByRole('button', { name: 'Check payment status' }).click()
 	await expect(page.getByRole('heading', { name: 'Payment successful.' })).toBeVisible()
-	await expect(page.getByText(/Your test payment of £12.00 is confirmed/)).toBeVisible()
+	await expect(page.getByText(/Test payment of £12.00 confirmed/)).toBeVisible()
 	await page.reload()
 	await expect(page.getByRole('heading', { name: 'Payment successful.' })).toBeVisible()
-	await page.screenshot({ path: 'test-results/checkout-success.png', fullPage: true })
+	await page.screenshot({
+		path: 'test-results/checkout-success.png',
+		fullPage: true,
+		animations: 'disabled',
+	})
 	const alice = process.env.E2E_COOKIE_ALICE ?? ''
 	const other = await request.get(`${apiUrl}/api/checkout/sessions/${sessionId}`, {
 		headers: { Cookie: alice },
@@ -99,7 +121,11 @@ test('marketing and status pages fit a phone viewport', async ({ page }) => {
 	}
 	await page.goto(marketingUrl)
 	await expect(page.getByRole('button', { name: 'Join the waitlist' })).toBeEnabled()
-	await page.screenshot({ path: 'test-results/marketing-mobile.png', fullPage: true })
+	await page.screenshot({
+		path: 'test-results/marketing-mobile.png',
+		fullPage: true,
+		animations: 'disabled',
+	})
 })
 
 test('a real server failure uses the custom error boundary and can recover', async ({
@@ -110,12 +136,12 @@ test('a real server failure uses the custom error boundary and can recover', asy
 	await context.setExtraHTTPHeaders({ 'x-test-session-failure': 'true' })
 	const failed = await page.goto('/login')
 	expect(failed?.status()).toBe(500)
-	await expect(page.getByRole('heading', { name: "Let's try that again." })).toBeVisible()
+	await expect(page.getByRole('heading', { name: "Couldn't load this page" })).toBeVisible()
 	await expect(page.locator('[data-slot="card"]')).toBeVisible()
 	await expect(page.getByText('Test upstream unavailable')).toHaveCount(0)
 	await context.setExtraHTTPHeaders({})
 	await page.getByRole('button', { name: 'Try again' }).click()
-	await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
+	await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
 })
 
 test('custom checkout creates a session and recovers from unavailable Stripe.js', async ({

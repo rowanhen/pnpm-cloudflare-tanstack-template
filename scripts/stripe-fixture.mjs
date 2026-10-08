@@ -43,7 +43,7 @@ export async function stripeFixture() {
 					object: 'product',
 					active: true,
 					name: 'Starter pass',
-					description: 'A little beginning for your next big idea.',
+					description: null,
 				},
 			})
 		if (url.pathname === '/v1/checkout/sessions' && request.method === 'POST') {
