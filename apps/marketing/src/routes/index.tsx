@@ -8,28 +8,13 @@ import { QuickStart } from '../components/quick-start'
 
 export const Route = createFileRoute('/')({ head: () => seo(), component: MarketingHomePage })
 const features = [
-	[
-		'01',
-		'Sign in. Stay private.',
-		'Google auth, sessions and a protected dashboard.',
-		'Better Auth',
-	],
-	[
-		'02',
-		'Your data, typed.',
-		'D1 tables, Drizzle migrations and shared API types.',
-		'D1 + Drizzle',
-	],
-	['03', 'Files, sorted.', 'Private uploads, downloads and deletion.', 'R2'],
-	[
-		'04',
-		'Charge for what gets used.',
-		'Custom checkout, credits and metered API requests.',
-		'Stripe',
-	],
-	['05', 'An API of your own.', 'Scoped keys, revocation and rate limits.', 'REST'],
-	['06', 'Keep people in the loop.', 'Waitlist confirmations and transactional email.', 'Email'],
-	['07', 'See what happens.', 'Analytics, masked replay and API monitoring.', 'PostHog'],
+	['01', 'Google sign-in', 'Google auth, sessions and a protected dashboard.', 'Better Auth'],
+	['02', 'Database', 'D1 tables, Drizzle migrations and shared API types.', 'D1 + Drizzle'],
+	['03', 'File storage', 'Private uploads, downloads and deletion.', 'R2'],
+	['04', 'Payments and credits', 'Custom checkout, credits and metered API requests.', 'Stripe'],
+	['05', 'API keys', 'Scoped keys, revocation and rate limits.', 'REST'],
+	['06', 'Email', 'Waitlist confirmations and transactional email.', 'Email'],
+	['07', 'Analytics and errors', 'Analytics, masked replay and API monitoring.', 'PostHog'],
 ]
 function MarketingHomePage() {
 	const structuredData = {
@@ -49,9 +34,9 @@ function MarketingHomePage() {
 						variant="hero-300"
 						className="max-w-xl text-5xl leading-[1.06] tracking-tight sm:text-6xl"
 					>
-						Your next idea.
+						Cloudflare
 						<br />
-						<span className="text-brand">Already started.</span>
+						<span className="text-brand">Starter</span>
 					</Typography>
 					<p className="max-w-md text-lg leading-7 text-content-secondary">
 						Auth, data, files, payments and email. One TypeScript repo, running on Cloudflare.
@@ -79,9 +64,12 @@ function MarketingHomePage() {
 			<section aria-labelledby="included-title" className="border-y py-12">
 				<div className="mb-8 flex flex-wrap items-end justify-between gap-3">
 					<h2 id="included-title" className="text-2xl font-semibold tracking-tight">
-						The foundations, in place.
+						Included
 					</h2>
-					<a href={`${repository}#what-is-included`} className="text-sm text-link hover:underline">
+					<a
+						href={`${repository}/blob/main/docs/reference.md`}
+						className="text-sm text-link hover:underline"
+					>
 						Read the docs ↗
 					</a>
 				</div>
@@ -106,13 +94,14 @@ function MarketingHomePage() {
 				<div className="space-y-7">
 					<div className="space-y-3">
 						<h2 id="examples-title" className="text-3xl font-semibold tracking-tight">
-							Take it for a spin.
+							Examples
 						</h2>
-						<p className="text-content-secondary">Real examples. Ready to make your own.</p>
+						<p className="text-content-secondary">Try the dashboard or submit the waitlist form.</p>
 					</div>
 					<LayerCard title="Explore the demo">
 						<nav aria-label="Examples" className="divide-y">
 							{[
+								['Sign in', '', `${site.dashboard}/login`],
 								['Dashboard', 'Todos, files, keys and email', site.dashboard],
 								['Test checkout', 'Payments and API credits', `${site.dashboard}/checkout`],
 								['Waitlist success', '', '/waitlist/success'],
@@ -136,10 +125,10 @@ function MarketingHomePage() {
 						</nav>
 					</LayerCard>
 					<p className="text-xs leading-5 text-content-secondary">
-						Google, Stripe and email need provider setup.{' '}
+						Google, Stripe, email and PostHog need provider setup.{' '}
 						<a
 							className="text-link underline underline-offset-4"
-							href={`${repository}/blob/main/docs/agent-setup.md`}
+							href={`${repository}/blob/main/docs/getting-started.md`}
 						>
 							Setup guide ↗
 						</a>
@@ -149,14 +138,14 @@ function MarketingHomePage() {
 			</section>
 			<section className="mb-8 flex flex-wrap items-center justify-between gap-6 rounded-xl border bg-muted p-6 sm:p-8">
 				<div className="space-y-2">
-					<h2 className="text-lg font-semibold">Check it. Ship it. Start again.</h2>
+					<h2 className="text-lg font-semibold">Run the tests</h2>
 					<p className="text-sm text-content-secondary">
 						<code>pnpm validate</code> runs the API and browser tests. Add <code>--cloud</code> to
 						test disposable cloud resources.
 					</p>
 				</div>
 				<Button asChild variant="outline">
-					<a href={`${repository}/blob/main/docs/agent-setup.md`}>Setup &amp; deployment ↗</a>
+					<a href={`${repository}/blob/main/docs/getting-started.md`}>Setup &amp; deployment ↗</a>
 				</Button>
 			</section>
 			<script

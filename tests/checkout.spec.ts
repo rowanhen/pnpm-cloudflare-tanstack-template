@@ -53,6 +53,58 @@ test('checkout is protected and handles unavailable payment configuration', asyn
 	await expect(page.getByRole('button', { name: 'Continue to payment' })).toHaveCount(0)
 })
 
+test('Google cancellation and sign-in preserve a protected order return path', async ({
+	page,
+	context,
+}) => {
+	const sessionId = 'cs_test_returnAudit'
+	await page.goto(`/checkout/success?session_id=${sessionId}`)
+	await expect(page).toHaveURL(
+		new RegExp(`/login\\?next=checkout-success&session_id=${sessionId}$`),
+	)
+	await page.route('https://accounts.google.com/**', (route) =>
+		route.fulfill({ status: 200, body: 'Google OAuth handoff' }),
+	)
+	const start = page.waitForRequest('**/api/auth/sign-in/social')
+	await page.getByRole('button', { name: 'Continue with Google' }).click()
+	const body = (await start).postDataJSON()
+	expect(body.callbackURL).toBe(`${dashboardUrl}/checkout/success?session_id=${sessionId}`)
+	expect(body.errorCallbackURL).toBe(
+		`${dashboardUrl}/login?next=checkout-success&session_id=${sessionId}`,
+	)
+	await expect(page).toHaveURL(/^https:\/\/accounts.google.com\//)
+	const state = new URL(page.url()).searchParams.get('state')
+	expect(state).toBeTruthy()
+	await page.goto(
+		`${dashboardUrl}/api/auth/callback/google?error=access_denied&state=${encodeURIComponent(state!)}`,
+	)
+	await expect(page.getByRole('alert')).toContainText('Sign-in was cancelled.')
+	expect(new URL(page.url()).searchParams.get('session_id')).toBe(sessionId)
+	await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeEnabled()
+	// Seeded session tests the return redirect, not Google's real token exchange.
+	await context.addCookies([cookie()])
+	await page.goto(`/login?next=checkout-success&session_id=${sessionId}`)
+	await expect(page).toHaveURL(new RegExp(`/checkout/success\\?session_id=${sessionId}$`))
+	await expect(page.getByRole('heading', { name: "We couldn't find that order." })).toBeVisible()
+})
+
+test('an expired checkout session returns to the same order and rejects external destinations', async ({
+	page,
+	context,
+}) => {
+	await context.addCookies([cookie()])
+	await page.route('**/api/checkout/sessions/cs_test_expiredAudit', async (route) => {
+		await context.clearCookies()
+		await route.fulfill({ status: 401, json: { error: 'Unauthorized' } })
+	})
+	await page.goto('/checkout/success?session_id=cs_test_expiredAudit')
+	await expect(page).toHaveURL(/\/login\?next=checkout-success&session_id=cs_test_expiredAudit$/)
+	await context.addCookies([cookie()])
+	await page.goto('/login?next=https%3A%2F%2Fexample.com&session_id=cs_test_expiredAudit')
+	await expect(page).toHaveURL(`${dashboardUrl}/`)
+	await expect(page.getByRole('heading', { name: 'Your workspace' })).toBeVisible()
+})
+
 test('checkout confirms only a backend-verified order and isolates accounts', async ({
 	page,
 	context,

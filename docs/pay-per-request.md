@@ -15,7 +15,7 @@ flowchart LR
 
 ## Try it
 
-1. Follow the README's Google and Stripe setup, then run `pnpm dev`. No additional Cloudflare services or billing daemon are needed.
+1. Follow [Google sign-in](google-sign-in.md) and [Stripe setup](payments.md), then run `pnpm dev`. No additional Cloudflare services or billing daemon are needed.
 2. Sign in, add a few todos, and choose **Add credits**. Complete a test payment. The backend grants 1,000 credits only after verifying the paid session with Stripe. Refreshing the success page or receiving duplicate webhooks never grants another pack.
 3. Create a key with **Summary · 1 credit** access. Copy it once.
 4. Call the endpoint. Keep the same request ID when retrying this logical request:
@@ -88,7 +88,7 @@ The checkout stays in **Stripe test mode**. Before taking real payments, impleme
 
 Your customer's one-credit request price is independent of your Cloudflare bill. [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) covers request/CPU usage and plan minimums; [D1](https://developers.cloudflare.com/d1/platform/pricing/) and [R2](https://developers.cloudflare.com/r2/pricing/) meter database/storage operations and storage. Auth, rate-limit writes, retries, and rejected API requests still use infrastructure. This is usage-based infrastructure without a dedicated server; it does not promise zero idle cost or one Cloudflare operation per paid request.
 
-The example uses the existing Worker, D1, R2 and Pages deployment from the README. `pnpm setup-project my-project` sets project names; follow **Deploy** to provision those bindings. No separate metering service, cron job, or additional paid resource is required. Review those providers' current prices when choosing your own credit price.
+The example uses the existing Worker, D1, R2 and Pages deployment from the [getting-started guide](getting-started.md). `pnpm setup-project my-project` sets project names; run `pnpm cloud:up my-demo` to provision those bindings. No separate metering service, cron job, or additional paid resource is required. Review those providers' current prices when choosing your own credit price.
 
 Cloudflare also offers an x402-based [Monetization Gateway](https://developers.cloudflare.com/monetization-gateway/). Its [current eligibility](https://developers.cloudflare.com/monetization-gateway/eligibility/) requires both buyers and sellers to be US-based. This starter's `402` response reports an empty prepaid account; it is **not an x402 payment challenge**. A wallet/protocol integration would be a separate example.
 
@@ -103,4 +103,4 @@ pnpm test:remote    # requires Cloudflare credentials; creates and deletes tempo
 
 Metering tests exercise scope isolation, input conflicts, cross-user results, concurrent duplicate IDs across keys, the last-credit race, zero-balance replay, retained history, revocation, and a forced debit failure with full rollback. Stripe tests race webhook delivery with status polling and check that unpaid/forged/mismatched events never grant credits. Browser tests create a paid key, call through the app proxy, refresh the balance, and revoke it.
 
-The cloud run uses a real deployed Worker and D1 for the paid endpoint; seed credits and a test-only SQL trigger live only in its disposable database. It deletes and verifies absence of the Worker, D1, R2, and both Pages projects. Stripe fixture tests create no Stripe resources and do not complete a real card payment. Follow the README's sandbox payment check for that final provider integration, then use `pnpm stripe:cleanup` for any sandbox resources you created.
+The cloud run uses a real deployed Worker and D1 for the paid endpoint; seed credits and a test-only SQL trigger live only in its disposable database. It deletes and verifies absence of the Worker, D1, R2, and both Pages projects. Stripe fixture tests create no Stripe resources and do not complete a real card payment. Follow the [sandbox payment check](payments.md) for that final provider integration, then use `pnpm stripe:cleanup` for any sandbox resources you created.

@@ -2,6 +2,8 @@
 
 Both frontends share `@workspace/observability/browser`. The API uses its separate `server` entry, so browser bundles never include the Node SDK or management credentials. Everything is optional: without a project token and host, there are no PostHog requests or consent controls.
 
+For a first setup, start with [Getting started](getting-started.md). For proof of live events, errors and playable replay, use the [verification checklist](verification.md#posthog-events-errors-and-replay).
+
 ## Connect a project
 
 Use a dedicated project for each application. An agent with the connected PostHog app can create the project and configure replay. Alternatively, the CLI can provision a project and reporting dashboard using an existing personal API key:
@@ -48,7 +50,7 @@ Browser API failures carry the same `request_id` as the Worker's response and op
 
 Unexpected errors retain their type and stack locations; messages, causes and source-code context are removed. This intentionally limits debugging of data-dependent failures. Source maps are not uploaded by this starter; stack locations refer to deployed bundles. Browser SSR failures are recorded when the rendered error boundary hydrates and analytics is allowed; requests that never hydrate remain in Cloudflare logs.
 
-Cloudflare Workers observability is enabled, with structured request logs using the same request ID. PostHog receives operational events, not a copy of arbitrary console output. SDK clients are scoped to each Worker invocation and flushed in `ctx.waitUntil`; a three-second request timeout and no retries bound telemetry failures. They do not delay the HTTP response. Adjust sampling/retention for your traffic volume.
+Cloudflare Workers observability is enabled, with structured request logs using the same request ID. PostHog receives operational events, not a copy of arbitrary console output. SDK clients are scoped to each Worker invocation and flushed in `ctx.waitUntil`; a three-second request timeout and no retries bound telemetry failures. They do not delay the HTTP response. Provider failure bodies and network error causes are removed before SDK diagnostic logging. Adjust sampling/retention for your traffic volume.
 
 ```sh
 pnpm setup:doctor

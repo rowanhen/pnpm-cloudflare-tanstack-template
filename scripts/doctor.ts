@@ -97,6 +97,8 @@ if (process.argv.includes('--json'))
 				providerSignInVerified: false,
 				cardPaymentVerified: false,
 				emailDeliveryVerified: false,
+				posthogIngestionVerified: false,
+				posthogReplayVerified: false,
 			},
 			null,
 			2,

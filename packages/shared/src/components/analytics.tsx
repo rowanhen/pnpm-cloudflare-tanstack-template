@@ -58,9 +58,9 @@ export function Analytics({ config, pathname }: { config: BrowserConfig; pathnam
 				</div>
 			) : (
 				<Button
-					className="fixed bottom-3 left-3 z-40 shadow-sm"
+					className="mx-5 mb-6 sm:mx-8"
 					size="sm"
-					variant="outline"
+					variant="link"
 					onClick={() => setOpen(true)}
 				>
 					Analytics preferences

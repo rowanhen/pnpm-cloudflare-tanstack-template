@@ -26,7 +26,9 @@ await writeFile(readmePath, readme.replace(/^# .+$/m, `# ${projectName}`))
 const projectConfig = await readFile(projectConfigPath, 'utf8')
 await writeFile(
 	projectConfigPath,
-	projectConfig.replace(/PROJECT_NAME = '.*'/, `PROJECT_NAME = '${projectName}'`),
+	projectConfig
+		.replace(/PROJECT_NAME = '.*'/, `PROJECT_NAME = '${projectName}'`)
+		.replace(/APP_NAME = '.*'/, `APP_NAME = '${projectName}'`),
 )
 
 const workerPath = new URL('../apps/api/wrangler.json', import.meta.url)

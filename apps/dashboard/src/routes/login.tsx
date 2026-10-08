@@ -1,24 +1,31 @@
 import { client } from '../lib/api'
 import { useEffect, useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { AppShell, Button, Card, Stack, Alert } from '@workspace/shared'
+import { AppShell, Button, Card, Stack, Alert, appTitle } from '@workspace/shared'
+import { observedFetch } from '@workspace/observability/browser'
 import { getSession } from '../lib/session'
+import { loginSearch, loginReturnPath, signInPath } from '../lib/login'
 
 export const Route = createFileRoute('/login')({
-	validateSearch: (search: Record<string, unknown>): { next?: 'checkout' } => ({
-		next: search.next === 'checkout' ? 'checkout' : undefined,
-	}),
+	validateSearch: loginSearch,
 	beforeLoad: async ({ search }) => {
-		if (await getSession()) throw redirect({ to: search.next === 'checkout' ? '/checkout' : '/' })
+		if (await getSession()) throw redirect({ href: loginReturnPath(search) })
 	},
+	head: () => ({ meta: [{ title: appTitle('Sign in') }] }),
 	component: LoginPage,
 })
 function LoginPage() {
-	const { next } = Route.useSearch()
+	const search = Route.useSearch()
 	const [ready, setReady] = useState(false)
 	const [googleEnabled, setGoogleEnabled] = useState(false)
 	const [error, setError] = useState('')
 	const [busy, setBusy] = useState(false)
+	const callbackError =
+		search.error === 'cancelled'
+			? 'Sign-in was cancelled. Try again when you’re ready.'
+			: search.error
+				? 'Google sign-in could not be completed. Please try again.'
+				: ''
 	useEffect(() => {
 		client
 			.get('config')
@@ -32,13 +39,17 @@ function LoginPage() {
 		setBusy(true)
 		setError('')
 		try {
-			const response = await fetch('/api/auth/sign-in/social', {
+			const returnPath = loginReturnPath(search)
+			const destination = new URL(returnPath, window.location.origin)
+			const response = await observedFetch('/api/auth/sign-in/social', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					provider: 'google',
-					callbackURL: window.location.origin + (next === 'checkout' ? '/checkout' : '/'),
-					errorCallbackURL: window.location.origin + '/login',
+					callbackURL: destination.href,
+					errorCallbackURL:
+						window.location.origin +
+						signInPath(destination.pathname, Object.fromEntries(destination.searchParams)),
 				}),
 			})
 			const data = (await response.json()) as { url?: string; message?: string }
@@ -58,7 +69,9 @@ function LoginPage() {
 						{busy ? 'Redirecting…' : 'Continue with Google'}
 					</Button>
 					{ready && !googleEnabled && <p>Google sign-in is unavailable.</p>}
-					{error && <Alert type="negative">{error}</Alert>}
+					{(error || (!busy && callbackError)) && (
+						<Alert type="negative">{error || callbackError}</Alert>
+					)}
 				</Stack>
 			</Card>
 		</AppShell>

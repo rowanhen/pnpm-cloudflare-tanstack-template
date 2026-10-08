@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
-import { ArrowUpRight, Layers3 } from 'lucide-react'
+import { Layers3 } from 'lucide-react'
 import { Typography } from '@leitware/composables'
-import { Button } from './components/ui/button'
+import { APP_NAME } from './project'
 
-export { PROJECT_NAME, appMetaDescription, appTitle } from './project'
+export { APP_NAME, PROJECT_NAME, appMetaDescription, appTitle } from './project'
 export { Button, buttonVariants } from './components/ui/button'
 export {
 	LayerCard,
@@ -41,17 +41,13 @@ export function AppShell({
 				<div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
 					<a href="/" className="flex items-center gap-2 font-semibold tracking-tight">
 						<Layers3 className="size-5 text-icon-brand" aria-hidden="true" />
-						Idea Starter
+						{APP_NAME}
 					</a>
-					<nav aria-label="Workspace navigation" className="flex items-center gap-2">
-						<Button asChild variant="ghost" size="sm">
-							<a href="/checkout">
-								Test checkout
-								<ArrowUpRight aria-hidden="true" />
-							</a>
-						</Button>
-						{actions}
-					</nav>
+					{actions && (
+						<nav aria-label="Workspace navigation" className="flex items-center gap-2">
+							{actions}
+						</nav>
+					)}
 				</div>
 			</header>
 			<main className="mx-auto max-w-6xl space-y-8 px-5 py-10 sm:px-8 sm:py-14">
