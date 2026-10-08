@@ -1,3 +1,4 @@
+import { resetUser } from '@workspace/observability/browser'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useHydrated } from '@workspace/shared'
 import { api, client as apiClient } from '../lib/api'
@@ -38,6 +39,7 @@ export function useSignOut() {
 				headers: { 'Content-Type': 'application/json' },
 				body: '{}',
 			})
+			resetUser()
 			client.clear()
 			window.location.assign('/login')
 		},

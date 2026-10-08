@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { reportError } from '@workspace/observability/browser'
 import type { ReactNode } from 'react'
 import { AlertCircle, Check, Compass, LoaderCircle } from 'lucide-react'
 import { Card, Stack, Typography } from '@leitware/composables'
@@ -58,7 +60,10 @@ export function NotFoundPage() {
 	)
 }
 
-export function ErrorPage({ retry }: { retry?: () => void }) {
+export function ErrorPage({ retry, error }: { retry?: () => void; error?: unknown }) {
+	useEffect(() => {
+		if (error) reportError(error, 'route')
+	}, [error])
 	return (
 		<PageState kind="error" title="Couldn't load this page">
 			<Button onClick={retry ?? (() => window.location.reload())}>Try again</Button>

@@ -1,4 +1,5 @@
-export interface Env {
+import type { ServerConfig } from '@workspace/observability/server'
+export interface Env extends ServerConfig {
 	API_PROXY_SECRET?: string
 	EMAIL?: SendEmail
 	EMAIL_FROM?: string

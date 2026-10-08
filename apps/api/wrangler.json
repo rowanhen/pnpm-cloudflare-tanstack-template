@@ -27,5 +27,8 @@
 		{
 			"name": "EMAIL"
 		}
-	]
+	],
+	"observability": {
+		"enabled": true
+	}
 }

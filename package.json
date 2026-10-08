@@ -40,14 +40,16 @@
 		"cloud:check": "tsx scripts/cloud.ts check",
 		"cloud:down": "tsx scripts/cloud.ts down",
 		"test:cloud-setup": "tsx scripts/test-cloud-setup.ts",
-		"test:setup": "node --import tsx --experimental-sqlite --test scripts/setup.test.ts scripts/migrations.test.ts scripts/site-domain.test.ts",
+		"test:setup": "node --import tsx --experimental-sqlite --test scripts/setup.test.ts scripts/migrations.test.ts scripts/site-domain.test.ts scripts/observability.test.ts",
 		"db:generate": "pnpm --filter @workspace/data db:generate",
 		"db:check": "pnpm --filter @workspace/data db:check && tsx scripts/check-schema.ts",
 		"email:setup": "tsx scripts/email-domain.ts setup",
 		"email:check": "tsx scripts/email-domain.ts check",
 		"typecheck:tools": "tsx scripts/check-typescript.ts && tsc -p tsconfig.tools.json && tsc -p scripts/workers/tsconfig.json",
 		"cloud:domain": "tsx scripts/cloud.ts domain",
-		"generate:social": "tsx scripts/generate-social-image.ts"
+		"generate:social": "tsx scripts/generate-social-image.ts",
+		"posthog:setup": "tsx scripts/posthog.ts setup",
+		"posthog:report": "tsx scripts/posthog.ts report"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.64.0",

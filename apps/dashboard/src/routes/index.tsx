@@ -1,3 +1,4 @@
+import { useAnalyticsIdentity } from '@workspace/shared/components/analytics'
 import { Email } from '../components/email'
 import { useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
@@ -29,6 +30,7 @@ export const Route = createFileRoute('/')({
 })
 function DashboardHomePage() {
 	const { user } = Route.useRouteContext()
+	useAnalyticsIdentity(user.id)
 	const [title, setTitle] = useState('')
 	const [file, setFile] = useState<File | null>(null)
 	const { todos, files, mutation, busy, error } = useWorkspace(user.id)

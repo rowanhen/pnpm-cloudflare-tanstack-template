@@ -1,0 +1,20 @@
+{
+	"name": "@workspace/observability",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./browser": "./src/browser.ts",
+		"./server": "./src/server.ts",
+		"./privacy": "./src/privacy.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"posthog-js": "1.438.2",
+		"posthog-node": "5.55.0"
+	},
+	"devDependencies": {
+		"typescript": "^7.0.2"
+	}
+}

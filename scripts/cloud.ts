@@ -1,3 +1,4 @@
+import { posthogEnv, posthogBuildEnv } from './posthog-env.ts'
 import { attachDomain, publicSite, removeDomainDns } from './site-domain.ts'
 import { z } from 'zod'
 import {
@@ -26,6 +27,7 @@ if (
 		'Usage: pnpm cloud:up|cloud:check|cloud:down|cloud:domain NAME (lowercase, max 25 characters)',
 	)
 const env = await setupEnv()
+const telemetry = posthogEnv({ APP_ENV: 'production', ...env })
 const account = z
 	.string()
 	.regex(/^[a-f0-9]{32}$/)
@@ -239,6 +241,9 @@ async function up(existing: SandboxManifest | null) {
 		main: resolve(root, 'apps/api/src/index.ts'),
 	})
 	config.vars = {
+		POSTHOG_KEY: telemetry.key,
+		POSTHOG_HOST: telemetry.host,
+		APP_ENV: telemetry.environment,
 		AUTH_URL: state.dashboard,
 		ALLOWED_ORIGINS: [...new Set([state.marketing, publicSite(state), state.dashboard])].join(','),
 		...(env.EMAIL_FROM ? { EMAIL_FROM: env.EMAIL_FROM } : {}),
@@ -289,6 +294,12 @@ async function up(existing: SandboxManifest | null) {
 	await deploy(config, await secretValues())
 	for (const app of ['dashboard', 'marketing'] as const) {
 		run(['--filter', app, 'build'], {
+			...posthogBuildEnv({
+				...env,
+				POSTHOG_KEY: telemetry.key,
+				POSTHOG_HOST: telemetry.host,
+				APP_ENV: telemetry.environment,
+			}),
 			VITE_API_URL: state.api,
 			VITE_DASHBOARD_URL: state.dashboard,
 			VITE_SITE_URL: publicSite(state),

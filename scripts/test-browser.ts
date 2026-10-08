@@ -15,7 +15,16 @@ try {
 				E2E_COOKIE_BOB: worker.fixture.cookies[1],
 			}
 		: process.env
-	const child = spawn('pnpm', ['exec', 'playwright', 'test'], { stdio: 'inherit', env })
+	const child = spawn(
+		'pnpm',
+		[
+			'exec',
+			'playwright',
+			'test',
+			...process.argv.slice(2).filter((arg) => arg !== '--dev' && arg !== '--'),
+		],
+		{ stdio: 'inherit', env },
+	)
 	for (const signal of ['SIGINT', 'SIGTERM'] as const)
 		process.once(signal, () => child.kill(signal))
 	const code = await new Promise<number>((resolve, reject) => {

@@ -44,7 +44,7 @@ test('doctor reports missing provider credentials without claiming live validati
 		} = JSON.parse(result.output)
 		assert.equal(output.providerSignInVerified, false)
 		assert.equal(output.cardPaymentVerified, false)
-		assert.equal(output.checks.filter((entry) => entry.status === 'missing').length, 4)
+		assert.equal(output.checks.filter((entry) => entry.status === 'missing').length, 5)
 	} finally {
 		await rm(directory, { recursive: true, force: true })
 	}
@@ -205,6 +205,51 @@ for (const mode of ['new', 'existing', 'wrong-zone', 'denied']) {
 				const data = JSON.parse(result.output)
 				assert.equal(data.enabled, true)
 				assert.equal(data.inboxDeliveryVerified, false)
+			}
+		} finally {
+			await rm(directory, { recursive: true, force: true })
+		}
+	})
+}
+
+for (const badScope of [false, true]) {
+	test(`PostHog agent setup is scoped and repeatable: ${badScope ? 'wrong project' : 'setup and report'}`, async () => {
+		const directory = await mkdtemp(join(tmpdir(), 'starter-posthog-'))
+		const statePath = join(directory, 'state.json')
+		const file = join(directory, 'config.env')
+		await writeFile(
+			statePath,
+			JSON.stringify({ projects: [], dashboards: [], insights: [], writes: 0 }),
+		)
+		const env: NodeJS.ProcessEnv = {
+			PATH: process.env.PATH,
+			STARTER_ENV_FILE: file,
+			TEST_POSTHOG_STATE: statePath,
+			POSTHOG_PERSONAL_API_KEY: 'phx_fixture_private',
+			POSTHOG_MANAGEMENT_HOST: 'https://eu.posthog.com',
+			POSTHOG_ORGANIZATION_ID: 'd2187fbd-d74f-45ab-bf16-9bb9e8c2bf46',
+			...(badScope ? { TEST_POSTHOG_BAD_SCOPE: 'true', POSTHOG_PROJECT_ID: '123' } : {}),
+		}
+		const args = ['--import', './scripts/fixtures/posthog-transport.ts', 'scripts/posthog.ts']
+		try {
+			const first = await child([...args, 'setup'], env)
+			assert.equal(first.code, badScope ? 1 : 0, first.output)
+			if (badScope) {
+				assert.match(first.output, /scope mismatch/)
+				assert.equal(JSON.parse(await readFile(statePath, 'utf8')).writes, 0)
+			} else {
+				const second = await child([...args, 'setup'], env)
+				assert.equal(second.code, 0, second.output)
+				const state = JSON.parse(await readFile(statePath, 'utf8'))
+				assert.equal(state.projects.length, 1)
+				assert.equal(state.dashboards.length, 1)
+				assert.equal(state.insights.length, 3)
+				const config = await readFile(file, 'utf8')
+				assert.match(config, /POSTHOG_KEY="phc_fixture"/)
+				assert.doesNotMatch(config, /phx_fixture_private/)
+				const report = await child([...args, 'report'], env)
+				assert.equal(report.code, 0, report.output)
+				assert.equal(JSON.parse(report.output).reports.length, 3)
 			}
 		} finally {
 			await rm(directory, { recursive: true, force: true })

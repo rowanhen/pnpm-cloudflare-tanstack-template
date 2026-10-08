@@ -10,6 +10,13 @@ export default defineConfig({
 	use: {
 		baseURL: process.env.E2E_DASHBOARD_URL ?? 'http://localhost:3001',
 		browserName: 'chromium',
+		storageState: {
+			cookies: [],
+			origins: ['http://localhost:3000', 'http://localhost:3001'].map((origin) => ({
+				origin,
+				localStorage: [{ name: 'starter.analytics-consent.v1', value: 'declined' }],
+			})),
+		},
 	},
 	webServer: process.env.E2E_DASHBOARD_URL
 		? []
@@ -22,6 +29,9 @@ export default defineConfig({
 					stdout: 'pipe',
 					env: {
 						VITE_API_URL: remoteApi ?? 'http://localhost:8787',
+						VITE_POSTHOG_KEY: 'phc_browser_fixture',
+						VITE_POSTHOG_HOST: 'https://eu.i.posthog.com',
+						VITE_APP_ENV: 'test',
 						E2E_PROXY_SECRET: process.env.E2E_PROXY_SECRET ?? '',
 					},
 					reuseExistingServer: false,
@@ -33,6 +43,9 @@ export default defineConfig({
 					url: 'http://localhost:3000',
 					env: {
 						VITE_API_URL: remoteApi ?? 'http://localhost:8787',
+						VITE_POSTHOG_KEY: 'phc_browser_fixture',
+						VITE_POSTHOG_HOST: 'https://eu.i.posthog.com',
+						VITE_APP_ENV: 'test',
 						VITE_SITE_URL: 'https://starter.example',
 						VITE_NOINDEX: 'false',
 						E2E_PROXY_SECRET: process.env.E2E_PROXY_SECRET ?? '',
