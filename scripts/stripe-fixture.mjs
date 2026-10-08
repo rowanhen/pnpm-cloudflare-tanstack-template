@@ -42,7 +42,7 @@ export async function stripeFixture() {
 					id: 'prod_fixture',
 					object: 'product',
 					active: true,
-					name: 'Starter pass',
+					name: 'API credits',
 					description: null,
 				},
 			})

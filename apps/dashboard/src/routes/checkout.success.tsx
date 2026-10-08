@@ -30,7 +30,7 @@ function CheckoutSuccess() {
 			<PageState
 				kind="success"
 				title="Payment successful."
-				description={`Test payment of ${money(order.amount, order.currency)} confirmed.`}
+				description={`${order.credits.toLocaleString('en-GB')} credits added · ${money(order.amount, order.currency)} test payment.`}
 			>
 				<p className="w-full break-all font-mono text-xs text-content-secondary">
 					Order {order.id}

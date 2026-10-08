@@ -5,6 +5,8 @@ import { HttpError, json, readBody, readJson, textField, sha256, methodNotAllowe
 import { rateLimit } from './rate-limit'
 import { apiKeyUser, keysRoute } from './keys'
 import { checkoutEnabled, checkoutRoute, stripeWebhook } from './checkout'
+import { billingStatus } from './billing'
+import { summaryRoute } from './summary'
 
 type TodoRow = { id: string; title: string; completed: number; created_at: string; user_id: string }
 const todo = ({ user_id: _owner, ...row }: TodoRow) => ({ ...row, completed: row.completed === 1 })
@@ -43,6 +45,7 @@ async function route(request: Request, env: Env): Promise<Response> {
 			.run()
 		return json({ message: "You're on the list. Thanks for your interest!" }, 202)
 	}
+	if (path === '/api/v1/summary') return summaryRoute(request, env)
 	if (path === '/api/v1/todos') {
 		if (method !== 'GET') return methodNotAllowed('GET')
 		const { userId, headers } = await apiKeyUser(request, env)
@@ -59,6 +62,8 @@ async function route(request: Request, env: Env): Promise<Response> {
 	const session = await createAuth(env).api.getSession({ headers: request.headers })
 	if (!session) throw new HttpError(401, 'Sign in to continue')
 	const userId = session.user.id
+	if (path === '/api/billing')
+		return method === 'GET' ? billingStatus(env.DB, userId) : methodNotAllowed('GET')
 	if (path === '/api/me' && method === 'GET') return json({ user: session.user })
 	// Cookie-authenticated mutations must originate from an explicitly trusted browser origin.
 	if (!['GET', 'HEAD'].includes(method)) {
@@ -233,10 +238,13 @@ export default {
 				'Access-Control-Allow-Methods',
 				'GET, HEAD, POST, PATCH, PUT, DELETE, OPTIONS',
 			)
-			response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+			response.headers.set(
+				'Access-Control-Allow-Headers',
+				'Content-Type, Authorization, Idempotency-Key',
+			)
 			response.headers.set(
 				'Access-Control-Expose-Headers',
-				'ETag, Content-Disposition, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After',
+				'ETag, Content-Disposition, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After, X-Request-Id, X-Credits-Charged, X-Credits-Balance, X-Credits-Required, Idempotency-Replayed',
 			)
 		}
 		return response

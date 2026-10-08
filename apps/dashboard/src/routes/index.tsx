@@ -15,6 +15,7 @@ import {
 import { getSession } from '../lib/session'
 import { api } from '../lib/api'
 import { ApiKeys } from '../lib/api-keys'
+import { Billing } from '../components/billing'
 import { useSignOut, useWorkspace } from '../hooks/use-workspace'
 
 export const Route = createFileRoute('/')({
@@ -224,6 +225,7 @@ function DashboardHomePage() {
 					</Stack>
 				</Card>
 			</div>
+			<Billing />
 			<ApiKeys />
 		</AppShell>
 	)

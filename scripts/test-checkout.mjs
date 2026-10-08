@@ -49,13 +49,17 @@ export async function testCheckout(worker) {
 	const config = await call('/api/checkout/config')
 	assert.equal(config.status, 200, await config.clone().text())
 	assert.deepEqual((await config.json()).offer, {
-		name: 'Starter pass',
+		name: 'API credits',
+		credits: 1000,
+		priceId: 'price_fixture',
 		description: null,
 		amount: 1200,
 		currency: 'gbp',
 	})
 	assert.equal((await create({ requestId: randomUUID(), amount: 1 })).status, 400)
 	assert.equal((await create({ requestId: 'bad' })).status, 400)
+	const balance = async () => (await (await call('/api/billing')).json()).balance
+	assert.equal(await balance(), 0)
 	const requestId = randomUUID()
 	const concurrent = await Promise.all([create({ requestId }), create({ requestId })])
 	for (const result of concurrent) assert.equal(result.status, 201, await result.clone().text())
@@ -83,16 +87,21 @@ export async function testCheckout(worker) {
 		amount_total: 1,
 	})
 	assert.equal((await webhook(first.sessionId)).status, 400)
+	assert.equal(await balance(), 0)
 	await patchProvider(first.sessionId, { amount_total: 1200 })
 	const eventId = `evt_${randomUUID()}`
 	const delivered = await Promise.all([
 		webhook(first.sessionId, eventId),
 		webhook(first.sessionId, eventId),
+		call(sessionPath),
+		call(sessionPath),
 	])
 	for (const result of delivered) assert.equal(result.status, 200, await result.clone().text())
 	const paid = (await (await call(sessionPath)).json()).order
 	assert.equal(paid.status, 'paid')
 	assert.equal(paid.amount, 1200)
+	assert.equal(paid.credits, 1000)
+	assert.equal(await balance(), 1000)
 	// Reordered events cannot undo a fulfilled order.
 	await patchProvider(first.sessionId, { status: 'open', payment_status: 'unpaid' })
 	assert.equal((await webhook(first.sessionId)).status, 200)
@@ -103,11 +112,14 @@ export async function testCheckout(worker) {
 		(await (await call(`/api/checkout/sessions/${expired.sessionId}`)).json()).order.status,
 		'expired',
 	)
+	assert.equal(await balance(), 1000)
+	const activity = (await (await call('/api/billing')).json()).activity
+	assert.equal(activity.filter((entry) => entry.type === 'topup').length, 1)
 	const limits = await Promise.all(
 		Array.from({ length: 12 }, () => create({ requestId: randomUUID() })),
 	)
 	assert.ok(limits.some((response) => response.status === 429))
 	console.log(
-		'PASS checkout: server-selected price, auth/CSRF, idempotent creation, ownership, signed/replayed/forged webhooks, amount checks, verified fulfilment, expiry, rate limit (Stripe API fixture)',
+		'PASS checkout: server-selected price, auth/CSRF, idempotent creation, ownership, signed/replayed/forged webhooks, amount checks, exactly-once credit grant across concurrent hooks/polls, expiry, rate limit (Stripe API fixture)',
 	)
 }

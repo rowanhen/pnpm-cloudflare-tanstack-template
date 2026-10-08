@@ -1,4 +1,14 @@
-import { Button, Card, Stack, Label, Input, Alert, useHydrated } from '@workspace/shared'
+import {
+	Button,
+	Card,
+	Stack,
+	Label,
+	Input,
+	Alert,
+	NativeSelect,
+	Badge,
+	useHydrated,
+} from '@workspace/shared'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
@@ -7,6 +17,7 @@ type Key = {
 	id: string
 	name: string
 	prefix: string
+	scope: string
 	created_at: string
 	last_used_at: string | null
 }
@@ -14,6 +25,9 @@ export function ApiKeys() {
 	const hydrated = useHydrated()
 	const [name, setName] = useState('')
 	const [newToken, setNewToken] = useState('')
+	const [scope, setScope] = useState('todos:read')
+	const [newScope, setNewScope] = useState('todos:read')
+	const [exampleId, setExampleId] = useState('')
 	const client = useQueryClient()
 	const keys = useQuery({
 		queryKey: ['keys'],
@@ -24,10 +38,7 @@ export function ApiKeys() {
 		onSuccess: () => client.invalidateQueries({ queryKey: ['keys'] }),
 	})
 	return (
-		<Card
-			title={<h2>API keys</h2>}
-			description="Read-only access to your todos · 30 requests/minute."
-		>
+		<Card title={<h2>API keys</h2>} description="30 requests/minute per key.">
 			<Stack gap={5}>
 				<form
 					className="flex flex-wrap items-end gap-3"
@@ -38,10 +49,12 @@ export function ApiKeys() {
 								await api('/api/keys', {
 									method: 'POST',
 									headers: { 'Content-Type': 'application/json' },
-									body: JSON.stringify({ name }),
+									body: JSON.stringify({ name, scope }),
 								})
 							).json()
 							setNewToken(result.key.token)
+							setNewScope(result.key.scope)
+							setExampleId(crypto.randomUUID())
 							setName('')
 						})
 					}}
@@ -56,6 +69,20 @@ export function ApiKeys() {
 							onChange={(event) => setName(event.target.value)}
 						/>
 					</Label>{' '}
+					<div className="grid gap-2">
+						<Label htmlFor="key-scope">Access</Label>
+						<NativeSelect
+							id="key-scope"
+							size="sm"
+							disabled={!hydrated || mutation.isPending}
+							value={scope}
+							onValueChange={setScope}
+							options={[
+								{ value: 'todos:read', label: 'Todos · free' },
+								{ value: 'summary:read', label: 'Summary · 1 credit' },
+							]}
+						/>
+					</div>
 					<Button disabled={!hydrated || mutation.isPending} type="submit">
 						Create API key
 					</Button>
@@ -66,7 +93,19 @@ export function ApiKeys() {
 						<Label className="grid gap-2">
 							New API key <Input readOnly value={newToken} className="w-full font-mono text-xs" />
 						</Label>
-						<pre className="whitespace-pre-wrap break-all rounded-md bg-default p-4 text-xs">{`curl ${typeof window === 'undefined' ? '' : window.location.origin}/api/v1/todos \\\n  -H 'Authorization: Bearer ${newToken}'`}</pre>
+						<pre className="whitespace-pre-wrap break-all rounded-md bg-default p-4 text-xs">
+							{[
+								`curl ${typeof window === 'undefined' ? '' : window.location.origin}/api/v1/${newScope === 'summary:read' ? 'summary' : 'todos'}`,
+								`  -H 'Authorization: Bearer ${newToken}'`,
+								...(newScope === 'summary:read'
+									? [
+											`  -H 'Idempotency-Key: ${exampleId}'`,
+											"  -H 'Content-Type: application/json'",
+											"  -d '{}'",
+										]
+									: []),
+							].join(' \\\n')}
+						</pre>
 						<Button onClick={() => setNewToken('')}>Hide key</Button>
 					</div>
 				)}
@@ -76,7 +115,10 @@ export function ApiKeys() {
 				<ul>
 					{keys.data?.keys.map((key) => (
 						<li key={key.id} className="flex flex-wrap items-center gap-3 border-t py-3 text-sm">
-							{key.name} — <code>{key.prefix}…</code>{' '}
+							{key.name} — <code>{key.prefix}…</code>
+							<Badge variant="outline">
+								{key.scope === 'summary:read' ? 'Summary · paid' : 'Todos · free'}
+							</Badge>{' '}
 							<Button
 								disabled={!hydrated || mutation.isPending}
 								aria-label={`Delete API key ${key.name}`}

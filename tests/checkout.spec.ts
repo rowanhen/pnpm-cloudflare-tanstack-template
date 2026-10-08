@@ -61,7 +61,7 @@ test('checkout confirms only a backend-verified order and isolates accounts', as
 	test.skip(!provider, 'Stripe contract fixture is local; live Stripe has a separate manual test')
 	await context.addCookies([cookie()])
 	await page.goto('/checkout')
-	await expect(page.getByRole('heading', { name: 'Starter pass' })).toBeVisible()
+	await expect(page.getByRole('heading', { name: 'API credits' })).toBeVisible()
 	await expect(page.getByRole('button', { name: 'Continue to payment' })).toBeEnabled()
 	await page.screenshot({
 		path: 'test-results/checkout-desktop.png',
@@ -77,6 +77,8 @@ test('checkout confirms only a backend-verified order and isolates accounts', as
 		fullPage: true,
 		animations: 'disabled',
 	})
+	const balanceBefore = (await (await request.get(`${apiUrl}/api/billing`, { headers })).json())
+		.balance
 	const result = await request.post(`${apiUrl}/api/checkout/sessions`, {
 		headers,
 		data: { requestId: randomUUID() },
@@ -91,7 +93,7 @@ test('checkout confirms only a backend-verified order and isolates accounts', as
 	})
 	await page.getByRole('button', { name: 'Check payment status' }).click()
 	await expect(page.getByRole('heading', { name: 'Payment successful.' })).toBeVisible()
-	await expect(page.getByText(/Test payment of £12.00 confirmed/)).toBeVisible()
+	await expect(page.getByText(/1,000 credits added/)).toBeVisible()
 	await page.reload()
 	await expect(page.getByRole('heading', { name: 'Payment successful.' })).toBeVisible()
 	await page.screenshot({
@@ -99,6 +101,10 @@ test('checkout confirms only a backend-verified order and isolates accounts', as
 		fullPage: true,
 		animations: 'disabled',
 	})
+	await page.getByRole('link', { name: 'Back to workspace', exact: true }).click()
+	await expect(page.getByTestId('credit-balance')).toHaveText(
+		`${(balanceBefore + 1000).toLocaleString('en-GB')} credits`,
+	)
 	const alice = process.env.E2E_COOKIE_ALICE ?? ''
 	const other = await request.get(`${apiUrl}/api/checkout/sessions/${sessionId}`, {
 		headers: { Cookie: alice },

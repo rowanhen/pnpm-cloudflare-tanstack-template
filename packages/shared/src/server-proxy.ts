@@ -35,6 +35,9 @@ export async function proxyApi(request: Request, base: string) {
 		method: request.method,
 		headers: await backendHeaders(request, base),
 		body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+		// Auth is forwarded explicitly in headers. Disable Node's automatic 401
+		// credential retry, which cannot replay this streamed body (undici #4940).
+		credentials: 'omit',
 		redirect: 'manual',
 		signal: AbortSignal.timeout(15000),
 	}

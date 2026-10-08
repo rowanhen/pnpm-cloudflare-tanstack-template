@@ -2,6 +2,7 @@ import Stripe from 'stripe'
 import type { Env } from './env'
 import { HttpError, json, methodNotAllowed, readBody, readJson } from './http'
 import { rateLimit } from './rate-limit'
+import { CREDIT_PACK } from './billing'
 
 type Order = {
 	id: string
@@ -9,6 +10,8 @@ type Order = {
 	stripe_session_id: string | null
 	amount: number
 	currency: string
+	credits: number
+	price_id: string | null
 	status: string
 }
 
@@ -45,6 +48,8 @@ async function offer(env: Env, stripe: Stripe) {
 		throw new HttpError(503, 'Configure an active test product')
 	return {
 		name: product.name,
+		credits: CREDIT_PACK,
+		priceId: price.id,
 		description: product.description,
 		amount: price.unit_amount,
 		currency: price.currency,
@@ -75,15 +80,28 @@ async function reconcile(env: Env, session: Stripe.Checkout.Session, eventId?: s
 	const update = env.DB.prepare(
 		"UPDATE orders SET stripe_session_id = ?, status = CASE WHEN status = 'paid' THEN 'paid' ELSE ? END, updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?",
 	).bind(session.id, status, order.id)
-	if (eventId) {
-		// D1 batches commit atomically. Duplicate delivery cannot double-fulfil an order.
-		await env.DB.batch([
-			update,
+	const grantId = crypto.randomUUID()
+	// The paid state, immutable grant and balance commit together. A fresh grant ID
+	// prevents both duplicate webhooks and concurrent status polling from minting twice.
+	const statements = [
+		update,
+		env.DB.prepare('INSERT INTO credit_accounts(user_id) VALUES (?) ON CONFLICT DO NOTHING').bind(
+			order.user_id,
+		),
+		env.DB.prepare(`INSERT INTO credit_grants(id, user_id, order_id, credits)
+			SELECT ?, user_id, id, credits FROM orders WHERE id = ? AND status = 'paid' AND credits > 0
+			ON CONFLICT(order_id) DO NOTHING`).bind(grantId, order.id),
+		env.DB.prepare(`UPDATE credit_accounts SET balance = balance +
+			(SELECT credits FROM credit_grants WHERE id = ?) WHERE user_id = ?
+			AND EXISTS (SELECT 1 FROM credit_grants WHERE id = ?)`).bind(grantId, order.user_id, grantId),
+	]
+	if (eventId)
+		statements.push(
 			env.DB.prepare('INSERT INTO stripe_events(id) VALUES (?) ON CONFLICT(id) DO NOTHING').bind(
 				eventId,
 			),
-		])
-	} else await update.run()
+		)
+	await env.DB.batch(statements)
 }
 
 export async function stripeWebhook(request: Request, env: Env) {
@@ -148,9 +166,17 @@ export async function checkoutRoute(
 		await rateLimit(env.DB, `checkout:${user.id}`, 10, 60)
 		const product = await offer(env, stripe)
 		await env.DB.prepare(
-			'INSERT INTO orders(id, user_id, request_id, amount, currency) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id, request_id) DO NOTHING',
+			'INSERT INTO orders(id, user_id, request_id, amount, currency, credits, price_id) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(user_id, request_id) DO NOTHING',
 		)
-			.bind(crypto.randomUUID(), user.id, body.requestId, product.amount, product.currency)
+			.bind(
+				crypto.randomUUID(),
+				user.id,
+				body.requestId,
+				product.amount,
+				product.currency,
+				product.credits,
+				product.priceId,
+			)
 			.run()
 		const order = await env.DB.prepare('SELECT * FROM orders WHERE user_id = ? AND request_id = ?')
 			.bind(user.id, body.requestId)
@@ -164,7 +190,7 @@ export async function checkoutRoute(
 						mode: 'payment',
 						allowed_payment_method_types: ['card'],
 						adaptive_pricing: { enabled: false },
-						line_items: [{ price: env.STRIPE_PRICE_ID ?? '', quantity: 1 }],
+						line_items: [{ price: order.price_id ?? env.STRIPE_PRICE_ID ?? '', quantity: 1 }],
 						customer_email: user.email,
 						client_reference_id: user.id,
 						metadata: { order_id: order.id },
@@ -191,7 +217,7 @@ export async function checkoutRoute(
 		const session = await stripe.checkout.sessions.retrieve(match[1])
 		await reconcile(env, session)
 		const saved = await env.DB.prepare(
-			'SELECT id, amount, currency, status FROM orders WHERE id = ?',
+			'SELECT id, amount, currency, credits, status FROM orders WHERE id = ?',
 		)
 			.bind(order.id)
 			.first()

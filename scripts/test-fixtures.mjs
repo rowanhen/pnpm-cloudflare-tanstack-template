@@ -28,5 +28,11 @@ export function fixtures(secret, secure = false) {
 	cookies.push(
 		`${cookieName}=${encodeURIComponent(`${expiredToken}.${createHmac('sha256', secret).update(expiredToken).digest('base64')}`)}`,
 	)
+	sql += `
+INSERT INTO credit_accounts(user_id, balance) VALUES ('e2e-alice', 3), ('e2e-bob', 3);
+ CREATE TRIGGER e2e_fail_debit BEFORE UPDATE OF balance ON credit_accounts
+ WHEN NEW.user_id = 'e2e-alice' AND EXISTS (
+   SELECT 1 FROM paid_requests WHERE user_id = 'e2e-alice' AND idempotency_key = '00000000-0000-4000-8000-000000000bad'
+ ) BEGIN SELECT RAISE(ABORT, 'Injected debit failure'); END;`
 	return { users, cookies, sql }
 }

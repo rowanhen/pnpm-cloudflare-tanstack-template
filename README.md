@@ -1,6 +1,6 @@
 # pnpm-cloudflare-tanstack-template
 
-A small starter for new ideas: a waitlist marketing site, Google sign-in, a protected TanStack Start dashboard, and a Cloudflare Worker REST API backed by D1 and R2. Users get private todos, files, revocable API keys, and an optional custom Stripe test checkout. Shared Composables and shadcn/ui components cover forms, loading/empty states, success, 404, and error pages. The waitlist needs no email delivery service.
+A small starter for new ideas: a waitlist marketing site, Google sign-in, a protected TanStack Start dashboard, and a Cloudflare Worker REST API backed by D1 and R2. Users get private todos, files, revocable API keys, and prepaid API credits through an optional custom Stripe test checkout. A paid summary endpoint connects those examples into a reusable pay-per-request flow. Shared Composables and shadcn/ui components cover forms, loading/empty states, success, 404, and error pages. The waitlist needs no email delivery service.
 
 ## Start locally
 
@@ -37,7 +37,7 @@ The waitlist works immediately. Dashboard sign-in requires your Google OAuth cli
 
 ### Stripe test checkout
 
-The signed-in dashboard has `/checkout` with a custom [Stripe Payment Element](https://docs.stripe.com/payments/quickstart?client=react) inside the app's shared UI. It uses Checkout Sessions (`ui_mode: elements`) for a **one-time test purchase**. `/checkout/success?session_id=...` checks the session on the server; visiting that URL alone never marks an order paid. It handles pending, incomplete, expired, missing, and confirmed orders.
+The signed-in dashboard has `/checkout` with a custom [Stripe Payment Element](https://docs.stripe.com/payments/quickstart?client=react) inside the app's shared UI. It uses Checkout Sessions (`ui_mode: elements`) for a **one-time test credit purchase**. `/checkout/success?session_id=...` checks the session on the server; visiting that URL alone never marks an order paid. It handles pending, incomplete, expired, missing, and confirmed orders.
 
 1. In a dedicated Stripe sandbox, copy its **test** secret and publishable keys into the ignored `apps/api/.dev.vars`:
 
@@ -46,7 +46,7 @@ The signed-in dashboard has `/checkout` with a custom [Stripe Payment Element](h
    STRIPE_PUBLISHABLE_KEY=pk_test_...
    ```
 
-2. Run `pnpm stripe:setup`. It creates a test **Starter pass** product and £12 one-time price, writes `STRIPE_PRICE_ID` locally, and saves an ignored resource manifest. It refuses to overwrite an existing price. The UI reads the product/price from Stripe, so you can replace `STRIPE_PRICE_ID` with your own active one-time test price.
+2. Run `pnpm stripe:setup`. It creates a test **API credits** product and £12 one-time price, writes `STRIPE_PRICE_ID` locally, and saves an ignored resource manifest. It refuses to overwrite an existing price. The UI reads the product/price from Stripe, so you can replace `STRIPE_PRICE_ID` with your own active one-time test price.
 3. Authenticate the [Stripe CLI](https://docs.stripe.com/stripe-cli) with `stripe login`, then run:
 
    ```bash
@@ -55,13 +55,13 @@ The signed-in dashboard has `/checkout` with a custom [Stripe Payment Element](h
 
    Save the listener's signing secret as `STRIPE_WEBHOOK_SECRET=whsec_...` in `.dev.vars`. Restart `pnpm dev`. The listener must use the same sandbox as the keys.
 
-4. Sign in with Google, open `/checkout`, choose **Continue to payment**, and use Stripe's [test cards](https://docs.stripe.com/testing): `4242 4242 4242 4242`, a future expiry, and any three-digit CVC. Also test a decline (`4000 0000 0000 0002`) and authentication (`4000 0025 0000 3155`). Only enter test details. Confirm the success page, refresh it, and check that the `orders` row remains paid.
+4. Sign in with Google, open `/checkout`, choose **Continue to payment**, and use Stripe's [test cards](https://docs.stripe.com/testing): `4242 4242 4242 4242`, a future expiry, and any three-digit CVC. Also test a decline (`4000 0000 0000 0002`) and authentication (`4000 0025 0000 3155`). Only enter test details. Confirm that the success page adds 1,000 credits, refresh it, and check that the balance does not increase again.
 
-No test keys are bundled with the template. It deliberately rejects live keys/events, restricts payment methods to cards, and disables adaptive pricing so the displayed and recorded currency match. Card details go directly to Stripe, never through the Worker or D1. The example records the purchase; it does not add a paid subscription or unlock features.
+No test keys are bundled with the template. It deliberately rejects live keys/events, restricts payment methods to cards, and disables adaptive pricing so the displayed and recorded currency match. Card details go directly to Stripe, never through the Worker or D1. Each verified purchase adds 1,000 API credits. The pack size is defined on the server in `apps/api/src/billing.ts`; new orders snapshot it before contacting Stripe.
 
 **Cloud deployment:** configure `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET` on the API Worker with `wrangler secret put`. For a new sandbox setup, `pnpm stripe:setup https://YOUR-API.workers.dev/api/stripe/webhook` also creates a signing endpoint and saves its secret locally. If reusing an existing price, add that webhook in Stripe's dashboard. Subscribe to `checkout.session.completed`, `checkout.session.expired`, `checkout.session.async_payment_succeeded`, and `checkout.session.async_payment_failed`, using API version `2026-09-30.endive`. Local listener and cloud endpoint signing secrets are different. The payment return URL derives from the Worker's `AUTH_URL`, which must be the canonical dashboard origin.
 
-Checkout creation requires a signed-in cookie and trusted Origin, accepts only a UUID `requestId`, and always selects the price on the server. Repeated requests reuse the same order/session. Orders belong to one user, including on the status endpoint. Verified webhooks retrieve canonical Stripe state, validate owner/amount/currency, and record fulfilment in an atomic D1 batch. Repeated or reordered events cannot downgrade a paid order. If you add fulfilment side effects, use a transactional outbox keyed by order ID rather than executing them repeatedly in a webhook. Creation is limited to ten requests per minute per user; status checks to sixty.
+Checkout creation requires a signed-in cookie and trusted Origin, accepts only a UUID `requestId`, and always selects the price on the server. Repeated requests reuse the same order/session. Orders belong to one user, including on the status endpoint. Verified webhooks retrieve canonical Stripe state, validate owner/amount/currency, and record the paid order, unique credit grant, and balance increase in an atomic D1 batch. Repeated or reordered events cannot downgrade a paid order or grant credits twice, including when status polling races a webhook. If you add fulfilment side effects, use a transactional outbox keyed by order ID rather than executing them repeatedly in a webhook. Creation is limited to ten requests per minute per user; status checks to sixty.
 
 To clean up resources created by the setup helper:
 
@@ -71,9 +71,15 @@ pnpm stripe:cleanup .wrangler/stripe-demo-RUN-ID.json
 
 It archives the demo price/product, removes its webhook, and clears matching local bindings. It leaves unrelated resources untouched. Stripe retains individual test payment/session history; use a dedicated sandbox and remove that sandbox when finished rather than clearing a shared account's test data. Cleanup is retryable using the retained manifest if interrupted. Normal automated tests below create **no Stripe account resources**.
 
+### Pay per request
+
+The dashboard's **Add credits** checkout funds `POST /api/v1/summary`: a private todo summary costs one credit. Create a key with **Summary · 1 credit** access; free todo keys keep their existing permissions. D1 commits the result and debit together. A required `Idempotency-Key` prevents retry charges; an empty balance returns 402. The dashboard shows the balance, while `/api/billing` provides the latest grants and debits.
+
+See [the pay-per-request guide](docs/pay-per-request.md) for a working curl example, the backend flow, pricing, retry semantics, Cloudflare infrastructure costs, and how to adapt the endpoint for another project.
+
 ### Shared frontend and reusable hooks
 
-Both apps use [`@leitware/composables`](https://www.npmjs.com/package/@leitware/composables), pinned to 1.3.2, with Tailwind CSS v4. Cards, inputs, labels, checkboxes, badges, alerts, separators, skeletons, stacks and typography come from the package's public entrypoint. The shared [shadcn/ui](https://ui.shadcn.com/docs/installation/tanstack) button remains source-owned for `asChild` link composition. Its styles use the same Composables semantic tokens and focus treatment. The MIT attribution is retained in `packages/shared/LICENSE.shadcn`.
+Both apps use [`@leitware/composables`](https://www.npmjs.com/package/@leitware/composables), pinned to 1.3.2, with Tailwind CSS v4. Cards, inputs, labels, native selects, checkboxes, badges, alerts, separators, skeletons, stacks and typography come from the package's public entrypoint. The shared [shadcn/ui](https://ui.shadcn.com/docs/installation/tanstack) button remains source-owned for `asChild` link composition. Its styles use the same Composables semantic tokens and focus treatment. The MIT attribution is retained in `packages/shared/LICENSE.shadcn`.
 
 Import UI from `@workspace/shared`; it re-exports the selected Composables components and the local button. Prefer public Composables components when extending the starter. Its `Card` owns its header and body: use `title`, `description`, `action`, and `footer` props, with `Stack` for body layout. Do not wrap children in another `CardContent`. The package includes a consumer guide at `node_modules/@leitware/composables/skills/use-composables/SKILL.md` relative to `packages/shared`.
 
@@ -81,7 +87,7 @@ Import UI from `@workspace/shared`; it re-exports the selected Composables compo
 
 Keep UI copy brief: labels identify fields, actions describe outcomes, and supporting text adds information needed to make a decision. Preserve consent, permissions, limits, one-time key warnings, and payment status. Put setup instructions and explanations of the backend in this README.
 
-Compose pages with `AppShell`, `MarketingShell`, and `PageState`. Reusable React hooks separate state from UI: `useHydrated`, `useWorkspace`, `useSignOut`, `useWaitlist`, `useCheckoutSession`, and `useOrderStatus`.
+Compose pages with `AppShell`, `MarketingShell`, and `PageState`. Reusable React hooks separate state from UI: `useHydrated`, `useWorkspace`, `useSignOut`, `useWaitlist`, `useCheckoutSession`, `useOrderStatus`, and `useBilling`.
 
 - Marketing `/waitlist/success` follows a successful database save, without exposing an email in the URL.
 - Both apps return a custom **HTTP 404** for unknown paths.
@@ -100,7 +106,7 @@ scripts/            Setup/deploy commands and isolated local/cloud tests
 
 Browsers call their own app's `/api` routes. The apps proxy to the configured Worker, keeping cookies on the dashboard domain and avoiding third-party cookies. In cloud deployments, they sign the original visitor IP with a separate shared `API_PROXY_SECRET`, so requests across Cloudflare zones retain individual rate limits. The Worker rejects forged or expired signatures. This secret grants no access to user data or sessions. Dashboard protection runs on the server before rendering, and the Worker independently authenticates and authorizes every private request. Private responses use `Cache-Control: no-store`.
 
-The database contains users, linked Google accounts, sessions, OAuth verifications, todos, API key hashes, waitlist entries, and rate-limit counters, checkout orders, and processed Stripe event IDs. Todos are filtered by the authenticated user's ID on every operation. R2 stores objects under a user-ID prefix and never exposes a public bucket. SQL uses prepared statements.
+The database contains users, linked Google accounts, sessions, OAuth verifications, todos, API key hashes, waitlist entries, and rate-limit counters, checkout orders, processed Stripe event IDs, credit balances, grants, and paid request receipts. Todos are filtered by the authenticated user's ID on every operation. R2 stores objects under a user-ID prefix and never exposes a public bucket. SQL uses prepared statements.
 
 ### REST API
 
@@ -122,6 +128,8 @@ Use the dashboard for cookie-authenticated operations. Session mutations also re
 | GET / POST           | `/api/keys`                       | List own key metadata / create with `{ "name": "My script" }`          |
 | DELETE               | `/api/keys/:id`                   | Revoke own API key immediately                                         |
 | GET                  | `/api/v1/todos`                   | API key only: read that key owner's private records                    |
+| POST                 | `/api/v1/summary`                 | `summary:read` key + UUID `Idempotency-Key`: 1 credit per new result   |
+| GET                  | `/api/billing`                    | Session: own credit balance, prices, latest ten grants/debits          |
 | GET                  | `/api/checkout/config`            | Session: test publishable key and server-selected offer                |
 | POST                 | `/api/checkout/sessions`          | Session + Origin: create/reuse checkout with `{ "requestId": "UUID" }` |
 | GET                  | `/api/checkout/sessions/:id`      | Session: verify and read only the caller's order                       |
@@ -131,7 +139,7 @@ File limit: 5 MiB (buffered, including streamed uploads). Filenames: 1–200 let
 
 ### API keys and rate limiting
 
-Create a key in the signed-in dashboard and copy it once. Only its SHA-256 hash and display prefix are stored. Each user can have ten keys; keys do not expire automatically and can be deleted in the dashboard. Their only scope is reading their owner's todos through one endpoint:
+Create a key in the signed-in dashboard and copy it once. Only its SHA-256 hash and display prefix are stored. Each user can have ten keys; keys do not expire automatically and can be deleted in the dashboard. Each key has one explicit scope. The default `todos:read` permits free access to its owner's todos:
 
 ```bash
 export IDEA_API_KEY='paste-the-key-shown-once'
@@ -139,9 +147,11 @@ curl http://localhost:3001/api/v1/todos \
   -H "Authorization: Bearer $IDEA_API_KEY"
 ```
 
-API keys cannot create records, access files, manage keys, or read other users' data. The example uses one D1 database with explicit per-user isolation, rather than provisioning a database per user.
+For the paid endpoint, create with `{ "name": "My paid client", "scope": "summary:read" }`, or choose Summary in the dashboard. A Summary key can spend its owner's credits on that endpoint; it cannot call the free todos endpoint. A Todo key cannot spend credits. Both are revocable, single-endpoint permissions.
 
-The API-key endpoint permits 30 requests per fixed minute per key and returns `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`. Excess requests return 429 and `Retry-After`. An atomic D1 upsert shares the counter across concurrent requests and Worker instances. Key creation permits ten attempts per minute per user. Public waitlist signup allows ten requests per hour per IP and three per email, with hashed limiter identifiers, a honeypot, validation, and explicit consent. Auth routes also use Better Auth's database-backed rate limiter. These are deliberately small example limits, configured in `apps/api/src/`.
+API keys cannot create todos, access files, manage keys or billing, or read other users' data. The example uses one D1 database with explicit per-user isolation, rather than provisioning a database per user.
+
+Each API key permits 30 requests per fixed minute per key and returns `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`. Excess requests return 429 and `Retry-After`. An atomic D1 upsert shares the counter across concurrent requests and Worker instances. Key creation permits ten attempts per minute per user. Public waitlist signup allows ten requests per hour per IP and three per email, with hashed limiter identifiers, a honeypot, validation, and explicit consent. Auth routes also use Better Auth's database-backed rate limiter. These are deliberately small example limits, configured in `apps/api/src/`.
 
 ### Waitlist and SEO
 
@@ -225,7 +235,7 @@ pnpm test:dev                      # Vite development apps → Worker → local 
 CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... pnpm test:remote
 ```
 
-Local tests create isolated temporary storage, apply all migrations, and seed two test users and signed sessions directly in that test database. No fixture user or login bypass is deployed by the application. They cover expired/tampered sessions, OAuth initiation/PKCE and callback rejection, server-protected routing, sign-out, private D1/R2 CRUD, cross-user isolation, API-key reveal/revocation/scope, concurrent rate limiting, signed proxy IP isolation, waitlist submission, and rendered SEO. Stripe contract tests run the real SDK and signature verifier against an isolated local HTTP fixture, testing server-selected pricing, idempotency, ownership, forged/replayed webhooks, amount checks, and order reconciliation. The temporary test Worker redirects only Stripe API requests to this fixture and can inject a session-service failure for the error-boundary test; neither capability exists in the deployed Worker. Browser tests cover checkout status/recovery, waitlist success, 404 status codes, actual error-boundary recovery, mobile layouts, and both production app builds in the Pages runtime and Vite development servers, including compressed responses and streamed uploads. Local storage and child processes are cleaned up afterward.
+Local tests create isolated temporary storage, apply all migrations, and seed two test users and signed sessions directly in that test database. No fixture user or login bypass is deployed by the application. They cover expired/tampered sessions, OAuth initiation/PKCE and callback rejection, server-protected routing, sign-out, private D1/R2 CRUD, cross-user isolation, API-key reveal/revocation/scope, concurrent rate limiting, signed proxy IP isolation, waitlist submission, and rendered SEO. Stripe contract tests run the real SDK and signature verifier against an isolated local HTTP fixture, testing server-selected pricing, idempotency, ownership, forged/replayed webhooks, amount checks, order reconciliation, and exactly-once credit grants across concurrent webhooks/status checks. Metering tests cover atomic debit/rollback, concurrent retries across keys, input conflicts, the last-credit race, balance exhaustion, and revoked-key replay. The temporary test Worker redirects only Stripe API requests to this fixture and can inject a session-service failure for the error-boundary test; neither capability exists in the deployed Worker. Browser tests cover checkout status/recovery, waitlist success, 404 status codes, actual error-boundary recovery, mobile layouts, and both production app builds in the Pages runtime and Vite development servers, including compressed responses and streamed uploads. Local storage and child processes are cleaned up afterward.
 
 **Stripe test boundary:** automated tests do not complete a real Stripe Payment Element card payment or 3DS challenge. Follow the manual sandbox checkout above to verify that final integration. Stripe account credentials are not needed by CI. Cloud tests skip the local Stripe fixture cases.
 

@@ -8,6 +8,7 @@ export { Button, buttonVariants } from './components/ui/button'
 export {
 	Card,
 	Input,
+	NativeSelect,
 	Label,
 	Checkbox,
 	Badge,

@@ -5,11 +5,17 @@ import { api } from '../lib/api'
 
 export type CheckoutConfig = {
 	publishableKey: string
-	offer: { name: string; description: string | null; amount: number; currency: string }
+	offer: {
+		name: string
+		description: string | null
+		amount: number
+		currency: string
+		credits: number
+	}
 }
 export type CheckoutSession = { clientSecret: string | null; sessionId: string; status: string }
 export type OrderStatus = {
-	order: { id: string; amount: number; currency: string; status: string }
+	order: { id: string; amount: number; currency: string; credits: number; status: string }
 	checkoutStatus: string
 }
 export function money(amount: number, currency: string) {

@@ -4,6 +4,7 @@ import { randomUUID, randomBytes } from 'node:crypto'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { testApi, waitForApi } from './test-api.mjs'
+import { testMetering } from './test-metering.mjs'
 import { fixtures } from './test-fixtures.mjs'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -206,6 +207,7 @@ if (cleanupPath) {
 		}
 		if (ready < 10) throw new Error('Authenticated API route did not become ready')
 		await testApi(base, fixture.cookies, proxySecret, dashboardUrl)
+		await testMetering(base, fixture.cookies, dashboardUrl)
 		for (const app of ['dashboard', 'marketing']) {
 			const project = `${state.name}-${app}`
 			state.pagesAttempted.push(project)

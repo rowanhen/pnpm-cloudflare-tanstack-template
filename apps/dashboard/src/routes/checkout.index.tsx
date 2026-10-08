@@ -49,7 +49,8 @@ function CheckoutPage() {
 								</Typography>
 								<span className="text-content-secondary">one time</span>
 							</div>
-							<p className="text-xs text-content-secondary">No real charge or paid features.</p>
+							<p>{config.data.offer.credits.toLocaleString('en-GB')} credits</p>
+							<p className="text-xs text-content-secondary">Test payment. No real charge.</p>
 						</Stack>
 					</Card>
 					<Card
