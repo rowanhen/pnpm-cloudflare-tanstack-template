@@ -1,3 +1,15 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+
+allowBuilds:
+  esbuild: true
+  workerd: true
+
+# Track the registry's latest releases, including versions published today.
+minimumReleaseAge: 0
+
+# Patched transitive tools until Drizzle Kit and Miniflare update their ranges.
+overrides:
+  '@esbuild-kit/core-utils>esbuild': ^0.28.2
+  'miniflare>sharp': ^0.35.5

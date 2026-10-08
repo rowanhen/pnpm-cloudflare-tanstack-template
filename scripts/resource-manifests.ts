@@ -12,6 +12,14 @@ const resources = z.object({
 })
 export const sandboxManifest = resources.extend({
 	kind: z.literal('starter-sandbox-v1'),
+	domain: z
+		.object({
+			hostname: z.string(),
+			zoneId: z.string().regex(/^[a-f0-9]{32}$/),
+			dnsRecordId: z.string().optional(),
+			dnsCreated: z.boolean(),
+		})
+		.optional(),
 	api: z.url(),
 	dashboard: z.url(),
 	marketing: z.url(),

@@ -112,3 +112,15 @@ pnpm test:cloud-setup
 Schema changes live in `packages/data/src/schema.ts`; run `pnpm db:generate --name my_change` and review the migration before deployment. `pnpm validate` includes schema drift, upgrade preservation and email tests.
 
 For email, choose the sender domain/address, authorize its Cloudflare zone, and set `EMAIL_FROM` plus `CLOUDFLARE_ZONE_ID`. `pnpm email:setup` uses the domain API; `pnpm email:check` checks that configuration. `cloud:up` enables the sender-restricted binding. Without a sender, the dashboard shows that email is disconnected and waitlist signups still save. [The data/email guide](data-and-email.md) explains permissions, DNS, local simulation, delivery status and cleanup. Real inbox delivery requires a chosen recipient and a separate live test.
+
+## Publish on your domain
+
+After `pnpm cloud:up my-demo`, run:
+
+```bash
+pnpm cloud:domain my-demo devtemplate.example.com
+```
+
+The token also needs zone read and DNS edit access. This attaches the marketing Pages project to a subdomain in the same Cloudflare account, creates its CNAME, saves domain ownership in the ignored manifest, and redeploys with the correct canonical URL and indexing enabled. It refuses to replace DNS for another service. Subsequent `cloud:up` runs retain the public URL; `cloud:check` verifies it. The dashboard URL and Google callback stay the same. `cloud:down` removes DNS created by this command along with the project's resources, but retains a matching DNS record that already existed.
+
+The maintained demo is `showcase` at https://devtemplate.leitware.com. Keep its ignored manifest and secrets to update the same resources without rotating credentials.

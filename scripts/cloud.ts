@@ -1,3 +1,4 @@
+import { attachDomain, publicSite, removeDomainDns } from './site-domain.ts'
 import { z } from 'zod'
 import {
 	cloudflareApi,
@@ -17,8 +18,13 @@ import { parseEnv } from 'node:util'
 import { root, setupEnv } from './setup-env.ts'
 
 const [action, slug] = process.argv.slice(2)
-if (!['up', 'check', 'down'].includes(action) || !/^[a-z][a-z0-9-]{0,24}$/.test(slug ?? ''))
-	throw new Error('Usage: pnpm cloud:up|cloud:check|cloud:down NAME (lowercase, max 25 characters)')
+if (
+	!['up', 'check', 'down', 'domain'].includes(action) ||
+	!/^[a-z][a-z0-9-]{0,24}$/.test(slug ?? '')
+)
+	throw new Error(
+		'Usage: pnpm cloud:up|cloud:check|cloud:down|cloud:domain NAME (lowercase, max 25 characters)',
+	)
 const env = await setupEnv()
 const account = z
 	.string()
@@ -111,7 +117,7 @@ async function waitFor(url: string, expected = 200) {
 async function check(state: SandboxManifest) {
 	await waitFor(`${state.api}/api/health`)
 	await waitFor(`${state.dashboard}/api/health`)
-	await waitFor(state.marketing)
+	await waitFor(publicSite(state))
 	const profile = await fetch(`${state.api}/api/me`)
 	if (profile.status !== 401) throw new Error('Private API did not reject anonymous access')
 	const dashboard = await fetch(state.dashboard, { redirect: 'manual' })
@@ -120,18 +126,19 @@ async function check(state: SandboxManifest) {
 		!dashboard.headers.get('location')?.endsWith('/login')
 	)
 		throw new Error('Dashboard did not redirect anonymous access to login')
-	const missing = await fetch(`${state.marketing}/does-not-exist`)
+	const missing = await fetch(`${publicSite(state)}/does-not-exist`)
 	if (missing.status !== 404) throw new Error('Custom 404 did not return HTTP 404')
-	const home = await (await fetch(state.marketing)).text()
-	if (!/noindex/.test(home)) throw new Error('Sandbox marketing page must be noindexed')
+	const home = await (await fetch(publicSite(state))).text()
+	if (/noindex/.test(home) !== !state.domain)
+		throw new Error('Marketing indexing setting did not match this deployment')
 	const config = await (await fetch(`${state.api}/api/config`)).json()
 	console.log(
 		JSON.stringify(
 			{
-				marketing: state.marketing,
+				marketing: publicSite(state),
 				dashboard: state.dashboard,
 				api: state.api,
-				checks: 'health, app proxy, private API, dashboard protection, 404, noindex passed',
+				checks: 'health, app proxy, private API, dashboard protection, 404, indexing policy passed',
 				googleConfigured: config.googleEnabled,
 				stripeConfigured: config.checkoutEnabled,
 				emailConfigured: config.emailEnabled,
@@ -233,7 +240,7 @@ async function up(existing: SandboxManifest | null) {
 	})
 	config.vars = {
 		AUTH_URL: state.dashboard,
-		ALLOWED_ORIGINS: `${state.marketing},${state.dashboard}`,
+		ALLOWED_ORIGINS: [...new Set([state.marketing, publicSite(state), state.dashboard])].join(','),
 		...(env.EMAIL_FROM ? { EMAIL_FROM: env.EMAIL_FROM } : {}),
 	}
 	config.d1_databases = [
@@ -284,8 +291,8 @@ async function up(existing: SandboxManifest | null) {
 		run(['--filter', app, 'build'], {
 			VITE_API_URL: state.api,
 			VITE_DASHBOARD_URL: state.dashboard,
-			VITE_SITE_URL: state.marketing,
-			VITE_NOINDEX: 'true',
+			VITE_SITE_URL: publicSite(state),
+			VITE_NOINDEX: String(!state.domain),
 		})
 		wrangler([
 			'pages',
@@ -303,6 +310,7 @@ async function up(existing: SandboxManifest | null) {
 async function down(state: SandboxManifest | null) {
 	if (!state) throw new Error('No managed sandbox found; no resources were touched')
 	// Only the resources named in this sandbox's validated manifest are eligible.
+	await removeDomainDns(state, z.string().parse(token))
 	for (const app of ['dashboard', 'marketing'] as const)
 		if (state[`${app}Attempted`])
 			await cf(`/pages/projects/${state.name}-${app}`, 'DELETE', undefined, true)
@@ -391,7 +399,11 @@ try {
 			!new RegExp(`^https://${state.name}\\.[a-z0-9-]+\\.workers\\.dev$`).test(state.api))
 	)
 		throw new Error('Invalid sandbox manifest or account mismatch')
-	if (action === 'up') await up(state)
+	if (action === 'domain') {
+		if (!state) throw new Error('Create the deployment with cloud:up first')
+		await attachDomain(state, process.argv[4] ?? '', token, () => saveJson(manifestPath, state))
+		await up(state)
+	} else if (action === 'up') await up(state)
 	else if (action === 'down') await down(state)
 	else {
 		if (!state) throw new Error('No managed sandbox found')

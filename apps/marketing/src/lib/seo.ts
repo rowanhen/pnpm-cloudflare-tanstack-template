@@ -1,6 +1,8 @@
+export const repository = 'https://github.com/rowanhen/pnpm-cloudflare-tanstack-template'
 export const site = {
-	name: import.meta.env.VITE_SITE_NAME ?? 'Idea Starter',
-	description: 'A private workspace for your next idea. Join the waitlist for early access.',
+	name: import.meta.env.VITE_SITE_NAME ?? 'Cloudflare Starter',
+	description:
+		'A TypeScript starter with Google auth, D1, R2, Stripe, API keys and email. Clone it, configure it, and build your next idea.',
 	url: (import.meta.env.VITE_SITE_URL ?? 'http://localhost:3000').replace(/\/$/, ''),
 	dashboard: import.meta.env.VITE_DASHBOARD_URL ?? 'http://localhost:3001',
 }
@@ -9,7 +11,7 @@ export const indexable =
 	!['localhost', '127.0.0.1'].includes(new URL(site.url).hostname)
 export function seo(
 	path = '/',
-	title = `${site.name} — Join the waitlist`,
+	title = `${site.name} — By Leitware`,
 	description = site.description,
 ) {
 	const url = `${site.url}${path}`
@@ -26,7 +28,7 @@ export function seo(
 			{ property: 'og:image', content: `${site.url}/og.png` },
 			{ property: 'og:image:width', content: '1200' },
 			{ property: 'og:image:height', content: '630' },
-			{ property: 'og:image:alt', content: `${site.name} — From idea to first signup` },
+			{ property: 'og:image:alt', content: `${site.name} — Your next idea. Already started.` },
 			{ name: 'twitter:card', content: 'summary_large_image' },
 			{ name: 'twitter:title', content: title },
 			{ name: 'twitter:description', content: description },

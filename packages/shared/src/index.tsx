@@ -6,6 +6,8 @@ import { Button } from './components/ui/button'
 export { PROJECT_NAME, appMetaDescription, appTitle } from './project'
 export { Button, buttonVariants } from './components/ui/button'
 export {
+	LayerCard,
+	ClipboardText,
 	Card,
 	Input,
 	NativeSelect,
