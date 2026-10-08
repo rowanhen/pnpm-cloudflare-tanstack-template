@@ -1,6 +1,6 @@
 import { randomBytes, createHmac } from 'node:crypto'
 
-export function fixtures(secret, secure = false) {
+export function fixtures(secret: string, secure = false) {
 	const users = ['alice', 'bob'].map((name) => ({
 		id: `e2e-${name}`,
 		name,

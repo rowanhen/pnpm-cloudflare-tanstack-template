@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { localWorker } from './local-worker.mjs'
+import { localWorker } from './local-worker.ts'
 let worker
 try {
 	if (!process.env.E2E_API_URL) worker = await localWorker(8787)
@@ -16,8 +16,9 @@ try {
 			}
 		: process.env
 	const child = spawn('pnpm', ['exec', 'playwright', 'test'], { stdio: 'inherit', env })
-	for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => child.kill(signal))
-	const code = await new Promise((resolve, reject) => {
+	for (const signal of ['SIGINT', 'SIGTERM'] as const)
+		process.once(signal, () => child.kill(signal))
+	const code = await new Promise<number>((resolve, reject) => {
 		child.on('error', reject)
 		child.on('exit', (exitCode) => resolve(exitCode ?? 1))
 	})

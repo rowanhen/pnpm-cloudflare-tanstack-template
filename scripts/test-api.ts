@@ -1,7 +1,9 @@
 import { createHmac } from 'node:crypto'
+import type { ChildProcess } from 'node:child_process'
+import type { TestRequestInit } from './tooling.ts'
 import assert from 'node:assert/strict'
 
-export async function waitForApi(base, child) {
+export async function waitForApi(base: string, child?: Pick<ChildProcess, 'exitCode'>) {
 	for (let attempt = 0; attempt < 90; attempt++) {
 		if (child?.exitCode != null) throw new Error('Worker exited before becoming ready')
 		try {
@@ -14,18 +16,23 @@ export async function waitForApi(base, child) {
 	throw new Error(`API did not become ready: ${base}`)
 }
 
-export async function testApi(base, cookies, proxySecret, authOrigin = 'http://localhost:3001') {
-	const request = (path, init = {}, user = 0) =>
+export async function testApi(
+	base: string,
+	cookies: string[],
+	proxySecret: string,
+	authOrigin = 'http://localhost:3001',
+) {
+	const request = (path: string, init: TestRequestInit = {}, user = 0) =>
 		fetch(`${base}${path}`, {
 			...init,
 			headers: { Cookie: cookies[user], Origin: 'http://localhost:3001', ...init.headers },
 			signal: AbortSignal.timeout(15000),
 		})
-	const body = (value) => ({
+	const body = (value: unknown) => ({
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(value),
 	})
-	const unauth = (path, init = {}) =>
+	const unauth = (path: string, init: TestRequestInit = {}) =>
 		fetch(`${base}${path}`, { ...init, signal: AbortSignal.timeout(15000) })
 	let todoId, keyId
 	const files = ['e2e-file.txt', 'e2e-binary.bin', 'e2e-empty.txt']
@@ -45,7 +52,7 @@ export async function testApi(base, cookies, proxySecret, authOrigin = 'http://l
 			redirect: 'manual',
 		})
 		assert.equal(invalidCallback.status, 302)
-		assert.match(invalidCallback.headers.get('location'), /error=/)
+		assert.match(invalidCallback.headers.get('location') ?? '', /error=/)
 		const oauth = await request('/api/auth/sign-in/social', {
 			method: 'POST',
 			...body({ provider: 'google', callbackURL: 'http://localhost:3001/' }),
@@ -223,7 +230,7 @@ export async function testApi(base, cookies, proxySecret, authOrigin = 'http://l
 			403,
 		)
 		console.log('PASS waitlist: signup, idempotence, consent, validation, no public email listing')
-		const forwarded = (ip, age = 0) => {
+		const forwarded = (ip: string, age = 0) => {
 			const timestamp = String(Math.floor(Date.now() / 1000) - age)
 			return {
 				'x-starter-ip': ip,

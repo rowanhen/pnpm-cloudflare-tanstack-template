@@ -1,20 +1,23 @@
+import type { LocalWorker } from './local-worker.ts'
+import type { TestRequestInit } from './tooling.ts'
+import type { Responses } from '../packages/contracts/src/index.ts'
 import assert from 'node:assert/strict'
 import { createHmac, randomUUID } from 'node:crypto'
 
-export async function testCheckout(worker) {
+export async function testCheckout(worker: LocalWorker) {
 	const headers = {
 		Cookie: worker.fixture.cookies[0],
 		Origin: 'http://localhost:3001',
 		'Content-Type': 'application/json',
 	}
-	const call = (path, init = {}) =>
+	const call = (path: string, init: TestRequestInit = {}) =>
 		fetch(worker.base + path, { ...init, headers: { ...headers, ...init.headers } })
-	const create = (value) =>
+	const create = (value: unknown) =>
 		call('/api/checkout/sessions', { method: 'POST', body: JSON.stringify(value) })
-	const patchProvider = (session, data) =>
+	const patchProvider = (session: string, data: unknown) =>
 		fetch(`${worker.stripeUrl}/__test/${session}`, { method: 'POST', body: JSON.stringify(data) })
 	const webhook = (
-		session,
+		session: string,
 		eventId = `evt_${randomUUID()}`,
 		{ timestamp = Math.floor(Date.now() / 1000), signature = true } = {},
 	) => {
@@ -113,7 +116,8 @@ export async function testCheckout(worker) {
 		'expired',
 	)
 	assert.equal(await balance(), 1000)
-	const activity = (await (await call('/api/billing')).json()).activity
+	const billing: Responses['billing'] = await (await call('/api/billing')).json()
+	const activity = billing.activity
 	assert.equal(activity.filter((entry) => entry.type === 'topup').length, 1)
 	const limits = await Promise.all(
 		Array.from({ length: 12 }, () => create({ requestId: randomUUID() })),

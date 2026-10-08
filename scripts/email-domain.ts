@@ -1,4 +1,6 @@
-import { setupEnv } from './setup-env.mjs'
+import { z } from 'zod'
+import { cloudflareApi } from './cloudflare-api.ts'
+import { setupEnv } from './setup-env.ts'
 
 const env = await setupEnv()
 const action = process.argv[2]
@@ -7,36 +9,31 @@ if (!/^[a-f0-9]{32}$/.test(env.CLOUDFLARE_ZONE_ID ?? '') || !env.CLOUDFLARE_API_
 	throw new Error(
 		'Set CLOUDFLARE_ZONE_ID and CLOUDFLARE_API_TOKEN with Email Sending and zone read access',
 	)
-if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(env.EMAIL_FROM ?? ''))
+if (!env.EMAIL_FROM || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(env.EMAIL_FROM))
 	throw new Error('Set EMAIL_FROM to the sender address you want to configure')
 const domain = env.EMAIL_FROM.split('@')[1].toLowerCase()
 const path = `/zones/${env.CLOUDFLARE_ZONE_ID}`
-async function api(endpoint, method = 'GET', body) {
-	const response = await fetch(`https://api.cloudflare.com/client/v4${endpoint}`, {
-		method,
-		headers: {
-			Authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`,
-			'Content-Type': 'application/json',
-		},
-		body: body ? JSON.stringify(body) : undefined,
-		signal: AbortSignal.timeout(30000),
-	})
-	const result = await response.json()
-	if (!response.ok || !result.success)
-		throw new Error(
-			`Cloudflare ${method} ${endpoint}: HTTP ${response.status}; ${result.errors?.map((error) => `${error.code}: ${error.message}`).join('; ') ?? 'request failed'}`,
-		)
-	return result.result
-}
-const zone = await api(path)
+const api = cloudflareApi(env.CLOUDFLARE_API_TOKEN)
+const senderSchema = z.object({
+	name: z.string(),
+	enabled: z.boolean(),
+	dkim_selector: z.string().nullish(),
+	return_path_domain: z.string().nullish(),
+})
+const zone = await api.read(
+	path,
+	z.object({ name: z.string(), account: z.object({ id: z.string() }) }),
+)
 if (domain !== zone.name && !domain.endsWith(`.${zone.name}`))
 	throw new Error('EMAIL_FROM must belong to CLOUDFLARE_ZONE_ID')
 if (env.CLOUDFLARE_ACCOUNT_ID && zone.account.id !== env.CLOUDFLARE_ACCOUNT_ID)
 	throw new Error('Zone belongs to a different Cloudflare account')
-const domains = await api(`${path}/email/sending/subdomains`)
+const domains = await api.read(`${path}/email/sending/subdomains`, z.array(senderSchema))
 let sender = domains.find((value) => value.name === domain)
 if (action === 'setup' && !sender?.enabled)
-	sender = await api(`${path}/email/sending/subdomains`, 'POST', { name: domain })
+	sender = senderSchema.parse(
+		await api(`${path}/email/sending/subdomains`, 'POST', { name: domain }),
+	)
 console.log(
 	JSON.stringify(
 		{

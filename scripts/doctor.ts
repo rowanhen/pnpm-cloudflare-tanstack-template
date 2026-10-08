@@ -1,8 +1,13 @@
-import { setupEnv } from './setup-env.mjs'
+import { setupEnv } from './setup-env.ts'
 
 const env = await setupEnv()
-const checks = []
-function add(name, status, detail) {
+export interface Check {
+	name: string
+	status: 'ready' | 'missing' | 'configured' | 'blocked'
+	detail: string
+}
+const checks: Check[] = []
+function add(name: string, status: Check['status'], detail: string) {
 	checks.push({ name, status, detail })
 }
 add(

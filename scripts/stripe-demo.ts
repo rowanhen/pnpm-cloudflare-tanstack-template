@@ -1,17 +1,18 @@
-import { createRequire } from 'node:module'
+import Stripe from 'stripe'
+import { stripeManifest, type StripeManifest } from './resource-manifests.ts'
+import { hasCode } from './tooling.ts'
 import { mkdir, readFile, writeFile, rm } from 'node:fs/promises'
 import { randomUUID, createHash } from 'node:crypto'
 import { parseEnv } from 'node:util'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
-const require = createRequire(new URL('../apps/api/package.json', import.meta.url))
-const Stripe = require('stripe')
 const root = fileURLToPath(new URL('..', import.meta.url))
 const varsPath = process.env.STARTER_ENV_FILE ?? join(root, 'apps/api/.dev.vars')
 const original = await readFile(varsPath, 'utf8').catch(() => '')
 const env = { ...parseEnv(original), ...process.env }
 if (
-	!/^(sk|rk)_test_/.test(env.STRIPE_SECRET_KEY ?? '') ||
+	!env.STRIPE_SECRET_KEY ||
+	!/^(sk|rk)_test_/.test(env.STRIPE_SECRET_KEY) ||
 	!env.STRIPE_PUBLISHABLE_KEY?.startsWith('pk_test_')
 )
 	throw new Error('Add Stripe test-mode secret and publishable keys to apps/api/.dev.vars first.')
@@ -20,8 +21,8 @@ const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
 	httpClient: Stripe.createFetchHttpClient(),
 })
 const mode = process.argv[2] ?? 'setup'
-const hash = (value) => createHash('sha256').update(value).digest('hex')
-async function saveVars(values) {
+const hash = (value: string) => createHash('sha256').update(value).digest('hex')
+async function saveVars(values: Record<string, string | null>) {
 	let content = await readFile(varsPath, 'utf8').catch(() => '')
 	for (const [key, value] of Object.entries(values)) {
 		content = content
@@ -32,12 +33,12 @@ async function saveVars(values) {
 	}
 	await writeFile(varsPath, content, { mode: 0o600 })
 }
-async function cleanup(manifest) {
+async function cleanup(manifest: StripeManifest) {
 	if (manifest.webhook) {
 		try {
 			await stripe.webhookEndpoints.del(manifest.webhook)
 		} catch (error) {
-			if (error.code !== 'resource_missing') throw error
+			if (!hasCode(error, 'resource_missing')) throw error
 		}
 	}
 	if (manifest.price) {
@@ -51,7 +52,7 @@ async function cleanup(manifest) {
 			throw new Error('Product cleanup failed')
 	}
 	const current = parseEnv(await readFile(varsPath, 'utf8').catch(() => ''))
-	const remove = {}
+	const remove: Record<string, null> = {}
 	if (current.STRIPE_PRICE_ID === manifest.price) remove.STRIPE_PRICE_ID = null
 	if (
 		manifest.webhookSecretHash &&
@@ -63,7 +64,7 @@ async function cleanup(manifest) {
 if (mode === 'cleanup') {
 	const path = process.argv[3]
 	if (!path) throw new Error('Usage: pnpm stripe:cleanup .wrangler/stripe-demo-ID.json')
-	const manifest = JSON.parse(await readFile(path, 'utf8'))
+	const manifest = stripeManifest.parse(JSON.parse(await readFile(path, 'utf8')))
 	if (manifest.kind !== 'starter-stripe-demo')
 		throw new Error('Not a starter Stripe resource manifest')
 	await cleanup(manifest)
@@ -95,7 +96,7 @@ if (mode === 'cleanup') {
 		await readFile(path).then(
 			() => true,
 			(error) => {
-				if (error.code === 'ENOENT') return false
+				if (hasCode(error, 'ENOENT')) return false
 				throw error
 			},
 		)
@@ -103,7 +104,7 @@ if (mode === 'cleanup') {
 		throw new Error(
 			'A Stripe manifest already exists; finish its cleanup before creating resources again.',
 		)
-	const manifest = { kind: 'starter-stripe-demo', id }
+	const manifest: StripeManifest = { kind: 'starter-stripe-demo', id }
 	await mkdir(join(root, '.wrangler'), { recursive: true })
 	const save = () => writeFile(path, JSON.stringify(manifest, null, 2), { mode: 0o600 })
 	await save()
@@ -125,7 +126,9 @@ if (mode === 'cleanup') {
 			manifest.price = price.id
 			await save()
 		}
-		const values = { STRIPE_PRICE_ID: manifest.price ?? env.STRIPE_PRICE_ID }
+		const priceId = manifest.price ?? env.STRIPE_PRICE_ID
+		if (!priceId) throw new Error('A price must be created or reused')
+		const values: Record<string, string> = { STRIPE_PRICE_ID: priceId }
 		if (webhookUrl) {
 			const webhook = await stripe.webhookEndpoints.create(
 				{
@@ -141,6 +144,7 @@ if (mode === 'cleanup') {
 				},
 				{ idempotencyKey: `starter-webhook-${id}` },
 			)
+			if (!webhook.secret) throw new Error('Stripe did not return a webhook signing secret')
 			manifest.webhook = webhook.id
 			manifest.webhookSecretHash = hash(webhook.secret)
 			await save()

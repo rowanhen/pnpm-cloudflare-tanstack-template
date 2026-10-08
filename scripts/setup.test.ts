@@ -1,3 +1,5 @@
+import { serverPort } from './tooling.ts'
+import type { Check } from './doctor.ts'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
@@ -6,32 +8,40 @@ import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseEnv } from 'node:util'
-import { root } from './setup-env.mjs'
+import { root } from './setup-env.ts'
 
-function child(args, env) {
-	return new Promise((resolve, reject) => {
-		const process = spawn('node', args, { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] })
+function child(args: string[], env: NodeJS.ProcessEnv) {
+	return new Promise<{ code: number | null; output: string }>((resolve, reject) => {
+		const childProcess = spawn(process.execPath, ['--import', 'tsx', ...args], {
+			cwd: root,
+			env,
+			stdio: ['ignore', 'pipe', 'pipe'],
+		})
 		let output = ''
-		process.stdout.on('data', (chunk) => {
+		childProcess.stdout.on('data', (chunk) => {
 			output += chunk
 		})
-		process.stderr.on('data', (chunk) => {
+		childProcess.stderr.on('data', (chunk) => {
 			output += chunk
 		})
-		process.on('error', reject)
-		process.on('exit', (code) => resolve({ code, output }))
+		childProcess.on('error', reject)
+		childProcess.on('exit', (code) => resolve({ code, output }))
 	})
 }
 
 test('doctor reports missing provider credentials without claiming live validation', async () => {
 	const directory = await mkdtemp(join(tmpdir(), 'starter-doctor-'))
 	try {
-		const result = await child(['scripts/doctor.mjs', '--json', '--strict'], {
+		const result = await child(['scripts/doctor.ts', '--json', '--strict'], {
 			PATH: process.env.PATH,
 			STARTER_ENV_FILE: join(directory, 'missing.env'),
 		})
 		assert.equal(result.code, 1)
-		const output = JSON.parse(result.output)
+		const output: {
+			providerSignInVerified: boolean
+			cardPaymentVerified: boolean
+			checks: Check[]
+		} = JSON.parse(result.output)
 		assert.equal(output.providerSignInVerified, false)
 		assert.equal(output.cardPaymentVerified, false)
 		assert.equal(output.checks.filter((entry) => entry.status === 'missing').length, 4)
@@ -45,15 +55,16 @@ for (const mode of ['new', 'reuse', 'webhook-failure']) {
 		const directory = await mkdtemp(join(tmpdir(), 'starter-stripe-setup-'))
 		const envFile = join(directory, 'secrets.env')
 		const manifestFile = join(directory, 'stripe.json')
-		const objects = new Map([
-			['price_existing', { id: 'price_existing', object: 'price', active: true }],
-		])
-		const calls = []
+		const objects = new Map<
+			string,
+			{ id: string; object?: string; active?: boolean; secret?: string; deleted?: boolean }
+		>([['price_existing', { id: 'price_existing', object: 'price', active: true }]])
+		const calls: string[] = []
 		const server = createServer(async (request, response) => {
 			const chunks = []
 			for await (const chunk of request) chunks.push(chunk)
 			const fields = new URLSearchParams(Buffer.concat(chunks).toString())
-			const path = new URL(request.url, 'http://fixture').pathname
+			const path = new URL(request.url ?? '/', 'http://fixture').pathname
 			calls.push(`${request.method} ${path}`)
 			response.setHeader('Content-Type', 'application/json')
 			if (request.headers.authorization !== 'Bearer sk_test_setup_fixture') {
@@ -80,7 +91,7 @@ for (const mode of ['new', 'reuse', 'webhook-failure']) {
 			const [, collection, id] = match
 			let object = objects.get(id)
 			if (request.method === 'POST' && !id) {
-				const prefix = { products: 'prod', prices: 'price', webhook_endpoints: 'we' }[collection]
+				const prefix = collection === 'products' ? 'prod' : collection === 'prices' ? 'price' : 'we'
 				object = { id: `${prefix}_fixture`, object: collection.slice(0, -1), active: true }
 				if (collection === 'webhook_endpoints') {
 					assert.equal(fields.get('url'), 'https://sandbox.example/api/stripe/webhook')
@@ -99,18 +110,10 @@ for (const mode of ['new', 'reuse', 'webhook-failure']) {
 			}
 			response.end(JSON.stringify(object))
 		})
-		await new Promise((done) => server.listen(0, '127.0.0.1', done))
-		const port = server.address().port
+		await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
+		const port = serverPort(server)
 		// Test-only process preload; production setup has no mock transport option.
-		const preload = join(directory, 'transport.mjs')
-		await writeFile(
-			preload,
-			`const original = globalThis.fetch; globalThis.fetch = (input, init) => {
-			const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url);
-			if (url.hostname !== 'api.stripe.com') throw new Error('Unexpected network host');
-			return original('http://127.0.0.1:${port}' + url.pathname + url.search, init);
-		};`,
-		)
+		const preload = join(root, 'scripts/fixtures/stripe-transport.ts')
 		await writeFile(
 			envFile,
 			'STRIPE_SECRET_KEY=sk_test_setup_fixture\nSTRIPE_PUBLISHABLE_KEY=pk_test_fixture\n' +
@@ -121,13 +124,14 @@ for (const mode of ['new', 'reuse', 'webhook-failure']) {
 			PATH: process.env.PATH,
 			STARTER_ENV_FILE: envFile,
 			STARTER_STRIPE_MANIFEST: manifestFile,
+			TEST_STRIPE_ORIGIN: `http://127.0.0.1:${port}`,
 		}
 		try {
 			const setup = await child(
 				[
 					'--import',
 					preload,
-					'scripts/stripe-demo.mjs',
+					'scripts/stripe-demo.ts',
 					'setup',
 					'https://sandbox.example/api/stripe/webhook',
 					...(mode === 'reuse' ? ['--reuse-price'] : []),
@@ -145,7 +149,7 @@ for (const mode of ['new', 'reuse', 'webhook-failure']) {
 					[
 						'--import',
 						preload,
-						'scripts/stripe-demo.mjs',
+						'scripts/stripe-demo.ts',
 						'setup',
 						'https://sandbox.example/api/stripe/webhook',
 						'--reuse-price',
@@ -154,7 +158,7 @@ for (const mode of ['new', 'reuse', 'webhook-failure']) {
 				)
 				assert.equal(duplicate.code, 1)
 				const cleanup = await child(
-					['--import', preload, 'scripts/stripe-demo.mjs', 'cleanup', manifestFile],
+					['--import', preload, 'scripts/stripe-demo.ts', 'cleanup', manifestFile],
 					env,
 				)
 				assert.equal(cleanup.code, 0, cleanup.output)
@@ -163,15 +167,15 @@ for (const mode of ['new', 'reuse', 'webhook-failure']) {
 				assert.equal(clean.STRIPE_WEBHOOK_SECRET, undefined)
 				assert.equal(clean.STRIPE_PRICE_ID, mode === 'reuse' ? 'price_existing' : undefined)
 			}
-			assert.equal(objects.get('price_existing').active, true)
+			assert.equal(objects.get('price_existing')?.active, true)
 			if (mode === 'reuse')
 				assert.equal(
 					calls.some((call) => /POST \/v1\/(products|prices)/.test(call)),
 					false,
 				)
 			else {
-				assert.equal(objects.get('price_fixture').active, false)
-				assert.equal(objects.get('prod_fixture').active, false)
+				assert.equal(objects.get('price_fixture')?.active, false)
+				assert.equal(objects.get('prod_fixture')?.active, false)
 			}
 			await assert.rejects(readFile(manifestFile), { code: 'ENOENT' })
 		} finally {
@@ -185,25 +189,12 @@ for (const mode of ['new', 'existing', 'wrong-zone', 'denied']) {
 	test(`Email domain API setup: ${mode}`, async () => {
 		const directory = await mkdtemp(join(tmpdir(), 'starter-email-setup-'))
 		try {
-			const preload = join(directory, 'transport.mjs')
-			await writeFile(
-				preload,
-				`globalThis.fetch = async (input, init = {}) => {
-    const url = new URL(input);
-    if(url.hostname !== 'api.cloudflare.com' || init.headers.Authorization !== 'Bearer email-fixture-token') throw new Error('Unexpected provider request');
-    const ok = value => Response.json({success:true,result:value});
-    if(url.pathname.endsWith('/zones/${'a'.repeat(32)}')) return ok({name:'example.test',account:{id:'${'b'.repeat(32)}'}});
-    if(!url.pathname.endsWith('/email/sending/subdomains')) throw new Error('Unexpected path');
-    if(${JSON.stringify(mode)} === 'denied') return Response.json({success:false,errors:[{code:10000,message:'Authentication error'}]},{status:403});
-    if((init.method ?? 'GET') === 'GET') return ok(${JSON.stringify(mode)} === 'existing' ? [{name:'mail.example.test',enabled:true,dkim_selector:'fixture'}] : []);
-    if(${JSON.stringify(mode)} !== 'new' || JSON.parse(init.body).name !== 'mail.example.test') throw new Error('Unexpected domain mutation');
-    return ok({name:'mail.example.test',enabled:true,dkim_selector:'fixture',return_path_domain:'cf-bounce.mail.example.test'});
-   };`,
-			)
-			const result = await child(['--import', preload, 'scripts/email-domain.mjs', 'setup'], {
+			const preload = join(root, 'scripts/fixtures/email-transport.ts')
+			const result = await child(['--import', preload, 'scripts/email-domain.ts', 'setup'], {
 				PATH: process.env.PATH,
 				STARTER_ENV_FILE: join(directory, 'missing.env'),
 				CLOUDFLARE_API_TOKEN: 'email-fixture-token',
+				TEST_EMAIL_MODE: mode,
 				CLOUDFLARE_ZONE_ID: 'a'.repeat(32),
 				CLOUDFLARE_ACCOUNT_ID: 'b'.repeat(32),
 				EMAIL_FROM: mode === 'wrong-zone' ? 'hello@other.test' : 'hello@mail.example.test',

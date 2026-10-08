@@ -1,3 +1,4 @@
+import { hasCode } from './tooling.ts'
 import { randomBytes } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
 
@@ -12,6 +13,6 @@ try {
 		'Created apps/api/.dev.vars with a random local auth secret. Add Google OAuth credentials to enable sign-in.',
 	)
 } catch (error) {
-	if (error.code !== 'EEXIST') throw error
+	if (!hasCode(error, 'EEXIST')) throw error
 	console.log('Using existing apps/api/.dev.vars.')
 }

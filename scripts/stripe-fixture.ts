@@ -1,13 +1,29 @@
+import { z } from 'zod'
+import { serverPort } from './tooling.ts'
 // A wire-level Stripe fixture for isolated tests. It is never imported by application code.
 import { createServer } from 'node:http'
 import { randomBytes } from 'node:crypto'
 
+const sessionSchema = z.object({
+	id: z.string(),
+	object: z.literal('checkout.session'),
+	livemode: z.boolean(),
+	mode: z.string(),
+	status: z.string(),
+	payment_status: z.string(),
+	amount_total: z.number(),
+	currency: z.string(),
+	client_secret: z.string(),
+	client_reference_id: z.string().nullable(),
+	metadata: z.object({ order_id: z.string().nullable() }),
+	return_url: z.string().nullable(),
+})
 export async function stripeFixture() {
-	const sessions = new Map()
-	const idempotency = new Map()
+	const sessions = new Map<string, z.infer<typeof sessionSchema>>()
+	const idempotency = new Map<string, string>()
 	const server = createServer(async (request, response) => {
-		const url = new URL(request.url, 'http://localhost')
-		const send = (data, status = 200) => {
+		const url = new URL(request.url ?? '/', 'http://localhost')
+		const send = (data: unknown, status = 200) => {
 			response.writeHead(status, {
 				'Content-Type': 'application/json',
 				'Request-Id': 'req_test_fixture',
@@ -20,7 +36,10 @@ export async function stripeFixture() {
 			if (request.method === 'POST') {
 				const chunks = []
 				for await (const chunk of request) chunks.push(chunk)
-				Object.assign(session, JSON.parse(Buffer.concat(chunks).toString()))
+				Object.assign(
+					session,
+					sessionSchema.partial().parse(JSON.parse(Buffer.concat(chunks).toString())),
+				)
 			}
 			return send(session)
 		}
@@ -63,9 +82,11 @@ export async function stripeFixture() {
 					400,
 				)
 			const key = request.headers['idempotency-key']
-			if (idempotency.has(key)) return send(sessions.get(idempotency.get(key)))
+			if (typeof key !== 'string') return send({ error: 'Expected an idempotency key' }, 400)
+			const previousId = idempotency.get(key)
+			if (previousId) return send(sessions.get(previousId))
 			const id = `cs_test_${randomBytes(16).toString('hex')}`
-			const session = {
+			const session: z.infer<typeof sessionSchema> = {
 				id,
 				object: 'checkout.session',
 				livemode: false,
@@ -83,15 +104,15 @@ export async function stripeFixture() {
 			idempotency.set(key, id)
 			return send(session)
 		}
-		const session = sessions.get(url.pathname.split('/').at(-1))
+		const session = sessions.get(url.pathname.split('/').at(-1) ?? '')
 		if (session && request.method === 'GET') return send(session)
 		send({ error: { type: 'invalid_request_error', message: 'Fixture resource not found' } }, 404)
 	})
-	await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
+	await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
 	return {
-		url: `http://127.0.0.1:${server.address().port}`,
+		url: `http://127.0.0.1:${serverPort(server)}`,
 		stop: () =>
-			new Promise((resolve, reject) =>
+			new Promise<void>((resolve, reject) =>
 				server.close((error) => (error ? reject(error) : resolve())),
 			),
 	}

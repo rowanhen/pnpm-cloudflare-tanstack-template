@@ -14,6 +14,8 @@ For an online sandbox, use `pnpm setup:doctor --online`, then `pnpm cloud:up my-
 
 Requires Node.js 22.12+ (CI uses Node 24) and pnpm 10.18.0.
 
+Application code, configuration, setup/deployment scripts, and test fixtures are authored in TypeScript. Node commands run through [tsx](https://github.com/privatenumber/tsx), so no separate script build is needed. `pnpm typecheck` checks the apps, shared packages, Node tooling, Playwright tests and test Workers in their own runtime environments. It also rejects JavaScript source files added to the repository. Generated build output and dependencies still contain JavaScript; Git uses a minimal generated shell launcher for the TypeScript-backed checks.
+
 ```bash
 git clone https://github.com/rowanhen/pnpm-cloudflare-tanstack-template.git
 cd pnpm-cloudflare-tanstack-template
@@ -117,7 +119,7 @@ apps/marketing/     Waitlist, privacy example, SEO metadata, sitemap and robots
 packages/data/      Drizzle schema, inferred database types and server-only D1 client
 packages/contracts/ Shared Zod inputs, public DTOs and typed REST client
 packages/shared/    Composables exports, shadcn button, theme, page states and shared hooks
-scripts/            Setup/deploy commands and isolated local/cloud tests
+scripts/            TypeScript setup/deploy commands and isolated local/cloud tests
 ```
 
 Browsers call their own app's `/api` routes. The apps proxy to the configured Worker, keeping cookies on the dashboard domain and avoiding third-party cookies. In cloud deployments, they sign the original visitor IP with a separate shared `API_PROXY_SECRET`, so requests across Cloudflare zones retain individual rate limits. The Worker rejects forged or expired signatures. This secret grants no access to user data or sessions. Dashboard protection runs on the server before rendering, and the Worker independently authenticates and authorizes every private request. Private responses use `Cache-Control: no-store`.

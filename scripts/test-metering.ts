@@ -1,20 +1,28 @@
+import type { Responses, KeyScope } from '../packages/contracts/src/index.ts'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 
 // Runs unchanged against workerd and the deployed Worker with a real D1 database.
-export async function testMetering(base, cookies, origin = 'http://localhost:3001') {
-	const session = (path, method = 'GET', body, cookie = cookies[0]) =>
+export async function testMetering(
+	base: string,
+	cookies: string[],
+	origin = 'http://localhost:3001',
+) {
+	const session = (path: string, method = 'GET', body?: unknown, cookie = cookies[0]) =>
 		fetch(base + path, {
 			method,
 			headers: { Cookie: cookie, Origin: origin, 'Content-Type': 'application/json' },
 			body: body === undefined ? undefined : JSON.stringify(body),
 		})
-	const billing = async (cookie = cookies[0]) => {
+	const billing = async (cookie = cookies[0]): Promise<Responses['billing']> => {
 		const result = await session('/api/billing', 'GET', undefined, cookie)
 		assert.equal(result.status, 200, await result.clone().text())
 		return result.json()
 	}
-	const createKey = async (scope, cookie = cookies[0]) => {
+	const createKey = async (
+		scope: KeyScope,
+		cookie = cookies[0],
+	): Promise<Responses['createKey']['key']> => {
 		const response = await session('/api/keys', 'POST', { name: 'Metering test', scope }, cookie)
 		assert.equal(response.status, 201, await response.clone().text())
 		return (await response.json()).key
@@ -23,7 +31,7 @@ export async function testMetering(base, cookies, origin = 'http://localhost:300
 	const other = await createKey('summary:read', cookies[1])
 	const sibling = await createKey('summary:read')
 	const free = await createKey('todos:read')
-	const call = (key = paid, id = randomUUID(), body = {}) =>
+	const call = (key = paid, id: string = randomUUID(), body: unknown = {}) =>
 		fetch(base + '/api/v1/summary', {
 			method: 'POST',
 			headers: {
@@ -108,7 +116,7 @@ export async function testMetering(base, cookies, origin = 'http://localhost:300
 		[free, cookies[0]],
 		[sibling, cookies[0]],
 		[other, cookies[1]],
-	])
+	] as const)
 		assert.equal((await session(`/api/keys/${key.id}`, 'DELETE', undefined, cookie)).status, 204)
 	assert.equal((await call(paid, id)).status, 401)
 	assert.equal((await billing()).activity.length, 3)

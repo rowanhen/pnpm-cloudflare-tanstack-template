@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { root, setupEnv } from './setup-env.mjs'
+import { root, setupEnv } from './setup-env.ts'
 const env = await setupEnv()
 const commands = [
 	['check'],

@@ -1,9 +1,10 @@
+import type { LocalWorker } from './local-worker.ts'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 
-export async function testEmail(worker) {
+export async function testEmail(worker: LocalWorker) {
 	const { base, fixture, query } = worker
-	const call = (body, { user = 0, headers = {}, method = 'POST' } = {}) =>
+	const call = (body: unknown, { user = 0, headers = {}, method = 'POST' } = {}) =>
 		fetch(`${base}/api/email`, {
 			method,
 			headers: {

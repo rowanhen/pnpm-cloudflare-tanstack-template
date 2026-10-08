@@ -1,3 +1,5 @@
+import { workerConfig } from './tooling.ts'
+import packageManifest from '../package.json' with { type: 'json' }
 import { createInterface } from 'node:readline/promises'
 import { readFile, writeFile } from 'node:fs/promises'
 import { stdin as input, stdout as output } from 'node:process'
@@ -14,7 +16,7 @@ const packageJsonPath = new URL('../package.json', import.meta.url)
 const readmePath = new URL('../README.md', import.meta.url)
 const projectConfigPath = new URL('../packages/shared/src/project.ts', import.meta.url)
 
-const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'))
+const packageJson = structuredClone(packageManifest)
 packageJson.name = projectName
 await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, '\t')}\n`)
 
@@ -28,7 +30,7 @@ await writeFile(
 )
 
 const workerPath = new URL('../apps/api/wrangler.json', import.meta.url)
-const worker = JSON.parse(await readFile(workerPath, 'utf8'))
+const worker = workerConfig()
 worker.name = `${projectName}-api`
 worker.d1_databases[0].database_name = `${projectName}-db`
 worker.r2_buckets[0].bucket_name = `${projectName}-files`
@@ -51,7 +53,7 @@ async function promptForName() {
 	}
 }
 
-function normalizeProjectName(value) {
+function normalizeProjectName(value: string) {
 	return value
 		.trim()
 		.toLowerCase()

@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { DatabaseSync } from 'node:sqlite'
 import { readdir, readFile } from 'node:fs/promises'
-import { fixtures } from './test-fixtures.mjs'
+import { fixtures } from './test-fixtures.ts'
 
 test('Drizzle adoption preserves existing auth sessions, private data and balances', async () => {
 	const db = new DatabaseSync(':memory:')
@@ -35,7 +35,7 @@ test('Drizzle adoption preserves existing auth sessions, private data and balanc
 		db.exec(
 			"INSERT INTO email_deliveries(id,dedupe_key,user_id,to_email,template) VALUES ('mail','test:1','e2e-alice','alice@example.test','test')",
 		)
-		assert.equal(db.prepare('SELECT status FROM email_deliveries').get().status, 'sending')
+		assert.equal(db.prepare('SELECT status FROM email_deliveries').get()?.status, 'sending')
 	} finally {
 		db.close()
 	}

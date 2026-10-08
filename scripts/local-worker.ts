@@ -1,3 +1,5 @@
+import { z } from 'zod'
+import type { ChildProcess } from 'node:child_process'
 import { spawn, execFileSync } from 'node:child_process'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -5,26 +7,28 @@ import { join } from 'node:path'
 import { randomBytes } from 'node:crypto'
 import { once } from 'node:events'
 import { fileURLToPath } from 'node:url'
-import { fixtures } from './test-fixtures.mjs'
-import { waitForApi } from './test-api.mjs'
-import { stripeFixture } from './stripe-fixture.mjs'
+import { fixtures } from './test-fixtures.ts'
+import { waitForApi } from './test-api.ts'
+import { stripeFixture } from './stripe-fixture.ts'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
-export async function localWorker(port) {
+export async function localWorker(port: string | number) {
 	const storage = await mkdtemp(join(tmpdir(), 'cloudflare-template-test-'))
 	const secret = randomBytes(32).toString('hex')
 	const fixture = fixtures(secret)
 	const proxySecret = randomBytes(32).toString('hex')
 	const common = ['--config', 'apps/api/wrangler.json', '--persist-to', storage]
-	const run = (args) =>
+	const run = (args: string[]) =>
 		execFileSync('pnpm', ['exec', 'wrangler', ...args], { cwd: root, stdio: 'inherit' })
-	let child, stripe, stopping
+	let child: ChildProcess | undefined
+	let stripe: Awaited<ReturnType<typeof stripeFixture>> | undefined
+	let stopping: Promise<void> | undefined
 	function stop() {
 		stopping ??= closeResources()
 		return stopping
 	}
 	async function closeResources() {
-		if (child && child.exitCode === null) {
+		if (child && child.exitCode === null && child.pid) {
 			const exited = once(child, 'exit')
 			process.kill(-child.pid, 'SIGTERM')
 			await exited
@@ -39,23 +43,7 @@ export async function localWorker(port) {
 		run(['d1', 'execute', 'DB', '--local', ...common, '--file', sql])
 		await rm(sql)
 		stripe = await stripeFixture()
-		const wrapper = join(storage, 'test-worker.mjs')
-		await writeFile(
-			wrapper,
-			`import worker from ${JSON.stringify(join(root, 'apps/api/src/index.ts'))};
-const originalFetch = globalThis.fetch;
-globalThis.fetch = (input, init) => {
- const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
- if (new URL(url).origin === 'https://api.stripe.com') return originalFetch(url.replace('https://api.stripe.com', ${JSON.stringify(stripe.url)}), init);
- return originalFetch(input, init);
-};
-export default { fetch(request, env, context) {
- if (new URL(request.url).pathname === '/api/auth/get-session' && request.headers.get('x-test-session-failure') === 'true') return new Response('Test upstream unavailable', { status: 503 });
- if (request.headers.get('x-test-email-failure') === 'true') env = {...env, EMAIL: {send: async () => {throw new Error('E_DELIVERY_FAILED test fixture')}}};
- if (request.headers.get('x-test-email-disabled') === 'true') env = {...env, EMAIL_FROM: undefined};
- return worker.fetch(request, env, context);
-}};`,
-		)
+		const wrapper = join(root, 'scripts/workers/test-worker.ts')
 		child = spawn(
 			'pnpm',
 			[
@@ -84,6 +72,8 @@ export default { fetch(request, env, context) {
 				'STRIPE_WEBHOOK_SECRET:whsec_fixture',
 				'--var',
 				'EMAIL_FROM:starter@example.test',
+				'--var',
+				`STRIPE_FIXTURE_URL:${stripe.url}`,
 			],
 			{ cwd: root, stdio: 'inherit', detached: true },
 		)
@@ -95,8 +85,8 @@ export default { fetch(request, env, context) {
 			proxySecret,
 			stripeUrl: stripe.url,
 			stop,
-			query(statement) {
-				return JSON.parse(
+			query(statement: string) {
+				const result: unknown = JSON.parse(
 					execFileSync(
 						'pnpm',
 						[
@@ -113,7 +103,14 @@ export default { fetch(request, env, context) {
 						],
 						{ cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
 					),
-				)[0].results
+				)
+				return z
+					.array(
+						z.object({
+							results: z.array(z.record(z.string(), z.union([z.string(), z.number(), z.null()]))),
+						}),
+					)
+					.parse(result)[0].results
 			},
 		}
 	} catch (error) {
@@ -121,3 +118,5 @@ export default { fetch(request, env, context) {
 		throw error
 	}
 }
+
+export type LocalWorker = Awaited<ReturnType<typeof localWorker>>

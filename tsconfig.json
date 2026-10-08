@@ -26,7 +26,7 @@
 		"esModuleInterop": true,
 		"isolatedModules": true,
 		"resolveJsonModule": true,
-		"allowJs": true,
+		"allowJs": false,
 		"forceConsistentCasingInFileNames": true
 	}
 }

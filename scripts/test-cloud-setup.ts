@@ -1,18 +1,20 @@
+import { sandboxManifest } from './resource-manifests.ts'
 import { spawnSync } from 'node:child_process'
 import { readFile, writeFile, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import assert from 'node:assert/strict'
 import { parseEnv } from 'node:util'
-import { root, setupEnv } from './setup-env.mjs'
+import { root, setupEnv } from './setup-env.ts'
 const slug = `setup-${Date.now()}`
 const env = await setupEnv()
 const directory = resolve(root, '.wrangler', 'sandboxes', slug)
-const run = (args) => {
+const run = (args: string[]) => {
 	const result = spawnSync('pnpm', args, { cwd: root, env, stdio: 'inherit', timeout: 300000 })
 	if (result.error || result.status !== 0)
 		throw new Error(`Setup test command failed: pnpm ${args.join(' ')}`)
 }
-const state = async () => JSON.parse(await readFile(resolve(directory, 'resources.json'), 'utf8'))
+const state = async () =>
+	sandboxManifest.parse(JSON.parse(await readFile(resolve(directory, 'resources.json'), 'utf8')))
 try {
 	run(['cloud:up', slug])
 	const first = await state()

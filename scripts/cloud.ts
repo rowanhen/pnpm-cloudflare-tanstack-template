@@ -1,17 +1,31 @@
+import { z } from 'zod'
+import {
+	cloudflareApi,
+	databases,
+	database as databaseSchema,
+	buckets,
+	workers,
+	subdomain as subdomainSchema,
+} from './cloudflare-api.ts'
+import { sandboxManifest, type SandboxManifest } from './resource-manifests.ts'
+import { hasCode, workerConfig, type WorkerConfig } from './tooling.ts'
 import { execFileSync } from 'node:child_process'
 import { mkdir, readFile, writeFile, rename, rm } from 'node:fs/promises'
 import { randomBytes } from 'node:crypto'
 import { resolve } from 'node:path'
 import { parseEnv } from 'node:util'
-import { root, setupEnv } from './setup-env.mjs'
+import { root, setupEnv } from './setup-env.ts'
 
 const [action, slug] = process.argv.slice(2)
 if (!['up', 'check', 'down'].includes(action) || !/^[a-z][a-z0-9-]{0,24}$/.test(slug ?? ''))
 	throw new Error('Usage: pnpm cloud:up|cloud:check|cloud:down NAME (lowercase, max 25 characters)')
 const env = await setupEnv()
-const account = env.CLOUDFLARE_ACCOUNT_ID
+const account = z
+	.string()
+	.regex(/^[a-f0-9]{32}$/)
+	.parse(env.CLOUDFLARE_ACCOUNT_ID)
 const token = env.CLOUDFLARE_API_TOKEN
-if (!/^[a-f0-9]{32}$/.test(account ?? '') || !token)
+if (!account || !/^[a-f0-9]{32}$/.test(account) || !token)
 	throw new Error(
 		'Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN. Run pnpm setup:doctor for readiness.',
 	)
@@ -25,41 +39,27 @@ const lock = resolve(directory, '.lock')
 try {
 	await writeFile(lock, String(process.pid), { flag: 'wx', mode: 0o600 })
 } catch (error) {
-	if (error.code === 'EEXIST')
+	if (hasCode(error, 'EEXIST'))
 		throw new Error(
 			`Sandbox is locked. If no setup process is running, remove ${lock} and retry.`,
 			{ cause: error },
 		)
 	throw error
 }
-async function saveJson(path, value) {
+async function saveJson(path: string, value: unknown) {
 	await writeFile(`${path}.tmp`, JSON.stringify(value, null, 2), { mode: 0o600 })
 	await rename(`${path}.tmp`, path)
 }
-const exists = async (path) =>
+const exists = async (path: string) =>
 	readFile(path).then(
 		() => true,
 		(error) => {
-			if (error.code === 'ENOENT') return false
+			if (hasCode(error, 'ENOENT')) return false
 			throw error
 		},
 	)
-async function cf(path, method = 'GET', body, missingOk = false) {
-	const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}${path}`, {
-		method,
-		headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-		...(body === undefined ? {} : { body: JSON.stringify(body) }),
-		signal: AbortSignal.timeout(30000),
-	})
-	if (missingOk && response.status === 404) return null
-	const payload = await response.json()
-	if (!response.ok || payload.success === false)
-		throw new Error(
-			`Cloudflare ${method} ${path}: HTTP ${response.status}, codes ${(payload.errors ?? []).map((error) => error.code).join(',')}`,
-		)
-	return payload.result
-}
-function run(args, extra = {}) {
+const cf = cloudflareApi(token, `/accounts/${account}`)
+function run(args: string[], extra: NodeJS.ProcessEnv = {}) {
 	execFileSync('pnpm', args, {
 		cwd: root,
 		stdio: 'inherit',
@@ -73,12 +73,11 @@ function run(args, extra = {}) {
 		},
 	})
 }
-const wrangler = (args) => run(['exec', 'wrangler', ...args])
-let state
+const wrangler = (args: string[]) => run(['exec', 'wrangler', ...args])
 async function secretValues() {
-	return parseEnv(await readFile(secretsPath, 'utf8'))
+	return z.record(z.string(), z.string()).parse(parseEnv(await readFile(secretsPath, 'utf8')))
 }
-async function saveSecrets(values) {
+async function saveSecrets(values: Record<string, string>) {
 	await writeFile(
 		secretsPath,
 		Object.entries(values)
@@ -87,7 +86,7 @@ async function saveSecrets(values) {
 		{ mode: 0o600 },
 	)
 }
-async function deploy(config, values) {
+async function deploy(config: Partial<WorkerConfig>, values: Record<string, string>) {
 	const secretFile = resolve(directory, 'deploy-secrets.json')
 	await saveJson(configPath, config)
 	await saveJson(secretFile, values)
@@ -97,7 +96,7 @@ async function deploy(config, values) {
 		await rm(secretFile, { force: true })
 	}
 }
-async function waitFor(url, expected = 200) {
+async function waitFor(url: string, expected = 200) {
 	for (let attempt = 0; attempt < 60; attempt++) {
 		try {
 			const response = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(10000) })
@@ -109,7 +108,7 @@ async function waitFor(url, expected = 200) {
 	}
 	throw new Error(`Deployment did not become ready: ${url}`)
 }
-async function check() {
+async function check(state: SandboxManifest) {
 	await waitFor(`${state.api}/api/health`)
 	await waitFor(`${state.dashboard}/api/health`)
 	await waitFor(state.marketing)
@@ -147,23 +146,21 @@ async function check() {
 		),
 	)
 }
-async function up() {
-	const { subdomain } = await cf('/workers/subdomain')
-	if (!subdomain) throw new Error('The Cloudflare account needs a workers.dev subdomain')
-	if (!state) {
-		const name = `starter-${slug}-${randomBytes(4).toString('hex')}`
-		state = {
-			kind: 'starter-sandbox-v1',
-			account,
-			name,
-			databaseName: `${name}-db`,
-			bucket: `${name}-files`,
-			api: `https://${name}.${subdomain}.workers.dev`,
-			dashboard: `https://${name}-dashboard.pages.dev`,
-			marketing: `https://${name}-marketing.pages.dev`,
-		}
-		await saveJson(manifestPath, state)
+async function up(existing: SandboxManifest | null) {
+	const { subdomain } = await cf.read('/workers/subdomain', subdomainSchema)
+	const name = `starter-${slug}-${randomBytes(4).toString('hex')}`
+	const state: SandboxManifest = existing ?? {
+		kind: 'starter-sandbox-v1',
+		account,
+		name,
+		databaseName: `${name}-db`,
+		bucket: `${name}-files`,
+		api: `https://${name}.${subdomain}.workers.dev`,
+		dashboard: `https://${name}-dashboard.pages.dev`,
+		marketing: `https://${name}-marketing.pages.dev`,
 	}
+	if (!subdomain) throw new Error('The Cloudflare account needs a workers.dev subdomain')
+	if (!existing) await saveJson(manifestPath, state)
 	if (!(await exists(secretsPath))) {
 		// Never rotate signing secrets on a rerun or copy the local auth secret to the cloud.
 		if (state.workerAttempted)
@@ -195,21 +192,21 @@ async function up() {
 			values[key] = env[key]
 		}
 	await saveSecrets(values)
-	const databases = await cf('/d1/database?per_page=1000')
-	let database = databases.find((item) => item.name === state.databaseName)
+	const existingDatabases = await cf.read('/d1/database?per_page=1000', databases)
+	let database = existingDatabases.find((item) => item.name === state.databaseName)
 	if (!database) {
 		state.databaseAttempted = true
 		await saveJson(manifestPath, state)
-		database = await cf('/d1/database', 'POST', { name: state.databaseName })
+		database = databaseSchema.parse(await cf('/d1/database', 'POST', { name: state.databaseName }))
 	}
 	state.databaseId = database.uuid
 	await saveJson(manifestPath, state)
-	if (!(await cf('/r2/buckets')).buckets.some((item) => item.name === state.bucket)) {
+	if (!(await cf.read('/r2/buckets', buckets)).buckets.some((item) => item.name === state.bucket)) {
 		state.bucketAttempted = true
 		await saveJson(manifestPath, state)
 		await cf('/r2/buckets', 'POST', { name: state.bucket })
 	}
-	for (const app of ['marketing', 'dashboard']) {
+	for (const app of ['marketing', 'dashboard'] as const) {
 		const project = `${state.name}-${app}`
 		const settings = {
 			production: {
@@ -228,7 +225,7 @@ async function up() {
 			})
 		else await cf(`/pages/projects/${project}`, 'PATCH', { deployment_configs: settings })
 	}
-	const config = JSON.parse(await readFile(resolve(root, 'apps/api/wrangler.json'), 'utf8'))
+	const config = workerConfig()
 	Object.assign(config, {
 		name: state.name,
 		account_id: account,
@@ -283,7 +280,7 @@ async function up() {
 	state.workerAttempted = true
 	await saveJson(manifestPath, state)
 	await deploy(config, await secretValues())
-	for (const app of ['dashboard', 'marketing']) {
+	for (const app of ['dashboard', 'marketing'] as const) {
 		run(['--filter', app, 'build'], {
 			VITE_API_URL: state.api,
 			VITE_DASHBOARD_URL: state.dashboard,
@@ -301,12 +298,12 @@ async function up() {
 			'--commit-dirty=true',
 		])
 	}
-	await check()
+	await check(state)
 }
-async function down() {
+async function down(state: SandboxManifest | null) {
 	if (!state) throw new Error('No managed sandbox found; no resources were touched')
 	// Only the resources named in this sandbox's validated manifest are eligible.
-	for (const app of ['dashboard', 'marketing'])
+	for (const app of ['dashboard', 'marketing'] as const)
 		if (state[`${app}Attempted`])
 			await cf(`/pages/projects/${state.name}-${app}`, 'DELETE', undefined, true)
 	if (await exists(stripeManifest)) {
@@ -317,20 +314,11 @@ async function down() {
 			STRIPE_PUBLISHABLE_KEY: values.STRIPE_PUBLISHABLE_KEY,
 		})
 	}
-	if ((await cf('/r2/buckets')).buckets.some((item) => item.name === state.bucket)) {
+	if ((await cf.read('/r2/buckets', buckets)).buckets.some((item) => item.name === state.bucket)) {
 		// R2's management API cannot empty a bucket. During explicit teardown, replace
 		// our owned Worker with a short-lived, secret-protected bucket-only cleanup worker.
 		const cleanupToken = randomBytes(32).toString('hex')
-		const cleanupSource = resolve(directory, 'empty-bucket.mjs')
-		await writeFile(
-			cleanupSource,
-			`export default { async fetch(request, env) {
-			if (request.method !== 'DELETE' || request.headers.get('Authorization') !== 'Bearer ' + env.CLEANUP_TOKEN) return new Response(null, { status: 401 });
-			const result = await env.FILES.list({ limit: 1000 });
-			if (result.objects.length) await env.FILES.delete(result.objects.map(object => object.key));
-			return Response.json({ deleted: result.objects.length });
-		} };`,
-		)
+		const cleanupSource = resolve(root, 'scripts/workers/empty-bucket.ts')
 		state.workerAttempted = true
 		await saveJson(manifestPath, state)
 		await deploy(
@@ -362,18 +350,20 @@ async function down() {
 		if (!empty) throw new Error('Bucket is not empty yet; rerun cloud:down')
 		await cf(`/r2/buckets/${state.bucket}`, 'DELETE', undefined, true)
 	}
-	const database = (await cf('/d1/database?per_page=1000')).find(
+	const database = (await cf.read('/d1/database?per_page=1000', databases)).find(
 		(item) => item.name === state.databaseName,
 	)
 	if (database) await cf(`/d1/database/${database.uuid}`, 'DELETE', undefined, true)
 	if (state.workerAttempted) await cf(`/workers/scripts/${state.name}`, 'DELETE', undefined, true)
-	for (const app of ['dashboard', 'marketing'])
+	for (const app of ['dashboard', 'marketing'] as const)
 		if (await cf(`/pages/projects/${state.name}-${app}`, 'GET', undefined, true))
 			throw new Error('Pages cleanup verification failed')
 	if (
-		(await cf('/d1/database?per_page=1000')).some((item) => item.name === state.databaseName) ||
-		(await cf('/r2/buckets')).buckets.some((item) => item.name === state.bucket) ||
-		(await cf('/workers/scripts')).some((item) => item.id === state.name)
+		(await cf.read('/d1/database?per_page=1000', databases)).some(
+			(item) => item.name === state.databaseName,
+		) ||
+		(await cf.read('/r2/buckets', buckets)).buckets.some((item) => item.name === state.bucket) ||
+		(await cf.read('/workers/scripts', workers)).some((item) => item.id === state.name)
 	)
 		throw new Error('Cleanup verification failed; keep the manifest and retry')
 	await rm(directory, { recursive: true, force: true })
@@ -382,10 +372,13 @@ async function down() {
 	)
 }
 try {
-	state = await readFile(manifestPath, 'utf8').then(JSON.parse, (error) => {
-		if (error.code === 'ENOENT') return null
-		throw error
-	})
+	const state = await readFile(manifestPath, 'utf8').then(
+		(value) => sandboxManifest.parse(JSON.parse(value)),
+		(error) => {
+			if (hasCode(error, 'ENOENT')) return null
+			throw error
+		},
+	)
 	if (
 		state &&
 		(state.kind !== 'starter-sandbox-v1' ||
@@ -398,11 +391,11 @@ try {
 			!new RegExp(`^https://${state.name}\\.[a-z0-9-]+\\.workers\\.dev$`).test(state.api))
 	)
 		throw new Error('Invalid sandbox manifest or account mismatch')
-	if (action === 'up') await up()
-	else if (action === 'down') await down()
+	if (action === 'up') await up(state)
+	else if (action === 'down') await down(state)
 	else {
 		if (!state) throw new Error('No managed sandbox found')
-		await check()
+		await check(state)
 	}
 } catch (error) {
 	console.error(

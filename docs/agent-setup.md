@@ -6,6 +6,8 @@ Provider access comes first. Cloudflare needs an existing account and authorized
 
 ## Validate the implementation
 
+Use the existing `pnpm` commands below. All tooling lives in `scripts/*.ts` and runs with `tsx`; `pnpm typecheck:tools` checks Node scripts, browser tests, configuration and the isolated Cloudflare test/cleanup Workers. Provider responses and resource manifests are validated before use. Test transports are in `scripts/fixtures/`, and Worker fixtures are in `scripts/workers/`; production configs do not import them.
+
 ```bash
 pnpm install
 pnpm validate

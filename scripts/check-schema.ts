@@ -2,7 +2,7 @@ import { mkdtemp, cp, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve, relative } from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { root } from './setup-env.mjs'
+import { root } from './setup-env.ts'
 
 const temporary = await mkdtemp(join(tmpdir(), 'starter-schema-'))
 try {
