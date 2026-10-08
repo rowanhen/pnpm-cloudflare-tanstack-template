@@ -16,7 +16,8 @@ function Privacy() {
 					<h1 className="text-3xl font-semibold tracking-tight">Privacy in this demo</h1>
 					<p>
 						The waitlist stores the email address and optional name you submit, your consent, and
-						the time you joined. It does not send email automatically.
+						the time you joined. When email is configured, it sends a confirmation and stores the
+						delivery status.
 					</p>
 					<p>
 						Google sign-in stores your name, email address, optional profile image, and the account
@@ -32,8 +33,9 @@ function Privacy() {
 						limit abuse.
 					</p>
 					<p>
-						This is example copy for a starter project. Before a public launch, the project owner
-						must replace it with their actual contact, retention and deletion information.
+						Leitware operates this demonstration. Demo records remain until you delete them or we
+						reset the deployment. To request deletion of your account or waitlist entry, contact
+						rowan@leitware.com. Replace this notice when using the template for your own project.
 					</p>
 				</Stack>
 			</Card>

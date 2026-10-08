@@ -2,6 +2,8 @@
 
 A small starter for new ideas: a waitlist marketing site, Google sign-in, a protected TanStack Start dashboard, and a Cloudflare Worker REST API backed by D1 and R2. Users get private todos, files, revocable API keys, and prepaid API credits through an optional custom Stripe test checkout. A paid summary endpoint connects those examples into a reusable pay-per-request flow. Shared Composables and shadcn/ui components cover forms, loading/empty states, success, 404, and error pages. Drizzle owns the D1 schema and shares public types across the stack. Optional Cloudflare email sends waitlist confirmations and signed-in test emails.
 
+Live example: [devtemplate.leitware.com](https://devtemplate.leitware.com).
+
 ## Agent setup and validation
 
 Run `pnpm validate` to check the complete implementation locally without provider credentials. It runs API/setup tests, builds, and browser suites, using isolated auth/payment fixtures. Add `--cloud` for disposable Cloudflare E2E and provisioning/cleanup tests.
@@ -12,17 +14,20 @@ For an online sandbox, use `pnpm setup:doctor --online`, then `pnpm cloud:up my-
 
 ## Start locally
 
-Requires Node.js 22.12+ (CI uses Node 24) and pnpm 10.18.0.
+Requires Node.js 22.12+ (CI uses Node 24) and pnpm 10.34.6.
+
+Application code, configuration, setup/deployment scripts, and test fixtures are authored in TypeScript. Node commands run through [tsx](https://github.com/privatenumber/tsx), so no separate script build is needed. `pnpm typecheck` checks the apps, shared packages, Node tooling, Playwright tests and test Workers in their own runtime environments. It also rejects JavaScript source files added to the repository. Generated build output and dependencies still contain JavaScript; Git uses a minimal generated shell launcher for the TypeScript-backed checks.
 
 ```bash
 git clone https://github.com/rowanhen/pnpm-cloudflare-tanstack-template.git
 cd pnpm-cloudflare-tanstack-template
+corepack enable
 pnpm install
 pnpm setup-project my-project # optional, before creating cloud resources
 pnpm dev
 ```
 
-Marketing runs at http://localhost:3000, the dashboard at http://localhost:3001, and the API at http://localhost:8787. `pnpm dev` generates a random local auth secret if absent, applies migrations, and starts all three apps. Local D1/R2 need no Cloudflare credentials and persist under `apps/api/.wrangler`.
+Marketing runs at http://localhost:3000, the dashboard at http://localhost:3001, and the API at http://localhost:8787. `pnpm dev` generates a random local auth secret if absent, applies migrations, and starts all three apps. Local D1/R2 need no Cloudflare credentials and persist under `apps/api/.wrangler`. Vite development runs the frontend servers in Node; production builds and browser previews use Cloudflare Workers. This avoids Nitro’s development runner depending on a mismatched Miniflare API.
 
 The waitlist works immediately. Dashboard sign-in requires your Google OAuth client; there is no development auth bypass. The login page explains when Google is unconfigured. Automated tests work without a Google account.
 
@@ -93,11 +98,11 @@ Email uses a native Worker binding, server-owned templates, D1 attempt records a
 
 ### Shared frontend and reusable hooks
 
-Both apps use [`@leitware/composables`](https://www.npmjs.com/package/@leitware/composables), pinned to 1.3.2, with Tailwind CSS v4. Cards, inputs, labels, native selects, checkboxes, badges, alerts, separators, skeletons, stacks and typography come from the package's public entrypoint. The shared [shadcn/ui](https://ui.shadcn.com/docs/installation/tanstack) button remains source-owned for `asChild` link composition. Its styles use the same Composables semantic tokens and focus treatment. The MIT attribution is retained in `packages/shared/LICENSE.shadcn`.
+Both apps use [`@leitware/composables`](https://www.npmjs.com/package/@leitware/composables), at 2.0.0 with the Kumo preset, with Tailwind CSS v4. Cards, inputs, labels, native selects, checkboxes, badges, alerts, separators, skeletons, stacks and typography come from the package's public entrypoint. The shared [shadcn/ui](https://ui.shadcn.com/docs/installation/tanstack) button remains source-owned for `asChild` link composition. Its styles use the same Composables semantic tokens and focus treatment. The MIT attribution is retained in `packages/shared/LICENSE.shadcn`.
 
 Import UI from `@workspace/shared`; it re-exports the selected Composables components and the local button. Prefer public Composables components when extending the starter. Its `Card` owns its header and body: use `title`, `description`, `action`, and `footer` props, with `Stack` for body layout. Do not wrap children in another `CardContent`. The package includes a consumer guide at `node_modules/@leitware/composables/skills/use-composables/SKILL.md` relative to `packages/shared`.
 
-`packages/shared/src/styles.css` imports the Tailwind adapter and compiled Composables stylesheet once, followed by product theme overrides. Keep colours at this theme boundary and use the package's public semantic utilities in components. Light and dark token overrides are colocated; the starter opens in light mode. Preset fonts are optional and use system fallbacks here. Stripe's Appearance API reads the same theme. The existing `components.json` files support adding a source-owned shadcn component when needed; align any generated styles with this theme.
+`packages/shared/src/styles.css` imports the Tailwind adapter and compiled Composables stylesheet once, followed by `presets/kumo.css`. The preset supplies light/dark surfaces, blue actions and orange accents. Inter is self-hosted through `@fontsource-variable/inter`; the starter opens in light mode. Keep future overrides at this theme boundary. Stripe's Appearance API reads the same theme. The existing `components.json` files support adding a source-owned shadcn component when needed; align any generated styles with this theme.
 
 Keep UI copy brief: labels identify fields, actions describe outcomes, and supporting text adds information needed to make a decision. Preserve consent, permissions, limits, one-time key warnings, and payment status. Put setup instructions and explanations of the backend in this README.
 
@@ -117,7 +122,7 @@ apps/marketing/     Waitlist, privacy example, SEO metadata, sitemap and robots
 packages/data/      Drizzle schema, inferred database types and server-only D1 client
 packages/contracts/ Shared Zod inputs, public DTOs and typed REST client
 packages/shared/    Composables exports, shadcn button, theme, page states and shared hooks
-scripts/            Setup/deploy commands and isolated local/cloud tests
+scripts/            TypeScript setup/deploy commands and isolated local/cloud tests
 ```
 
 Browsers call their own app's `/api` routes. The apps proxy to the configured Worker, keeping cookies on the dashboard domain and avoiding third-party cookies. In cloud deployments, they sign the original visitor IP with a separate shared `API_PROXY_SECRET`, so requests across Cloudflare zones retain individual rate limits. The Worker rejects forged or expired signatures. This secret grants no access to user data or sessions. Dashboard protection runs on the server before rendering, and the Worker independently authenticates and authorizes every private request. Private responses use `Cache-Control: no-store`.
@@ -185,7 +190,7 @@ VITE_NOINDEX=true
 
 Production builds need the final HTTPS URLs and `VITE_NOINDEX=false`. Localhost is always noindexed. Set `VITE_NOINDEX=true` explicitly for staging/preview builds; a production build copied to a preview URL still contains its production settings. `VITE_` values are public and embedded at build time.
 
-The marketing site renders titles, descriptions, canonical URLs, Open Graph/Twitter metadata, a 1200×630 social image, WebSite JSON-LD, `/robots.txt`, and `/sitemap.xml` on the server. The dashboard is always noindexed. Update page copy in `apps/marketing/src/routes/`, defaults in `src/lib/seo.ts`, and `public/og.png`/`favicon.svg` for each new idea. Add new public pages to the sitemap. The privacy page is example copy: replace its project/contact/retention details before collecting real signups.
+The marketing site renders titles, descriptions, canonical URLs, Open Graph/Twitter metadata, a 1200×630 social image, WebSite JSON-LD, `/robots.txt`, and `/sitemap.xml` on the server. The dashboard is always noindexed. Update page copy in `apps/marketing/src/routes/`, defaults in `src/lib/seo.ts`, and `public/favicon.svg` for each new idea. Edit `scripts/generate-social-image.ts` and run `pnpm generate:social` to regenerate `public/og.png`. Add new public pages to the sitemap. The privacy page is example copy: replace its project/contact/retention details before collecting real signups.
 
 ## Deploy
 
@@ -276,3 +281,11 @@ GitHub Actions runs `pnpm check` and Chromium tests on main and pull requests wi
 - [Cloudflare D1](https://developers.cloudflare.com/d1/)
 - [R2 Worker binding API](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/)
 - [TanStack Start authentication](https://tanstack.com/start/latest/docs/framework/react/guide/authentication)
+
+## Dependency maintenance
+
+Dependabot checks the pnpm workspace and GitHub Actions daily, including major releases. Its updates are grouped and queued for squash auto-merge; the required **Verify** check must pass first. That check covers formatting, lint, schema consistency, API tests, TypeScript, production builds and both browser suites. The merge workflow only enables GitHub auto-merge and never executes pull-request code.
+
+The repository uses the newest supported pnpm 10 release because [Dependabot currently supports pnpm through v10](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories). Application dependencies use their latest releases. Scoped overrides in `pnpm-workspace.yaml` patch the esbuild bundled by Drizzle Kit's loader and Sharp used by Miniflare; remove them when upstream ranges include the fixes.
+
+Run `pnpm -r outdated`, `pnpm audit`, and `pnpm dlx knip --dependencies` when reviewing upgrades. The dependency audit removed redundant app-level Tailwind declarations; the Vite plugin and shared stylesheet package own those dependencies. For a cloned repository, enable GitHub auto-merge and require **Verify** on the default branch before enabling the bot workflow.

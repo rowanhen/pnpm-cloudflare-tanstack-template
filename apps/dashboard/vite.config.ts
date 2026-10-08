@@ -7,5 +7,10 @@ import { defineConfig } from 'vite'
 export default defineConfig({
 	server: { port: 3001 },
 	resolve: { tsconfigPaths: true },
-	plugins: [tailwindcss(), tanstackStart(), nitro({ preset: 'cloudflare-pages' }), viteReact()],
+	plugins: [
+		tailwindcss(),
+		tanstackStart(),
+		nitro({ preset: 'cloudflare-pages', devServer: { runner: 'node-worker' } }),
+		viteReact(),
+	],
 })

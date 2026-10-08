@@ -3,11 +3,11 @@
 	"include": ["**/*.ts", "**/*.tsx"],
 	"exclude": ["node_modules", ".output"],
 	"compilerOptions": {
-		"baseUrl": ".",
 		"paths": {
 			"@workspace/shared": ["../../packages/shared/src/index.tsx"],
 			"@workspace/shared/*": ["../../packages/shared/src/*"],
 			"~/*": ["./src/*"]
-		}
+		},
+		"types": ["vite/client"]
 	}
 }

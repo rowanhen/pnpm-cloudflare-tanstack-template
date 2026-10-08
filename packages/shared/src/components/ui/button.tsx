@@ -8,7 +8,8 @@ const buttonVariants = cva(
 	{
 		variants: {
 			variant: {
-				default: 'bg-fill-primary text-on-fill-primary hover:opacity-90',
+				default:
+					'border border-(--button-primary-border) bg-fill-primary text-on-fill-primary bg-[image:var(--button-primary-background-image)] shadow-(--button-primary-shadow) hover:bg-[image:var(--button-primary-hover-background-image)]',
 				destructive: 'bg-fill-critical text-inverse hover:opacity-90',
 				outline: 'border border-stroke-input bg-surface-default hover:bg-surface-hover',
 				secondary: 'bg-fill-secondary text-on-fill-secondary hover:bg-surface-hover',

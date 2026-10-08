@@ -1,59 +1,11 @@
+@import '@fontsource-variable/inter';
 @import 'tailwindcss';
 @import '@leitware/composables/tailwind.css';
 @import '@leitware/composables/styles.css';
+@import '@leitware/composables/presets/kumo.css';
 @source '../../../apps/dashboard/src';
 @source '../../../apps/marketing/src';
 @source './';
-
-/* Product theme. Composables owns component styles and semantic utilities. */
-:root {
-	--bg-default: #f8faf9;
-	--bg-surface-default: #ffffff;
-	--bg-surface-popover: #ffffff;
-	--bg-muted: #edf2ee;
-	--bg-surface-hover: #e2ece6;
-	--bg-surface-brand: #edf2ee;
-	--bg-fill-primary: #185c43;
-	--bg-fill-brand: #185c43;
-	--bg-fill-secondary: #edf2ee;
-	--text-default: #172c29;
-	--text-secondary: #5a6e65;
-	--text-muted: #5a6e65;
-	--text-brand: #185c43;
-	--text-link: #185c43;
-	--text-on-fill-primary: #ffffff;
-	--text-on-fill-secondary: #172c29;
-	--icon-brand: #185c43;
-	--border-default: #d6e1da;
-	--border-input: #b3c6bb;
-	--border-focus: #185c43;
-	--border-brand: #185c43;
-	--card-padding: 1.5rem;
-}
-
-.dark {
-	--bg-default: #13201b;
-	--bg-surface-default: #1a2b22;
-	--bg-surface-popover: #1a2b22;
-	--bg-muted: #23372d;
-	--bg-surface-hover: #2f493b;
-	--bg-surface-brand: #23372d;
-	--bg-fill-primary: #a5dbbe;
-	--bg-fill-brand: #a5dbbe;
-	--bg-fill-secondary: #23372d;
-	--text-default: #e3f0e8;
-	--text-secondary: #b2c6bb;
-	--text-muted: #b2c6bb;
-	--text-brand: #a5dbbe;
-	--text-link: #a5dbbe;
-	--text-on-fill-primary: #13201b;
-	--text-on-fill-secondary: #e3f0e8;
-	--icon-brand: #a5dbbe;
-	--border-default: #3d5547;
-	--border-input: #769783;
-	--border-focus: #a5dbbe;
-	--border-brand: #a5dbbe;
-}
 
 @layer base {
 	* {
@@ -65,5 +17,17 @@
 	button:not(:disabled),
 	[role='button']:not([aria-disabled='true']) {
 		cursor: pointer;
+	}
+}
+
+@layer base {
+	html {
+		scroll-behavior: smooth;
+		scroll-padding-top: 2rem;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		html {
+			scroll-behavior: auto;
+		}
 	}
 }
