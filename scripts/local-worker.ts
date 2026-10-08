@@ -1,3 +1,4 @@
+import { observabilityFixture } from './observability-fixture.ts'
 import { z } from 'zod'
 import type { ChildProcess } from 'node:child_process'
 import { spawn, execFileSync } from 'node:child_process'
@@ -22,6 +23,7 @@ export async function localWorker(port: string | number) {
 		execFileSync('pnpm', ['exec', 'wrangler', ...args], { cwd: root, stdio: 'inherit' })
 	let child: ChildProcess | undefined
 	let stripe: Awaited<ReturnType<typeof stripeFixture>> | undefined
+	let telemetry: Awaited<ReturnType<typeof observabilityFixture>> | undefined
 	let stopping: Promise<void> | undefined
 	function stop() {
 		stopping ??= closeResources()
@@ -34,6 +36,7 @@ export async function localWorker(port: string | number) {
 			await exited
 		}
 		await stripe?.stop()
+		await telemetry?.stop()
 		await rm(storage, { recursive: true, force: true })
 	}
 	try {
@@ -43,6 +46,7 @@ export async function localWorker(port: string | number) {
 		run(['d1', 'execute', 'DB', '--local', ...common, '--file', sql])
 		await rm(sql)
 		stripe = await stripeFixture()
+		telemetry = await observabilityFixture()
 		const wrapper = join(root, 'scripts/workers/test-worker.ts')
 		child = spawn(
 			'pnpm',
@@ -60,6 +64,10 @@ export async function localWorker(port: string | number) {
 				`API_PROXY_SECRET:${proxySecret}`,
 				'--var',
 				'GOOGLE_CLIENT_ID:e2e-client.apps.googleusercontent.com',
+				'--var',
+				'POSTHOG_KEY:',
+				'--var',
+				`POSTHOG_FIXTURE_URL:${telemetry.url}`,
 				'--var',
 				'GOOGLE_CLIENT_SECRET:e2e-provider-not-a-real-secret',
 				'--var',
@@ -84,6 +92,7 @@ export async function localWorker(port: string | number) {
 			fixture,
 			proxySecret,
 			stripeUrl: stripe.url,
+			telemetry,
 			stop,
 			query(statement: string) {
 				const result: unknown = JSON.parse(

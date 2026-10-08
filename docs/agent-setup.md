@@ -124,3 +124,7 @@ pnpm cloud:domain my-demo devtemplate.example.com
 The token also needs zone read and DNS edit access. This attaches the marketing Pages project to a subdomain in the same Cloudflare account, creates its CNAME, saves domain ownership in the ignored manifest, and redeploys with the correct canonical URL and indexing enabled. It refuses to replace DNS for another service. Subsequent `cloud:up` runs retain the public URL; `cloud:check` verifies it. The dashboard URL and Google callback stay the same. `cloud:down` removes DNS created by this command along with the project's resources, but retains a matching DNS record that already existed.
 
 The maintained demo is `showcase` at https://devtemplate.leitware.com. Keep its ignored manifest and secrets to update the same resources without rotating credentials.
+
+## PostHog
+
+Use the connected PostHog app or `pnpm posthog:setup` with an explicitly selected organization/project and management credential. The helper creates a project if needed, enables masked replay support, prepares reporting, and saves public collection settings locally. `pnpm setup:local` and `pnpm cloud:up NAME` wire both apps and the Worker; `pnpm posthog:report` checks seven-day results. An agent can do this without account GUIs once authenticated. See [observability](observability.md) for scopes, consent, event contracts and verification. Do not claim live ingestion or replay from fixture tests or key presence alone.

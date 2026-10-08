@@ -1,3 +1,4 @@
+import { track } from '@workspace/observability/browser'
 import { createFileRoute } from '@tanstack/react-router'
 import { Badge, Button, LayerCard, Typography } from '@workspace/shared'
 import { repository, seo, site } from '../lib/seo'
@@ -28,6 +29,7 @@ const features = [
 	],
 	['05', 'An API of your own.', 'Scoped keys, revocation and rate limits.', 'REST'],
 	['06', 'Keep people in the loop.', 'Waitlist confirmations and transactional email.', 'Email'],
+	['07', 'See what happens.', 'Analytics, masked replay and API monitoring.', 'PostHog'],
 ]
 function MarketingHomePage() {
 	const structuredData = {
@@ -56,7 +58,7 @@ function MarketingHomePage() {
 					</p>
 					<div className="flex flex-wrap gap-3">
 						<Button asChild size="lg">
-							<a href={`${repository}/generate`}>
+							<a href={`${repository}/generate`} onClick={() => track('template.opened', {})}>
 								Use the template <span aria-hidden="true">↗</span>
 							</a>
 						</Button>

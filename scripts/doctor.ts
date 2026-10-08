@@ -1,3 +1,4 @@
+import { posthogEnv } from './posthog-env.ts'
 import { setupEnv } from './setup-env.ts'
 
 const env = await setupEnv()
@@ -42,6 +43,16 @@ add(
 	env.EMAIL_FROM ? 'configured' : 'missing',
 	'EMAIL_FROM on a Cloudflare Email Service domain; configuration is not proof of inbox delivery',
 )
+try {
+	const config = posthogEnv(env)
+	add(
+		'posthog',
+		config.key ? 'configured' : 'missing',
+		'Public project token + regional ingestion host; ingestion and replay are not verified by presence',
+	)
+} catch {
+	add('posthog', 'blocked', 'Use a phc_ project token and matching PostHog Cloud ingestion host')
+}
 if (process.argv.includes('--online')) {
 	if (env.CLOUDFLARE_ACCOUNT_ID && env.CLOUDFLARE_API_TOKEN) {
 		try {

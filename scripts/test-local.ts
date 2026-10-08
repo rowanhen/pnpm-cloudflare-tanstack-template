@@ -1,3 +1,4 @@
+import { testObservability } from './test-observability.ts'
 import { testEmail } from './test-email.ts'
 import { localWorker } from './local-worker.ts'
 import { testApi } from './test-api.ts'
@@ -13,6 +14,7 @@ try {
 	await testMetering(worker.base, worker.fixture.cookies)
 	await testCheckout(worker)
 	await testEmail(worker)
+	await testObservability(worker)
 } finally {
 	await worker.stop()
 	console.log('Local Worker and isolated D1/R2 test storage removed.')

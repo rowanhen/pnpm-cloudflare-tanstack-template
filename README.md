@@ -192,6 +192,8 @@ Production builds need the final HTTPS URLs and `VITE_NOINDEX=false`. Localhost 
 
 The marketing site renders titles, descriptions, canonical URLs, Open Graph/Twitter metadata, a 1200×630 social image, WebSite JSON-LD, `/robots.txt`, and `/sitemap.xml` on the server. The dashboard is always noindexed. Update page copy in `apps/marketing/src/routes/`, defaults in `src/lib/seo.ts`, and `public/favicon.svg` for each new idea. Edit `scripts/generate-social-image.ts` and run `pnpm generate:social` to regenerate `public/og.png`. Add new public pages to the sitemap. The privacy page is example copy: replace its project/contact/retention details before collecting real signups.
 
+PostHog analytics, masked session replay, browser/API errors and a reusable reporting dashboard are included. Run `pnpm posthog:setup` with a scoped management credential, then `pnpm cloud:up NAME`. See [observability setup and privacy defaults](docs/observability.md).
+
 ## Deploy
 
 Authenticate with `pnpm exec wrangler login`, or export `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. API provisioning needs D1, Workers R2 Storage, and Workers Scripts Edit permissions; app deployment also needs Cloudflare Pages Edit.

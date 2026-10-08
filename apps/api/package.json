@@ -18,6 +18,7 @@
 	"dependencies": {
 		"@workspace/contracts": "workspace:*",
 		"@workspace/data": "workspace:*",
+		"@workspace/observability": "workspace:*",
 		"better-auth": "^1.7.7",
 		"drizzle-orm": "0.45.4",
 		"stripe": "^23.0.0"

@@ -1,3 +1,5 @@
+import { reportRequest } from '@workspace/observability/server'
+import { safeError, safePath } from '@workspace/observability/privacy'
 import { emailEnabled, emailRoute } from './email'
 import { database } from '@workspace/data/client'
 import { waitlist } from '@workspace/data/schema'
@@ -146,7 +148,10 @@ async function route(request: Request, env: Env): Promise<Response> {
 }
 
 export default {
-	async fetch(request: Request, env: Env): Promise<Response> {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		const started = performance.now()
+		const path = new URL(request.url).pathname
+		let unexpectedError: unknown
 		const origin = request.headers.get('origin')
 		const allowed = env.ALLOWED_ORIGINS.split(',')
 			.map((value) => value.trim())
@@ -160,7 +165,7 @@ export default {
 					? new Response(null, { status: 204 })
 					: await route(request, env)
 		} catch (error) {
-			if (!(error instanceof HttpError)) console.error(error)
+			if (!(error instanceof HttpError)) unexpectedError = error
 			response = json(
 				{ error: error instanceof HttpError ? error.message : 'Internal server error' },
 				error instanceof HttpError ? error.status : 500,
@@ -169,6 +174,39 @@ export default {
 				for (const [name, value] of Object.entries(error.headers)) response.headers.set(name, value)
 		}
 		response = new Response(response.body, response)
+		const requestId = response.headers.get('X-Request-Id') ?? crypto.randomUUID()
+		response.headers.set('X-Request-Id', requestId)
+		if (path !== '/api/health' && request.method !== 'OPTIONS') {
+			const report = {
+				requestId,
+				method: request.method,
+				path,
+				status: response.status,
+				durationMs: performance.now() - started,
+			}
+			console.log(
+				JSON.stringify({
+					event: 'api.request',
+					request_id: requestId,
+					route: safePath(path),
+					method: request.method,
+					status: response.status,
+					duration_ms: Math.round(report.durationMs),
+				}),
+			)
+			if (unexpectedError !== undefined) {
+				const error = safeError(unexpectedError)
+				console.error(
+					JSON.stringify({
+						event: 'api.exception',
+						request_id: requestId,
+						type: error.name,
+						stack: error.stack,
+					}),
+				)
+			}
+			ctx.waitUntil(reportRequest(env, { ...report, error: unexpectedError }))
+		}
 		response.headers.set('Cache-Control', 'no-store')
 		response.headers.set('X-Content-Type-Options', 'nosniff')
 		response.headers.set('Vary', 'Origin')

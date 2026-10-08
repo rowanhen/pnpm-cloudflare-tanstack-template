@@ -1,10 +1,11 @@
+import { observedFetch, track } from '@workspace/observability/browser'
 import { createClient } from '@workspace/contracts/client'
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useHydrated } from '@workspace/shared'
 
 const client = createClient(async (path, init) => {
-	const response = await fetch(path, init)
+	const response = await observedFetch(path, init)
 	if (!response.ok) {
 		const body: unknown = await response.json().catch(() => null)
 		throw new Error(
@@ -33,6 +34,7 @@ export function useWaitlist() {
 				website: fields.get('website')?.toString() ?? '',
 				consent: true,
 			})
+			track('waitlist.joined', {})
 			await navigate({ to: '/waitlist/success' })
 		} catch (cause) {
 			setError(cause instanceof Error ? cause.message : 'Unable to join the waitlist.')

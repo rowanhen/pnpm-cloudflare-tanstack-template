@@ -29,8 +29,15 @@ function Privacy() {
 						Stripe handles payment details; card numbers never pass through this app.
 					</p>
 					<p>
-						This example includes no advertising or analytics trackers. Request counters are used to
-						limit abuse.
+						When configured, PostHog records page visits, interactions, browser errors and masked
+						session replays only after you allow analytics. Change your choice with Analytics
+						preferences on either site. Each site stores its own preference. Account IDs identify
+						signed-in sessions; names, email addresses and form contents are excluded.
+					</p>
+					<p>
+						The API separately records operational route, status, timing and sanitized error data
+						with a random request ID, without visitor identifiers or request contents. Request
+						counters limit abuse. PostHog data retention follows the configured project settings.
 					</p>
 					<p>
 						Leitware operates this demonstration. Demo records remain until you delete them or we
