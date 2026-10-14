@@ -11,8 +11,8 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"posthog-js": "1.438.6",
-		"posthog-node": "5.55.1"
+		"posthog-js": "1.438.7",
+		"posthog-node": "5.55.2"
 	},
 	"devDependencies": {
 		"typescript": "^7.0.2"
