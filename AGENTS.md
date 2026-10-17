@@ -4,6 +4,7 @@ Read [the one-page structure guide](docs/architecture.md) before changing applic
 
 - Keep operational commands in `scripts/` and tests/fixtures in the corresponding `tests/` folders.
 - Use the Node and pnpm versions pinned in `.nvmrc` and `package.json`.
+- Commit the root `.env.local` only with dotenvx-encrypted values; its public encryption key is safe to track. Keep `.env.keys`, private decryption keys and plaintext secrets out of Git.
 - Build every new page and UI state with the public `@leitware/composables` components, imported through the direct exports in `@workspace/shared`. Apply this to marketing, dashboard, auth, checkout, privacy, success, loading, error and 404 pages.
 - Use `Typography` with the appropriate variant and semantic `as` for headings, paragraphs and inline text; do not add loose `<p>`, `<span>` or heading tags. Use the library's form controls, status components, `CodeBlock`, `Container`, `Section`, `Stack` and `Grid` wherever they fit. Use `Container maxWidth="md"` for page content and keep copy brief.
 - Use the public DropZone components for file selection/upload. Use `Button variant="destructive"` for deleting/revoking data and known file replacements.

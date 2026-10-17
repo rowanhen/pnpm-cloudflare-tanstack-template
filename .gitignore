@@ -13,6 +13,7 @@ node_modules
 dist
 dist-ssr
 *.local
+!/.env.local
 
 
 # Nitro / TanStack output
