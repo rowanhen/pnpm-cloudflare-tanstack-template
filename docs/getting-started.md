@@ -4,18 +4,18 @@ Build locally first, then connect the services you need. You can run and test th
 
 ## 1. Install and run
 
-Install [Node.js](https://nodejs.org/en/download) (24 LTS recommended) and [Git](https://git-scm.com/downloads). A terminal is the app where you run the commands below. Keep it open while developing.
+Install [Node.js](https://nodejs.org/en/download) (26.12.0, matching `.nvmrc`) and [Git](https://git-scm.com/downloads). A terminal is the app where you run the commands below. Keep it open while developing.
 
 ```bash
 git clone https://github.com/rowanhen/pnpm-cloudflare-tanstack-template.git my-project
 cd my-project
-corepack enable
+npm install --global pnpm@10.34.7
 pnpm install
 pnpm setup-project my-project
 pnpm dev
 ```
 
-If `corepack` is not installed, run `npm install --global corepack` and retry. `setup-project` is optional: it changes local package, app and Cloudflare resource names. Run it before creating cloud resources. It does not rename a GitHub repository. To start your own GitHub repository, use the repository's **Use this template** button and clone that new repository instead.
+`setup-project` is optional: it changes local package, app and Cloudflare resource names. Run it before creating cloud resources. It does not rename a GitHub repository. To start your own GitHub repository, use the repository's **Use this template** button and clone that new repository instead.
 
 Open http://localhost:3000. Submit the waitlist with an address you control and tick the consent checkbox. You should reach `/waitlist/success`. Entries save locally; email is off until you connect it. Repeating the same address shows the same success page without creating another entry.
 
