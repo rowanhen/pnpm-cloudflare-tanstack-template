@@ -112,7 +112,7 @@ PostHog analytics, masked session replay and browser/API errors are included. Co
 
 ## Dependency maintenance
 
-Dependabot checks the pnpm workspace and GitHub Actions daily, including major releases. Its updates are grouped and queued for squash auto-merge; the required **Verify** check must pass first. That check covers API generation/drift checks, formatting, lint, schema consistency, TypeScript and production builds. Unit/API integration tests remain available locally; CI does not run test suites. The merge workflow only enables GitHub auto-merge and never executes pull-request code.
+Dependabot checks the pnpm workspace and GitHub Actions daily, including major releases. Its updates are grouped and queued for squash auto-merge; the required **Verify** check must pass first. That check covers lint/formatting, unit tests, TypeScript and production builds, in that order. A separate deployment job runs after it succeeds on main. API integration tests remain available locally. The merge workflow only enables GitHub auto-merge and never executes pull-request code.
 
 The repository uses the newest supported pnpm 10 release (10.34.7) because [Dependabot currently supports pnpm through v10](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories). Dependency versions are pinned in the lockfile; check for newer releases when upgrading. Scoped overrides in `pnpm-workspace.yaml` patch the esbuild bundled by Drizzle Kit's loader and Sharp used by Miniflare; remove them when upstream ranges include the fixes.
 

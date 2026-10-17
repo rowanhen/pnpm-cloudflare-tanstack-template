@@ -33,9 +33,9 @@ pnpm check
 
 It runs lint, formatting, schema/migration checks, local unit/API integration tests, TypeScript and builds. `pnpm validate` is an alias. Tests create isolated local D1/R2, signed sessions and provider fixtures, then clean up. Fixtures never become a production login bypass. Analytics fixture events do not go to your real project.
 
-Individual local commands: `pnpm test`, `pnpm test:unit`. Browser E2E tests and their tooling have been removed; use the manual frontend checks below. CI runs generation/drift checks, lint, formatting, schema checks, TypeScript and builds, without the test suites.
+Individual local commands: `pnpm test`, `pnpm test:unit`. Browser E2E tests and their tooling have been removed; use the manual frontend checks below. CI runs lint/formatting, unit tests, TypeScript and builds, followed by deployment on main. API integration tests remain local.
 
-CI regenerates API outputs with native Orval and rejects tracked changes or new files. Local generation writes directly to generated directories; run it after contract changes and review the diff.
+Generate API outputs with native Orval after contract changes and review the diff. Generation writes directly to generated directories.
 
 The historical cloud provisioning/lifecycle runner has been removed. Use the [Wrangler deployment guide](manual-deployment.md) and live checklist below to verify a retained deployment. Local tests do not establish current provider access or deployed health. Check the API health endpoint, each app's `/api` proxy, anonymous protection, unknown-path 404s and indexing after deployment.
 

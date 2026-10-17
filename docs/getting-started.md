@@ -73,7 +73,7 @@ The API uses `apps/api/wrangler.json`; each website has its own Pages `wrangler.
 pnpm validate
 ```
 
-This runs lint, formatting, migration checks, local unit/API tests, TypeScript and builds. CI runs generation/drift checks, lint, formatting, schema checks, TypeScript and builds. Review frontend flows manually. Temporary auth/payment/analytics fixtures need no provider accounts. Live Google consent, Stripe card completion, PostHog ingestion/replay and inbox delivery use the [verification checklist](verification.md).
+This runs lint, formatting, migration checks, local unit/API tests, TypeScript and builds. CI runs lint/formatting, unit tests, TypeScript and builds, followed by deployment on main. Review frontend flows manually. Temporary auth/payment/analytics fixtures need no provider accounts. Live Google consent, Stripe card completion, PostHog ingestion/replay and inbox delivery use the [verification checklist](verification.md).
 
 Resource creation and deletion use provider tools. Keep the names and configuration of any deployed resources you own; local tests only clean up their own temporary local storage.
 

@@ -76,4 +76,4 @@ Provider-side retention is configured separately. A 180-day preference does not 
 - `apps/marketing/src/routes/privacy.tsx`: public example notice; replace its business-specific details.
 - `tests/unit/consent.test.ts`: invalid/expired/changed-policy records.
 
-Run `pnpm test:unit` locally for consent-record validation. Manually verify browser SDK gating, granular choices, GPC, blocked storage, cross-tab withdrawal, masking, keyboard access and phone layout using the launch checklist above. Browser E2E tests are not included, and CI does not run the local API suites. Test live ingestion, storage and deletion separately using authorized test data.
+Run `pnpm test:unit` locally for consent-record validation. Manually verify browser SDK gating, granular choices, GPC, blocked storage, cross-tab withdrawal, masking, keyboard access and phone layout using the launch checklist above. Browser E2E tests are not included, and API integration suites run locally rather than in CI. Test live ingestion, storage and deletion separately using authorized test data.

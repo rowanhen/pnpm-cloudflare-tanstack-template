@@ -13,7 +13,7 @@ Read [the one-page structure guide](docs/architecture.md) before changing applic
 - Run `pnpm api:generate` after contract changes. Never hand-edit `src/generated/` files.
 - Implement behaviour in the scaffolded feature handlers. Preserve ownership checks and select public database columns explicitly.
 - Replace unresolved `TODO_IMPLEMENT_OPERATION` scaffold expressions with typed implementations; ordinary TypeScript checking rejects unfinished handlers.
-- Run `pnpm check` before committing; unit and API integration tests run locally. CI runs API generation/drift checks, lint, formatting, schema checks, TypeScript and builds, without browser or API test suites. Browser E2E tooling is not included. Review frontend changes manually in the browser.
-- CI runs Orval and checks Git status for changed and new generated files. Generation cleans only generated directories; never put handwritten code there.
+- Run `pnpm check` before committing. CI runs lint/formatting, unit tests, TypeScript and builds in that order, followed by a separate deployment job on main. API integration tests remain local. Browser E2E tooling is not included. Review frontend changes manually in the browser.
+- Run Orval after contract changes and review generated output. Generation cleans only generated directories; never put handwritten code there.
 - Use Wrangler and provider tools for provisioning and deployment; see `docs/manual-deployment.md`.
 - Keep provider setup/deployment instructions in the existing docs. Follow the actual scope of the migrated feature; other integrations still use their existing handlers.

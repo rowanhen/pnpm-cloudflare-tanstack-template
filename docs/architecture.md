@@ -30,7 +30,7 @@ Effect handler → typed Drizzle query → Cloudflare D1
 2. Reference each path in `api.json` with an ordinary OpenAPI `$ref`.
 3. Run `pnpm api:generate`. Missing handler entry points are created; existing implementations are preserved.
 4. Implement the generated handler types with Effect and Drizzle. Use the generated frontend hooks.
-5. Run `pnpm check`. TypeScript rejects unfinished stubs. CI regenerates and rejects changed or newly generated files.
+5. Run `pnpm check`. TypeScript rejects unfinished stubs. Review regenerated files before committing.
 
 Shared adapters validate requests and each declared status/body pair at runtime. Generated types check expected failures; business logic still owns permissions and unexpected defects become sanitized 500 responses. Drizzle's storage schema stays separate from the public contract, with query results checked against generated response types.
 

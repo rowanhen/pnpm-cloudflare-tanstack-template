@@ -54,6 +54,6 @@ pnpm test:unit
 pnpm test
 ```
 
-Local tests cover consent-record validation, URL/message redaction, API request correlation, server SDK flushing and provider outages against local transports. Tests never send fixture events to your live project. Check browser consent gates, replay masking, identity reset, withdrawal, live ingestion and playable replay manually using the [verification guide](verification.md). CI does not run these test suites.
+Local tests cover consent-record validation, URL/message redaction, API request correlation, server SDK flushing and provider outages against local transports. Tests never send fixture events to your live project. Check browser consent gates, replay masking, identity reset, withdrawal, live ingestion and playable replay manually using the [verification guide](verification.md). CI runs unit tests; API integration checks run locally.
 
 References: [Workers integration](https://posthog.com/docs/libraries/cloudflare-workers), [JavaScript configuration](https://posthog.com/docs/libraries/js/config), [replay privacy](https://posthog.com/docs/session-replay/privacy), [API authentication](https://posthog.com/docs/api).

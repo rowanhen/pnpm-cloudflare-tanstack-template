@@ -46,7 +46,7 @@ pnpm check        # lint, formatting, migrations, unit/API tests, types and buil
 pnpm validate     # alias for pnpm check
 ```
 
-Deploy with the [Wrangler deployment guide](docs/manual-deployment.md). Cloudflare resources, secrets and provider accounts use their native tools; this template does not maintain its own provisioning or teardown framework. Live provider checks are described in [verification](docs/verification.md).
+CI runs lint, unit tests, type checks and build. On main, a separate job deploys the verified build when Cloudflare Actions settings are configured. See the [Wrangler deployment guide](docs/manual-deployment.md#github-actions-deployment). Cloudflare resources, secrets and provider accounts use their native tools; this template does not maintain its own provisioning or teardown framework. Live provider checks are described in [verification](docs/verification.md).
 
 ## Guides
 

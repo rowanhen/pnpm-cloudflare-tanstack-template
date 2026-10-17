@@ -10,7 +10,7 @@ pnpm api:generate # after contract changes
 pnpm validate
 ```
 
-`validate` is an alias for `pnpm check`: lint, formatting, migration drift/upgrade checks, unit/API integration tests, TypeScript and builds. Tests run locally; CI runs generation/drift checks, lint, formatting, schema checks, TypeScript and builds. Review frontend flows manually in a browser.
+`validate` is an alias for `pnpm check`: lint, formatting, migration drift/upgrade checks, unit/API integration tests, TypeScript and builds. Tests run locally; CI runs lint/formatting, unit tests, TypeScript and builds, followed by deployment on main. Review frontend flows manually in a browser.
 
 Tests use isolated local D1/R2 storage and provider fixtures. The test Worker and transports live under `tests/support/`, outside production code. Tests do not complete Google consent or real card payments, send live analytics or deliver real email. Record live evidence separately using [verification](verification.md).
 
