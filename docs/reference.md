@@ -4,11 +4,17 @@
 
 ## Shared UI
 
-Both apps use [`@leitware/composables`](https://www.npmjs.com/package/@leitware/composables), at 2.0.0 with the Kumo preset, with Tailwind CSS v4. Cards, inputs, labels, native selects, checkboxes, badges, alerts, separators, skeletons, stacks and typography come from the package's public entrypoint. The shared [shadcn/ui](https://ui.shadcn.com/docs/installation/tanstack) button remains source-owned for `asChild` link composition. Its styles use the same Composables semantic tokens and focus treatment. The MIT attribution is retained in `packages/shared/LICENSE.shadcn`.
+Both apps consume `@leitware/composables` 2.0.0 with the Kumo preset. Import its public components through `@workspace/shared`; these are direct re-exports, including `Button`, `Typography`, `Container`, `Section`, `Stack`, `Grid`, form controls, status components and `CodeBlock`.
 
-Import UI from `@workspace/shared`; it re-exports the selected Composables components and the local button. Prefer public Composables components when extending the starter. Its `Card` owns its header and body: use `title`, `description`, `action`, and `footer` props, with `Stack` for body layout. Do not wrap children in another `CardContent`. The package includes a consumer guide at `node_modules/@leitware/composables/skills/use-composables/SKILL.md` relative to `packages/shared`.
+Use `Typography` variants for headings, body text, captions and inline text. Keep the correct semantic element with `as`. Use Composables layout props for ordinary stacks, grids and section spacing. Leave document, navigation, form, list and machine-readable status/time semantics in HTML when no matching package component fits. Do not introduce raw paragraphs/spans, replacement button styles, variant aliases, or one-off font sizes/weights/tracking to reproduce package variants.
 
-`packages/shared/src/styles.css` imports the Tailwind adapter and compiled Composables stylesheet once, followed by `presets/kumo.css`. The preset supplies light/dark surfaces, blue actions and orange accents. Inter is self-hosted through `@fontsource-variable/inter`; the starter opens in light mode. Keep future overrides at this theme boundary. Stripe's Appearance API reads the same theme. The existing `components.json` files support adding a source-owned shadcn component when needed; align any generated styles with this theme.
+Use the package's actual `Button variant="ghost"` for text links. Compose internal links with `render={<Link to="/privacy" />}` from `@tanstack/react-router`, and register each app's router in its `router.tsx` so destinations and search parameters are checked. Use `hash` for same-page section links. Payment completion and sign-out also navigate through the router. Cross-origin URLs, OAuth handoffs and expired-session HTTP redirects remain real document navigations; the deliberately invalid 404 example also uses an HTTP link.
+
+For rendered links, pass Base UI's `nativeButton: false` and set `role="link"` on the rendered anchor, preserving link semantics. This installed Composables version forwards that Base UI option but omits it from `ButtonProps`, so the render compositions supply it through a prop spread. This is a package typing gap, not a custom component or variant. External anchors exist only as `Button` render targets. Do not nest a native button inside a link. There is no source-owned button implementation or router-button alias.
+
+Each app's registered router checks route destinations and search values during typechecking. Browser tests cover navigation, focusable links, auth boundaries and the actual workflows.
+
+`packages/shared/src/styles.css` imports Tailwind theme/preflight, the Tailwind adapter and the compiled Composables stylesheet once, followed by `presets/kumo.css` and app utilities. Keep the app utilities last: otherwise the package’s compiled base utility rules can override responsive consumer layouts. The preset supplies light/dark surfaces, blue actions and orange accents. Inter is self-hosted through `@fontsource-variable/inter`; the starter opens in light mode. Keep future overrides at this theme boundary. Stripe's Appearance API reads the same theme. The existing `components.json` files support adding a source-owned shadcn component when needed; align any generated styles with this theme.
 
 Keep UI copy brief: labels identify fields, actions describe outcomes, and supporting text adds information needed to make a decision. Preserve consent, permissions, limits, one-time key warnings, and payment status. Put setup instructions and backend details in the docs.
 
@@ -27,7 +33,7 @@ apps/dashboard/     Protected workspace, private todos/files, API key management
 apps/marketing/     Waitlist, privacy example, SEO metadata, sitemap and robots
 packages/data/      Drizzle schema, inferred database types and server-only D1 client
 packages/contracts/ OpenAPI todo contract, generated Effect types; legacy Zod inputs and REST client
-packages/shared/    Composables exports, shadcn button, theme, page states and shared hooks
+packages/shared/    Composables exports, theme, page states and shared hooks
 packages/observability/ Consent, analytics, replay, error capture and API telemetry
 codegen/            Orval Effect extension for typed handlers and wiring
 scripts/            Small local setup and migration checks
@@ -102,7 +108,7 @@ Production builds need the final HTTPS URLs and `VITE_NOINDEX=false`. Localhost 
 
 The marketing site renders titles, descriptions, canonical URLs, Open Graph/Twitter metadata, a 1200×630 social image, WebSite JSON-LD, `/robots.txt`, and `/sitemap.xml` on the server. The dashboard is always noindexed. Update page copy in `apps/marketing/src/routes/`, defaults in `src/lib/seo.ts`, and `public/favicon.svg` for each new idea. Replace `apps/marketing/public/og.png` with your own 1200×630 social image. Add new public pages to the sitemap. The privacy page is example copy: replace its project/contact/retention details before collecting real signups.
 
-PostHog analytics, masked session replay and browser/API errors are included. Configure a project and its public token/host through PostHog, then supply the frontend build settings and Worker bindings. See [observability setup and privacy defaults](observability.md).
+PostHog analytics, masked session replay and browser/API errors are included. Configure a project and its public token/host through PostHog, then supply the frontend build settings and Worker bindings. See [observability setup and privacy defaults](observability.md) and the [consent example and launch requirements](privacy-consent.md).
 
 ## Dependency maintenance
 

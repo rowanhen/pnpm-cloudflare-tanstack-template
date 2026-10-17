@@ -1,3 +1,5 @@
+import { useNavigate } from '@tanstack/react-router'
+import { Alert, Button, Skeleton, Typography } from '@workspace/shared'
 import { useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import {
@@ -5,7 +7,6 @@ import {
 	PaymentElement,
 	useCheckoutElements,
 } from '@stripe/react-stripe-js/checkout'
-import { Alert, Button, Skeleton } from '@workspace/shared'
 
 const clients = new Map<string, ReturnType<typeof loadStripe>>()
 function stripeClient(key: string) {
@@ -54,6 +55,7 @@ export default function PaymentForm({
 	)
 }
 function Form({ sessionId }: { sessionId: string }) {
+	const navigate = useNavigate()
 	const checkout = useCheckoutElements()
 	const [busy, setBusy] = useState(false)
 	const [error, setError] = useState('')
@@ -75,8 +77,7 @@ function Form({ sessionId }: { sessionId: string }) {
 					if (result.type === 'error') {
 						setError(result.error.message)
 						setBusy(false)
-					} else
-						window.location.assign(`/checkout/success?session_id=${encodeURIComponent(sessionId)}`)
+					} else await navigate({ to: '/checkout/success', search: { session_id: sessionId } })
 				} catch {
 					setError('Payment could not be confirmed. Please try again.')
 					setBusy(false)
@@ -88,9 +89,9 @@ function Form({ sessionId }: { sessionId: string }) {
 			<Button className="w-full" size="lg" disabled={busy} type="submit">
 				{busy ? 'Confirming…' : `Pay ${checkout.checkout.total.total.amount}`}
 			</Button>
-			<p className="text-center text-xs leading-5 text-content-secondary">
+			<Typography as="p" variant="caption-100" className="text-center text-content-secondary">
 				Test mode · No real charge.
-			</p>
+			</Typography>
 		</form>
 	)
 }

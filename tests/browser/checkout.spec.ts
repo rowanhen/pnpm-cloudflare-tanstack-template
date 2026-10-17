@@ -29,11 +29,26 @@ for (const [app, base] of [
 		expect(response?.status()).toBe(404)
 		await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
 		await expect(page.getByRole('link', { name: 'Back to home' })).toBeVisible()
-		await expect(page.locator('[data-slot="card"]')).toBeVisible()
+		await expect
+			.poll(
+				async () => (await page.locator('[data-slot="container"]').first().boundingBox())?.width,
+			)
+			.toBe(768)
+		await page.screenshot({
+			path: `test-results/${app}-404.png`,
+			fullPage: true,
+			animations: 'disabled',
+		})
+		await expect(page.locator('[data-slot="container"]').first()).toBeVisible()
 		await page.goto(`${base}/error`)
 		await expect(page.getByRole('heading', { name: "Couldn't load this page" })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible()
 		expect(await page.locator('body').innerText()).not.toContain('stack trace')
+		await page.screenshot({
+			path: `test-results/${app}-error.png`,
+			fullPage: true,
+			animations: 'disabled',
+		})
 	})
 }
 
@@ -170,7 +185,7 @@ test('checkout confirms only a backend-verified order and isolates accounts', as
 
 test('marketing and status pages fit a phone viewport', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 })
-	for (const path of ['/', '/waitlist/success', '/error', '/missing-page']) {
+	for (const path of ['/', '/privacy', '/waitlist/success', '/error', '/missing-page']) {
 		await page.goto(`${marketingUrl}${path}`)
 		expect(
 			await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
@@ -195,7 +210,7 @@ test('a real server failure uses the custom error boundary and can recover', asy
 	const failed = await page.goto('/login')
 	expect(failed?.status()).toBe(500)
 	await expect(page.getByRole('heading', { name: "Couldn't load this page" })).toBeVisible()
-	await expect(page.locator('[data-slot="card"]')).toBeVisible()
+	await expect(page.locator('[data-slot="container"]').first()).toBeVisible()
 	await expect(page.getByText('Test upstream unavailable')).toHaveCount(0)
 	await context.setExtraHTTPHeaders({})
 	await page.getByRole('button', { name: 'Try again' }).click()
@@ -218,4 +233,17 @@ test('custom checkout creates a session and recovers from unavailable Stripe.js'
 	expect((await created).status()).toBe(201)
 	await expect(page.getByRole('alert')).toContainText('Unable to load the payment form')
 	await expect(page.getByRole('link', { name: 'Back to workspace' })).toBeVisible()
+})
+
+test('privacy uses the shared page width', async ({ page }) => {
+	await page.goto(`${marketingUrl}/privacy`)
+	await expect(page.getByRole('heading', { name: 'Privacy', exact: true })).toBeVisible()
+	await expect
+		.poll(async () => (await page.locator('[data-slot="container"]').first().boundingBox())?.width)
+		.toBe(768)
+	await page.screenshot({
+		path: 'test-results/privacy-desktop.png',
+		fullPage: true,
+		animations: 'disabled',
+	})
 })

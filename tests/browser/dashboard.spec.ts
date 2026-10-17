@@ -59,6 +59,11 @@ test('signed-in dashboard persists private D1/R2 data and manages scoped API key
 		expect(initial?.headers()['cache-control']).toContain('no-store')
 		await expect(page.getByText('alice@example.test', { exact: true })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Create API key' })).toBeEnabled()
+		await expect
+			.poll(
+				async () => (await page.locator('[data-slot="container"]').first().boundingBox())?.width,
+			)
+			.toBe(768)
 		await page.screenshot({
 			path: 'test-results/dashboard-desktop.png',
 			fullPage: true,

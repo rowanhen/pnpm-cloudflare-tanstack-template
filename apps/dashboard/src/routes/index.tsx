@@ -1,11 +1,7 @@
-import { useAnalyticsIdentity } from '@workspace/shared/components/analytics'
-import { Email } from '../components/email'
-import { useState } from 'react'
-import { createFileRoute, redirect } from '@tanstack/react-router'
 import {
 	AppShell,
 	Button,
-	Card,
+	PageSection,
 	Stack,
 	Input,
 	Label,
@@ -13,7 +9,13 @@ import {
 	Alert,
 	Skeleton,
 	useHydrated,
+	Typography,
 } from '@workspace/shared'
+import { useAnalyticsIdentity } from '@workspace/shared/components/analytics'
+import { Email } from '../components/email'
+import { useState } from 'react'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+
 import { getSession } from '../lib/session'
 import { api } from '../lib/api'
 import { ApiKeys } from '../lib/api-keys'
@@ -39,6 +41,7 @@ function DashboardHomePage() {
 	return (
 		<AppShell
 			title="Your workspace"
+			description={user.email}
 			actions={
 				<Button
 					disabled={!hydrated || signOut.isPending}
@@ -50,12 +53,11 @@ function DashboardHomePage() {
 				</Button>
 			}
 		>
-			<p className="text-sm text-content-secondary">{user.email}</p>
 			{(error || signOut.error) && (
 				<Alert type="negative">{(error ?? signOut.error)?.message}</Alert>
 			)}
-			<div className="grid items-start gap-6 lg:grid-cols-2">
-				<Card title={<h2>Todos</h2>}>
+			<Stack gap={10}>
+				<PageSection title="Todos">
 					<Stack gap={6}>
 						<form
 							className="flex items-end gap-3"
@@ -64,7 +66,7 @@ function DashboardHomePage() {
 								todoMutations.create.mutate({ data: { title } }, { onSuccess: () => setTitle('') })
 							}}
 						>
-							<div className="flex-1 space-y-2">
+							<Stack gap={2} className="min-w-0 flex-1">
 								<Label htmlFor="todo-title" className="sr-only">
 									Todo title
 								</Label>
@@ -77,7 +79,7 @@ function DashboardHomePage() {
 									maxLength={200}
 									placeholder="New todo"
 								/>
-							</div>
+							</Stack>
 							<Button disabled={busy} type="submit">
 								Add todo
 							</Button>
@@ -86,7 +88,7 @@ function DashboardHomePage() {
 						<ul className="divide-y">
 							{todos.data?.todos.map((item) => (
 								<li key={item.id} className="flex items-center justify-between gap-3 py-3">
-									<div className="flex min-w-0 items-center gap-3">
+									<Stack gap={3} direction="horizontal" align="center" className="min-w-0">
 										<Checkbox
 											id={`todo-${item.id}`}
 											checked={item.completed}
@@ -100,11 +102,11 @@ function DashboardHomePage() {
 										/>
 										<Label
 											htmlFor={`todo-${item.id}`}
-											className={`break-all leading-5 ${item.completed ? 'text-content-secondary line-through' : ''}`}
+											className={`break-all ${item.completed ? 'text-content-secondary line-through' : ''}`}
 										>
 											{item.title}
 										</Label>
-									</div>
+									</Stack>
 									<Button
 										variant="ghost"
 										size="sm"
@@ -118,13 +120,13 @@ function DashboardHomePage() {
 							))}
 						</ul>
 						{todos.data?.todos.length === 0 && (
-							<p className="rounded-lg border border-dashed p-6 text-center text-sm text-content-secondary">
+							<Typography as="p" variant="body-100" className="text-content-secondary">
 								No todos yet.
-							</p>
+							</Typography>
 						)}
 					</Stack>
-				</Card>
-				<Card title={<h2>Files</h2>} description="Up to 5 MiB per file.">
+				</PageSection>
+				<PageSection title="Files" description="Up to 5 MiB per file.">
 					<Stack gap={6}>
 						<form
 							className="space-y-3"
@@ -140,7 +142,7 @@ function DashboardHomePage() {
 									)
 							}}
 						>
-							<div className="space-y-2">
+							<Stack gap={2}>
 								<Label htmlFor="file">File</Label>
 								<Input
 									id="file"
@@ -149,10 +151,10 @@ function DashboardHomePage() {
 									disabled={busy}
 									onChange={(event) => setFile(event.target.files?.[0] ?? null)}
 								/>
-								<p className="text-xs text-content-secondary">
+								<Typography as="p" variant="caption-100" className="text-content-secondary">
 									Filenames: letters, numbers, . _ - only. Matching names replace existing files.
-								</p>
-							</div>
+								</Typography>
+							</Stack>
 							<Button disabled={busy || !file} type="submit" variant="secondary">
 								Upload file
 							</Button>
@@ -165,10 +167,14 @@ function DashboardHomePage() {
 									className="flex flex-wrap items-center justify-between gap-2 py-3"
 								>
 									<div className="min-w-0">
-										<p className="break-all text-sm font-medium">{item.key}</p>
-										<p className="text-xs text-content-secondary">{item.size} bytes</p>
+										<Typography as="p" variant="body-100" className="break-all">
+											{item.key}
+										</Typography>
+										<Typography as="p" variant="caption-100" className="text-content-secondary">
+											{item.size} bytes
+										</Typography>
 									</div>
-									<div className="flex gap-1">
+									<Stack gap={1} direction="horizontal">
 										<Button
 											variant="ghost"
 											size="sm"
@@ -201,21 +207,23 @@ function DashboardHomePage() {
 										>
 											Delete
 										</Button>
-									</div>
+									</Stack>
 								</li>
 							))}
 						</ul>
 						{files.data?.files.length === 0 && (
-							<p className="rounded-lg border border-dashed p-6 text-center text-sm text-content-secondary">
+							<Typography as="p" variant="body-100" className="text-content-secondary">
 								No files yet.
-							</p>
+							</Typography>
 						)}
 						{files.data?.cursor && (
-							<p className="text-sm text-content-secondary">Showing the first 100 files.</p>
+							<Typography as="p" variant="body-100" className="text-content-secondary">
+								Showing the first 100 files.
+							</Typography>
 						)}
 					</Stack>
-				</Card>
-			</div>
+				</PageSection>
+			</Stack>
 			<Billing />
 			<ApiKeys />
 			<Email />

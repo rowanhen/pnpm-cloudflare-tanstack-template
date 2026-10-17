@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test'
+import { consentKey, createConsent } from './packages/observability/src/consent'
 
 const remoteApi = process.env.E2E_API_URL
 const development = process.env.E2E_DEV === 'true'
@@ -14,7 +15,12 @@ export default defineConfig({
 			cookies: [],
 			origins: ['http://localhost:3000', 'http://localhost:3001'].map((origin) => ({
 				origin,
-				localStorage: [{ name: 'starter.analytics-consent.v1', value: 'declined' }],
+				localStorage: [
+					{
+						name: consentKey,
+						value: JSON.stringify(createConsent({ analytics: false, replay: false })),
+					},
+				],
 			})),
 		},
 	},

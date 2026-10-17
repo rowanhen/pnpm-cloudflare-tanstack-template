@@ -6,9 +6,10 @@ export function WaitlistForm() {
 	return (
 		<Card
 			id="waitlist"
+			className="shadow-none"
 			title={
 				<Typography as="h2" variant="heading-400" id="waitlist-title">
-					Try the waitlist
+					Waitlist
 				</Typography>
 			}
 			aria-labelledby="waitlist-title"
@@ -44,14 +45,10 @@ export function WaitlistForm() {
 				</div>
 				<Stack direction="horizontal" align="start" gap={3}>
 					<Checkbox id="consent" name="consent" required disabled={disabled} />
-					<Label
-						htmlFor="consent"
-						className="block text-xs font-normal leading-5 text-content-secondary"
-					>
-						Save my email in this demo.{' '}
-						<a className="underline underline-offset-4" href="/privacy">
-							Privacy details
-						</a>
+					<Label htmlFor="consent" className="block text-content-secondary">
+						<Typography as="span" variant="caption-100">
+							Save my email in this demo.
+						</Typography>{' '}
 					</Label>
 				</Stack>
 				<Button type="submit" disabled={disabled} className="w-full" size="lg">

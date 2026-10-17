@@ -41,7 +41,7 @@ After deployment, allow analytics, visit pages and submit the waitlist; verify e
 
 ## Privacy and reuse
 
-Browser analytics and replay start only after explicit consent. Users can reopen **Analytics preferences** and withdraw it. Each frontend origin stores its own preference; this avoids sharing identifiers with unrelated Leitware projects. Signed-in dashboard sessions use the opaque account ID without name/email properties; logout resets identity. Anonymous marketing sessions are not joined across origins automatically.
+Browser analytics and replay have independent opt-in choices. Users can reopen **Privacy preferences** and withdraw either purpose. Global Privacy Control disables both in this template. See [privacy and consent](privacy-consent.md) for the behaviour, regulatory context and launch requirements. Each frontend origin stores its own preference; this avoids sharing identifiers with unrelated Leitware projects. Signed-in dashboard sessions use the opaque account ID without name/email properties; logout resets identity. Anonymous marketing sessions are not joined across origins automatically.
 
 Replay masks all text, input values and element attributes, blocks media and iframes, and excludes console/network bodies and headers. URL queries, hashes and unknown route segments are removed. Autocapture, heatmaps, remote SDK scripts and automatic exception capture are disabled; explicit typed events and sanitized exception handlers are used instead. Add `.ph-no-capture` to any new sensitive subtree. Revisit these choices and the privacy notice when adapting the template.
 
