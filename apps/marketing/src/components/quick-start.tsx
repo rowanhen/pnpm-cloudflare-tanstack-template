@@ -3,7 +3,7 @@ import { repository } from '../lib/seo'
 
 const commands = [
 	{ label: 'Clone', value: `git clone ${repository}.git my-idea` },
-	{ label: 'Install', value: 'cd my-idea && corepack enable && pnpm install' },
+	{ label: 'Install', value: 'cd my-idea && npm install --global pnpm@10.34.7 && pnpm install' },
 	{ label: 'Run', value: 'pnpm dev' },
 ]
 export function QuickStart() {
@@ -13,7 +13,7 @@ export function QuickStart() {
 			title={<span className="font-mono text-xs">~/my-idea</span>}
 			footer={
 				<span className="text-xs text-content-secondary">
-					Node 22.12+ · pnpm 10 · No cloud account needed locally
+					Node 26.12.0 · pnpm 10.34.7 · No cloud account needed locally
 				</span>
 			}
 		>

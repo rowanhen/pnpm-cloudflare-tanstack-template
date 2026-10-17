@@ -13,12 +13,11 @@ function add(name: string, status: Check['status'], detail: string) {
 }
 add(
 	'node',
-	Number(process.versions.node.split('.')[0]) > 22 ||
-		(Number(process.versions.node.split('.')[0]) === 22 &&
-			Number(process.versions.node.split('.')[1]) >= 12)
+	Number(process.versions.node.split('.')[0]) === 26 &&
+		Number(process.versions.node.split('.')[1]) >= 12
 		? 'ready'
 		: 'missing',
-	`Node ${process.versions.node}; requires 22.12+`,
+	`Node ${process.versions.node}; requires >=26.12.0 <27`,
 )
 add(
 	'cloudflare',

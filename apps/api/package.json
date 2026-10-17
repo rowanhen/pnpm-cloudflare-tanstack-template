@@ -11,15 +11,15 @@
 		"deploy": "wrangler deploy"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^5.20261009.1",
+		"@cloudflare/workers-types": "^5.20261016.1",
 		"typescript": "^7.0.2",
-		"wrangler": "^4.149.0"
+		"wrangler": "^4.151.1"
 	},
 	"dependencies": {
 		"@workspace/contracts": "workspace:*",
 		"@workspace/data": "workspace:*",
 		"@workspace/observability": "workspace:*",
-		"better-auth": "^1.7.7",
+		"better-auth": "^1.7.10",
 		"drizzle-orm": "0.45.4",
 		"stripe": "^23.0.0"
 	}

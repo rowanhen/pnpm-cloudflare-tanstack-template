@@ -6,17 +6,19 @@ A TypeScript starter with a waitlist website, Google sign-in, a private dashboar
 
 ## Run locally
 
-Install [Node.js 24 LTS](https://nodejs.org/en/download) and [Git](https://git-scm.com/downloads), then run:
+Install [Node.js 26.12.0](https://nodejs.org/en/download) and [Git](https://git-scm.com/downloads), then run:
 
 ```bash
 git clone https://github.com/rowanhen/pnpm-cloudflare-tanstack-template.git my-project
 cd my-project
-corepack enable
+nvm install
+nvm use
+npm install --global pnpm@10.34.7
 pnpm install
 pnpm dev
 ```
 
-If `corepack` is missing, run `npm install --global corepack` first. Node 22.12+ is supported; the repository selects pnpm 10.34.6. Run commands from the repository root. Leave `pnpm dev` running and open:
+The repository pins Node 26.12.0 in `.nvmrc` and pnpm 10.34.7 in `package.json`. `pnpm install` also installs the pinned Node runtime for project scripts. The `nvm` commands use [Node Version Manager](https://github.com/nvm-sh/nvm); if you install Node directly, use the pinned version and skip those two commands. Run commands from the repository root. Leave `pnpm dev` running and open:
 
 | App       | Local address                    | What works first                                    |
 | --------- | -------------------------------- | --------------------------------------------------- |
