@@ -31,6 +31,8 @@ The public marketing domain `devtemplate.leitware.com` does not handle login. A 
 
 For a fresh project, use your own OAuth client. Separate development and production clients make their allowed users and callbacks easier to manage. A provider may require the account owner to sign in, pass MFA, or approve consent. Credentials alone do not prove that a callback is registered.
 
+Keep deployment credentials (`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`) encrypted with dotenvx in the repository-root `.env.local`. This encrypted file can be committed; the matching `.env.keys` must remain private and is gitignored. Cloudflare Worker secrets hold the deployed copies. Load the encrypted file with `npx --yes @dotenvx/dotenvx@1.65.0 run -f .env.local -- <command>` when using these credentials. Local Wrangler development still uses the ignored `apps/api/.dev.vars` with its own development credentials.
+
 ## Verify it in a browser
 
 1. Open the dashboard in a fresh browser session. You should reach `/login` before any private data renders.
