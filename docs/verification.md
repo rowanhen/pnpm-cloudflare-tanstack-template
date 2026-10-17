@@ -16,11 +16,11 @@ Use this checklist after connecting an account or changing deployment URLs. The 
 
 Public site: [devtemplate.leitware.com](https://devtemplate.leitware.com). Sign-in: [dashboard login](https://starter-showcase-18d8b58f-dashboard.pages.dev/login). Stripe checkout is intentionally test-only. This table is an audit record, not a runtime status monitor.
 
-## Results from this audit
+## Historical results from this audit
 
 - `pnpm validate`: passed lint, formatting, schema/migration checks, local API tests, TypeScript and builds; **19 production-browser + 19 development-browser tests passed**.
-- `pnpm test:remote`: real Cloudflare API/metering checks passed; **13 browser tests passed, 6 provider-fixture cases skipped**. Teardown independently confirmed both Pages projects, Worker, D1 and R2 were absent.
-- `pnpm test:browser tests/observability.spec.ts`: **3 passed** after moving analytics preferences out of the content area. The SDK transport tests also cover redacted provider failure logs.
+- The former disposable cloud runner: real Cloudflare API/metering checks passed; **13 browser tests passed, 6 provider-fixture cases skipped**. Teardown independently confirmed both Pages projects, Worker, D1 and R2 were absent.
+- `pnpm test:browser tests/browser/observability.spec.ts`: **3 passed** after moving analytics preferences out of the content area. The SDK transport tests also cover redacted provider failure logs.
 - Live Google handoff reproduced `redirect_uri_mismatch`. No real Google session, Stripe card payment, PostHog project ingestion/replay or inbox delivery was recorded.
 
 ## Automated checks
@@ -33,17 +33,11 @@ pnpm validate
 
 It runs lint, formatting, schema/migration checks, API tests, TypeScript, builds, and Chromium tests against both Vite development servers and production Pages runtimes. Tests create isolated local D1/R2, signed sessions and provider fixtures, then clean up. Fixtures never become a production login bypass. Analytics tests never send their events to your real project.
 
-With authorized Cloudflare credentials:
+Individual commands: `pnpm check`, `pnpm test:unit`, `pnpm test:browser`, `pnpm test:dev`. Browser commands accept a spec path, for example `pnpm test:browser tests/browser/checkout.spec.ts`.
 
-```bash
-pnpm validate --cloud
-```
+CI regenerates API outputs with native Orval and rejects tracked changes or new files. Local generation writes directly to generated directories; run it after contract changes and review the diff.
 
-This adds a deployed API/browser suite and a repeatable provisioning/teardown test. The deployed suite uses real Workers, D1 and R2 with temporary users and seeded credits. Stripe and PostHog fixture cases are skipped there. The lifecycle test checks that rerunning setup preserves IDs and secrets, then deletes uploaded files and all owned cloud resources.
-
-Individual commands: `pnpm check`, `pnpm test:browser`, `pnpm test:dev`, `pnpm test:remote`, `pnpm test:cloud-setup`. The browser commands also accept a spec path, for example `pnpm test:browser tests/checkout.spec.ts`.
-
-For a retained deployment, `pnpm cloud:check my-demo` performs read-only health, proxy, login-protection, 404 and indexing checks. `pnpm setup:doctor --online` checks credential readiness and the provider API access it reports. Neither command completes sign-in, a card payment, replay viewing or inbox delivery.
+The historical cloud provisioning/lifecycle runner has been removed. Use the [Wrangler deployment guide](manual-deployment.md) and live checklist below to verify a retained deployment. Local tests do not establish current provider access or deployed health. Check the API health endpoint, each app's `/api` proxy, anonymous protection, unknown-path 404s and indexing after deployment.
 
 ## Google and private data
 
@@ -80,7 +74,7 @@ Connect the selected project using the [PostHog guide](observability.md). Record
 4. On the dashboard origin, opt in separately. Sign in, navigate, then sign out. Verify the opaque signed-in ID resets. Marketing and dashboard sessions are intentionally separate.
 5. Trigger a harmless unauthorized request to `/api/v1/todos` without a key. Find `api.request` with route `/api/v1/todos`, status 401 and its response's `X-Request-Id`. Use the same ID when investigating browser/API failures.
 6. For a real crash-to-replay check, use an isolated staging deployment with analytics allowed. In your own browser console, run `setTimeout(() => { throw new Error('starter-verification') }, 0)`. Find the `$exception` in Error Tracking and open its linked recording. The message is deliberately sanitized. Remove any staging fault injection afterward; no public crash endpoint is included. Visiting `/error` previews the UI and does not throw an exception.
-7. Run `pnpm posthog:report` with management credentials and the same `APP_ENV`. Expect non-empty engagement/API results; the error report should include the staged crash. Open the replay itself: an accepted capture request alone does not prove it is playable.
+7. Inspect PostHog Activity, dashboards and Error Tracking filtered to the same `APP_ENV`. Expect non-empty engagement/API results and the staged crash. Open the replay itself: an accepted capture request alone does not prove it is playable.
 8. Withdraw consent and repeat page navigation. No further browser analytics or replay should be sent.
 
 A successful local SDK test, a present token, or an empty report is not proof of real project ingestion. Recording may take time to process; check blockers, consent, host/region and project settings if it does not appear.
@@ -93,10 +87,4 @@ Connect the sender using the [email guide](data-and-email.md). Sign in with your
 
 Save command results and the provider/project/environment used, together with what actually passed. Do not put keys, cookies, authorization codes or real user data in logs or screenshots. Delete manual test todos/files and revoke temporary keys.
 
-Cloud test runners verify absence of their uniquely named temporary Worker, D1, R2 and Pages projects. If interrupted, retain their manifest and retry:
-
-```bash
-pnpm test:remote --cleanup .wrangler/template-e2e-RUN-ID/resources.json
-```
-
-For your own disposable environment, `pnpm cloud:down my-demo` removes the resources owned by its manifest and archives its owned Stripe catalog. Stripe retains test payment history. PostHog and email domain configuration are retained; use dedicated test projects if their history must be removed. Keep the maintained `showcase` deployment.
+Local test runners remove their temporary D1/R2 storage and stop fixture servers. Remote resource cleanup is manual through Wrangler and provider tools; record the resources created before deleting them. Preserve existing deployment configuration and secrets, including earlier ignored `.wrangler/sandboxes/<name>/` files. Keep the maintained `showcase` deployment. Stripe retains payment history; PostHog projects and email domains have their own lifecycle.

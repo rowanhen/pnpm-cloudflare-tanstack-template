@@ -88,7 +88,7 @@ The checkout stays in **Stripe test mode**. Before taking real payments, impleme
 
 Your customer's one-credit request price is independent of your Cloudflare bill. [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) covers request/CPU usage and plan minimums; [D1](https://developers.cloudflare.com/d1/platform/pricing/) and [R2](https://developers.cloudflare.com/r2/pricing/) meter database/storage operations and storage. Auth, rate-limit writes, retries, and rejected API requests still use infrastructure. This is usage-based infrastructure without a dedicated server; it does not promise zero idle cost or one Cloudflare operation per paid request.
 
-The example uses the existing Worker, D1, R2 and Pages deployment from the [getting-started guide](getting-started.md). `pnpm setup-project my-project` sets project names; run `pnpm cloud:up my-demo` to provision those bindings. No separate metering service, cron job, or additional paid resource is required. Review those providers' current prices when choosing your own credit price.
+The example uses the existing Worker, D1, R2 and Pages deployment from the [getting-started guide](getting-started.md). `pnpm setup-project my-project` sets project names; follow the [Wrangler deployment guide](manual-deployment.md) to provision those bindings. No separate metering service, cron job, or additional paid resource is required. Review those providers' current prices when choosing your own credit price.
 
 Cloudflare also offers an x402-based [Monetization Gateway](https://developers.cloudflare.com/monetization-gateway/). Its [current eligibility](https://developers.cloudflare.com/monetization-gateway/eligibility/) requires both buyers and sellers to be US-based. This starter's `402` response reports an empty prepaid account; it is **not an x402 payment challenge**. A wallet/protocol integration would be a separate example.
 
@@ -98,9 +98,8 @@ Cloudflare also offers an x402-based [Monetization Gateway](https://developers.c
 pnpm test           # workerd + temporary D1/R2; real Stripe SDK against local HTTP fixture
 pnpm test:dev       # browser → Vite proxy → Worker → D1/R2
 pnpm test:browser   # browser → production Pages runtime → Worker → D1/R2
-pnpm test:remote    # requires Cloudflare credentials; creates and deletes temporary resources
 ```
 
 Metering tests exercise scope isolation, input conflicts, cross-user results, concurrent duplicate IDs across keys, the last-credit race, zero-balance replay, retained history, revocation, and a forced debit failure with full rollback. Stripe tests race webhook delivery with status polling and check that unpaid/forged/mismatched events never grant credits. Browser tests create a paid key, call through the app proxy, refresh the balance, and revoke it.
 
-The cloud run uses a real deployed Worker and D1 for the paid endpoint; seed credits and a test-only SQL trigger live only in its disposable database. It deletes and verifies absence of the Worker, D1, R2, and both Pages projects. Stripe fixture tests create no Stripe resources and do not complete a real card payment. Follow the [sandbox payment check](payments.md) for that final provider integration, then use `pnpm stripe:cleanup` for any sandbox resources you created.
+Local suites use the real Worker/D1 runtime with temporary storage. Stripe fixture tests create no Stripe resources and do not complete a real card payment. Follow the [sandbox payment check](payments.md) for that provider integration. Manage remote resources and obsolete Stripe test catalog/webhook entries with their native provider tools.

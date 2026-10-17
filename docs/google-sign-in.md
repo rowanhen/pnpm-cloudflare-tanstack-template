@@ -24,10 +24,10 @@ A Google **origin** is the base address of the dashboard. The **redirect URI** i
 | Environment     | Authorized JavaScript origin                            | Authorized redirect URI                                                          |
 | --------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | Local           | `http://localhost:3001`                                 | `http://localhost:3001/api/auth/callback/google`                                 |
-| Your deployment | The dashboard URL printed by `pnpm cloud:up my-demo`    | That URL followed by `/api/auth/callback/google`                                 |
+| Your deployment | Your deployed dashboard origin                          | That URL followed by `/api/auth/callback/google`                                 |
 | Maintained demo | `https://starter-showcase-18d8b58f-dashboard.pages.dev` | `https://starter-showcase-18d8b58f-dashboard.pages.dev/api/auth/callback/google` |
 
-The public marketing domain `devtemplate.leitware.com` does not handle login. `cloud:domain` changes the marketing address only. Google redirects through the dashboard's `/api` proxy to Better Auth in the Worker. `AUTH_URL` and the registered callback must describe that dashboard, even though the API has a separate address.
+The public marketing domain `devtemplate.leitware.com` does not handle login. A marketing custom domain does not change the dashboard callback. Google redirects through the dashboard's `/api` proxy to Better Auth in the Worker. `AUTH_URL` and the registered callback must describe that dashboard, even though the API has a separate address.
 
 For a fresh project, use your own OAuth client. Separate development and production clients make their allowed users and callbacks easier to manage. A provider may require the account owner to sign in, pass MFA, or approve consent. Credentials alone do not prove that a callback is registered.
 
@@ -45,7 +45,7 @@ A first real sign-in creates the user's D1 user/account records. Automated brows
 
 | What you see                            | What to check                                                                                                                                                            |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Google sign-in is unavailable           | Both Google values in `apps/api/.dev.vars`; restart `pnpm dev` or rerun `pnpm cloud:up my-demo`.                                                                         |
+| Google sign-in is unavailable           | Both Google values in `apps/api/.dev.vars`; restart `pnpm dev`, or update Worker secrets and redeploy.                                                                   |
 | `redirect_uri_mismatch` at Google       | Copy the exact `redirect_uri` from Google's error details into that web client's authorized redirect URIs. Check that you edited the client matching `GOOGLE_CLIENT_ID`. |
 | Access blocked / testing restriction    | Configure the Google audience and add the signing-in account as a test user.                                                                                             |
 | Sign-in returns but no session persists | Use one dashboard hostname throughout. Check `AUTH_URL`, `ALLOWED_ORIGINS` and HTTPS; do not start on a temporary Pages preview hostname.                                |

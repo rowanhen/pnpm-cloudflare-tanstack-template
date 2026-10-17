@@ -4,7 +4,7 @@ const remoteApi = process.env.E2E_API_URL
 const development = process.env.E2E_DEV === 'true'
 
 export default defineConfig({
-	testDir: './tests',
+	testDir: './tests/browser',
 	fullyParallel: false,
 	workers: 1,
 	use: {
@@ -24,7 +24,7 @@ export default defineConfig({
 				{
 					command: development
 						? 'pnpm --filter dashboard dev'
-						: 'pnpm --filter dashboard build && pnpm exec tsx scripts/preview.ts dashboard 3001',
+						: 'pnpm --filter dashboard build && pnpm exec tsx tests/support/preview.ts dashboard 3001',
 					url: 'http://localhost:3001/api/health',
 					stdout: 'pipe',
 					env: {
@@ -39,7 +39,7 @@ export default defineConfig({
 				{
 					command: development
 						? 'pnpm --filter marketing dev'
-						: 'pnpm --filter marketing build && pnpm exec tsx scripts/preview.ts marketing 3000',
+						: 'pnpm --filter marketing build && pnpm exec tsx tests/support/preview.ts marketing 3000',
 					url: 'http://localhost:3000',
 					env: {
 						VITE_API_URL: remoteApi ?? 'http://localhost:8787',

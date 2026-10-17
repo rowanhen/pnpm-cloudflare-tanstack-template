@@ -26,6 +26,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Regenerate API and reject drift (including new files)
+        run: |
+          pnpm api:generate
+          test -z "$(git status --porcelain -- packages/contracts/src/generated apps/api/src/generated apps/dashboard/src/generated apps/api/src/features)"
+
       - name: Pre-commit parity checks
         run: pnpm run check
 

@@ -17,10 +17,11 @@
 	},
 	"include": [
 		"scripts/**/*.ts",
+		"codegen/**/*.ts",
 		"tests/**/*.ts",
 		"playwright.config.ts",
 		"packages/data/drizzle.config.ts",
 		"orval.config.ts"
 	],
-	"exclude": ["scripts/workers", "node_modules"]
+	"exclude": ["node_modules", "tests/support/workers"]
 }
