@@ -19,7 +19,8 @@
 		"scripts/**/*.ts",
 		"tests/**/*.ts",
 		"playwright.config.ts",
-		"packages/data/drizzle.config.ts"
+		"packages/data/drizzle.config.ts",
+		"orval.config.ts"
 	],
 	"exclude": ["scripts/workers", "node_modules"]
 }

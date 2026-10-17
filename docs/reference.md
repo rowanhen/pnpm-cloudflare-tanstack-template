@@ -26,7 +26,7 @@ apps/api/           Worker REST API, auth, rate limiting, D1 migrations, R2 bind
 apps/dashboard/     Protected workspace, private todos/files, API key management
 apps/marketing/     Waitlist, privacy example, SEO metadata, sitemap and robots
 packages/data/      Drizzle schema, inferred database types and server-only D1 client
-packages/contracts/ Shared Zod inputs, public DTOs and typed REST client
+packages/contracts/ OpenAPI todo contract, generated Effect types; legacy Zod inputs and REST client
 packages/shared/    Composables exports, shadcn button, theme, page states and shared hooks
 packages/observability/ Consent, analytics, replay, error capture and API telemetry
 scripts/            TypeScript setup/deploy commands and isolated local/cloud tests
@@ -38,7 +38,7 @@ The database contains users, linked Google accounts, sessions, OAuth verificatio
 
 ## REST API
 
-Use the dashboard for cookie-authenticated operations. Session mutations also require a trusted `Origin` header. Errors use `{ "error": "..." }`; auth endpoints use Better Auth's response format.
+Use the dashboard for cookie-authenticated operations. Session mutations also require a trusted `Origin` header. Todo errors use generated `{ "code": "...", "error": "..." }` bodies; other integration errors use `{ "error": "..." }`; auth endpoints use Better Auth's response format.
 
 | Method               | Route                             | Access / behavior                                                      |
 | -------------------- | --------------------------------- | ---------------------------------------------------------------------- |

@@ -1,0 +1,176 @@
+{
+	"components": {
+		"schemas": {
+			"BadRequest": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["bad_request"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"Unauthorized": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["unauthorized"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"Forbidden": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["forbidden"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"PayloadTooLarge": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["payload_too_large"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"UnsupportedMediaType": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["unsupported_media_type"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"InternalError": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["internal_error"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"Unavailable": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["unavailable"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			}
+		},
+		"responses": {
+			"BadRequest": {
+				"description": "Invalid request",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/BadRequest"
+						}
+					}
+				}
+			},
+			"Unauthorized": {
+				"description": "Sign in required",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Unauthorized"
+						}
+					}
+				}
+			},
+			"Forbidden": {
+				"description": "Untrusted origin",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Forbidden"
+						}
+					}
+				}
+			},
+			"InternalError": {
+				"description": "Unexpected server failure",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/InternalError"
+						}
+					}
+				}
+			},
+			"Unavailable": {
+				"description": "Authentication unavailable",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Unavailable"
+						}
+					}
+				}
+			},
+			"PayloadTooLarge": {
+				"description": "Request exceeds 16 KiB",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/PayloadTooLarge"
+						}
+					}
+				}
+			},
+			"UnsupportedMediaType": {
+				"description": "JSON content type required",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/UnsupportedMediaType"
+						}
+					}
+				}
+			}
+		}
+	}
+}
