@@ -50,8 +50,9 @@ const featureGroups = (operations: Record<string, GeneratorVerbOptions>) => {
 function operationContract(operation: GeneratorVerbOptions, context: ContextSpec) {
 	const { operationId: id, originalOperation: spec, pathRoute, verb } = operation
 	const name = typeName(operation)
-	if (JSON.stringify(spec.security ?? context.spec.security) !== JSON.stringify([{ session: [] }]))
-		throw new Error(`${id}: this adapter requires cookie-session security`)
+	const security = JSON.stringify(spec.security ?? context.spec.security)
+	if (security !== '[]' && security !== JSON.stringify([{ session: [] }]))
+		throw new Error(`${id}: this adapter supports public or cookie-session security`)
 	const parameters = [
 		...(context.spec.paths?.[pathRoute]?.parameters ?? []),
 		...(spec.parameters ?? []),
@@ -170,10 +171,10 @@ export const operations = [${Object.values(operations)
 				content: `${header}
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
-import { effectHandler } from '../contract/handler'
+import { ${[...new Set(items.map(({ originalOperation: spec }) => (JSON.stringify(spec.security ?? context.spec.security) === '[]' ? 'publicEffectHandler' : 'effectHandler')))].join(', ')} } from '../contract/handler'
 ${items.map(({ operationId: id }) => `import { ${id} } from '../features/${feature}/${operationFile(id)}'`).join('\n')}
 const factory = createFactory()
-${items.map(({ operationId: id }) => `export const ${id}Handlers = factory.createHandlers(effectHandler(operations.${id}, ${id}))`).join('\n')}
+${items.map(({ operationId: id, originalOperation: spec }) => `export const ${id}Handlers = factory.createHandlers(${JSON.stringify(spec.security ?? context.spec.security) === '[]' ? 'publicEffectHandler' : 'effectHandler'}(operations.${id}, ${id}))`).join('\n')}
 `,
 			})
 			for (const operation of items) {
@@ -187,12 +188,16 @@ ${items.map(({ operationId: id }) => `export const ${id}Handlers = factory.creat
 				} catch (error) {
 					if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error
 				}
+				const requestContext =
+					JSON.stringify(operation.originalOperation.security ?? context.spec.security) === '[]'
+						? 'PublicApiRequest'
+						: 'ApiRequest'
 				files.push({
 					path,
 					content: `import type { ${typeName(operation)}Handler } from '@workspace/contracts/operations'
-import type { ApiRequest } from '../../contract/context'
+import type { ${requestContext} } from '../../contract/context'
 // Replace this placeholder with the business logic; TypeScript rejects unfinished handlers.
-export const ${operation.operationId}: ${typeName(operation)}Handler<ApiRequest> = TODO_IMPLEMENT_OPERATION
+export const ${operation.operationId}: ${typeName(operation)}Handler<${requestContext}> = TODO_IMPLEMENT_OPERATION
 `,
 				})
 			}

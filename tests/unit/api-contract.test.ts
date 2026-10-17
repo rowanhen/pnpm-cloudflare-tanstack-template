@@ -114,6 +114,12 @@ test('native Orval resolves a feature, preserves implementations and removes sta
 	await write(entry, JSON.stringify(contract))
 	await write('packages/contracts/openapi/features/products.json', JSON.stringify(productFeature))
 	generate()
+	assert.match(await read('apps/api/src/generated/storefront.handlers.ts'), /publicEffectHandler/)
+	assert.doesNotMatch(await read('apps/api/src/generated/todos.handlers.ts'), /publicEffectHandler/)
+	assert.match(
+		await read('apps/api/src/features/storefront/get-storefront.ts'),
+		/Handler<PublicApiRequest>/,
+	)
 	const implementation = 'apps/api/src/features/products/get-product.ts'
 	assert.match(await read('apps/api/src/generated/routes.ts'), /from '\.\/products\.handlers'/)
 	assert.match(
@@ -196,9 +202,9 @@ test('the Effect extension rejects operations outside the supported boundary', a
 	for (const [change, error] of [
 		[
 			(operation: Record<string, unknown>) => {
-				operation.security = []
+				operation.security = [{ unsupported: [] }]
 			},
-			/cookie-session security/,
+			/public or cookie-session security/,
 		],
 		[
 			(operation: Record<string, unknown>) => {

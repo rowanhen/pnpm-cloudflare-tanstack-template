@@ -434,6 +434,333 @@
 					}
 				}
 			}
+		},
+		"/api/storefront": {
+			"get": {
+				"operationId": "getStorefront",
+				"tags": ["storefront"],
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Storefront"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Resource not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/NotFound"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Request rate exceeded",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TooManyRequests"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/storefront/checkouts": {
+			"post": {
+				"operationId": "createStorefrontCheckout",
+				"tags": ["storefront"],
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StorefrontCheckout"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Resource not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/NotFound"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Request exceeds 16 KiB",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PayloadTooLarge"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "JSON content type required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UnsupportedMediaType"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Request rate exceeded",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TooManyRequests"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateStorefrontCheckout"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/storefront/status": {
+			"post": {
+				"operationId": "checkStorefrontCheckout",
+				"tags": ["storefront"],
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StorefrontStatus"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Resource not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/NotFound"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Request exceeds 16 KiB",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PayloadTooLarge"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "JSON content type required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UnsupportedMediaType"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Request rate exceeded",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TooManyRequests"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CheckStorefrontCheckout"
+							}
+						}
+					}
+				}
+			}
 		}
 	},
 	"components": {
@@ -630,6 +957,143 @@
 					}
 				},
 				"required": ["code", "error"]
+			},
+			"NotFound": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["not_found"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"TooManyRequests": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["too_many_requests"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"StorefrontProduct": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"id": {
+						"type": "string",
+						"enum": ["purchase", "subscription"]
+					},
+					"name": {
+						"type": "string"
+					},
+					"amount": {
+						"type": "integer",
+						"minimum": 1
+					},
+					"currency": {
+						"type": "string"
+					},
+					"interval": {
+						"type": ["string", "null"]
+					}
+				},
+				"required": ["id", "name", "amount", "currency", "interval"]
+			},
+			"Storefront": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"enabled": {
+						"type": "boolean"
+					},
+					"products": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/StorefrontProduct"
+						}
+					}
+				},
+				"required": ["enabled", "products"]
+			},
+			"CreateStorefrontCheckout": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"product": {
+						"type": "string",
+						"enum": ["purchase", "subscription"]
+					},
+					"requestId": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"token": {
+						"type": "string",
+						"format": "uuid"
+					}
+				},
+				"required": ["product", "requestId", "token"]
+			},
+			"StorefrontCheckout": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"sessionId": {
+						"type": "string"
+					},
+					"url": {
+						"type": "string"
+					}
+				},
+				"required": ["sessionId", "url"]
+			},
+			"CheckStorefrontCheckout": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"sessionId": {
+						"type": "string",
+						"pattern": "^cs_test_[A-Za-z0-9]+$",
+						"maxLength": 250
+					},
+					"token": {
+						"type": "string",
+						"format": "uuid"
+					}
+				},
+				"required": ["sessionId", "token"]
+			},
+			"StorefrontStatus": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"status": {
+						"type": "string",
+						"enum": ["open", "pending", "paid", "expired"]
+					},
+					"mode": {
+						"type": "string",
+						"enum": ["payment", "subscription"]
+					},
+					"amount": {
+						"type": "integer"
+					},
+					"currency": {
+						"type": "string"
+					}
+				},
+				"required": ["status", "mode", "amount", "currency"]
 			}
 		}
 	},

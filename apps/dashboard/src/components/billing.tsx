@@ -27,7 +27,7 @@ export function Billing() {
 				<Stack direction="horizontal" gap={3} wrap>
 					<Button
 						{...{ nativeButton: false }}
-						render={<Link aria-label="Add credits" role="link" to="/checkout" />}
+						render={<Link aria-label="Add credits" role="link" to="/credits" />}
 					>
 						Add credits
 					</Button>

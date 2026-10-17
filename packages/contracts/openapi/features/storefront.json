@@ -1,0 +1,270 @@
+{
+	"paths": {
+		"/api/storefront": {
+			"get": {
+				"operationId": "getStorefront",
+				"tags": ["storefront"],
+				"security": [],
+				"responses": {
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Storefront"
+								}
+							}
+						}
+					},
+					"404": {
+						"$ref": "../shared/errors.json#/components/responses/NotFound"
+					},
+					"429": {
+						"$ref": "../shared/errors.json#/components/responses/TooManyRequests"
+					}
+				}
+			}
+		},
+		"/api/storefront/checkouts": {
+			"post": {
+				"operationId": "createStorefrontCheckout",
+				"tags": ["storefront"],
+				"security": [],
+				"responses": {
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"413": {
+						"$ref": "../shared/errors.json#/components/responses/PayloadTooLarge"
+					},
+					"415": {
+						"$ref": "../shared/errors.json#/components/responses/UnsupportedMediaType"
+					},
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StorefrontCheckout"
+								}
+							}
+						}
+					},
+					"404": {
+						"$ref": "../shared/errors.json#/components/responses/NotFound"
+					},
+					"429": {
+						"$ref": "../shared/errors.json#/components/responses/TooManyRequests"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateStorefrontCheckout"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/storefront/status": {
+			"post": {
+				"operationId": "checkStorefrontCheckout",
+				"tags": ["storefront"],
+				"security": [],
+				"responses": {
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"413": {
+						"$ref": "../shared/errors.json#/components/responses/PayloadTooLarge"
+					},
+					"415": {
+						"$ref": "../shared/errors.json#/components/responses/UnsupportedMediaType"
+					},
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/StorefrontStatus"
+								}
+							}
+						}
+					},
+					"404": {
+						"$ref": "../shared/errors.json#/components/responses/NotFound"
+					},
+					"429": {
+						"$ref": "../shared/errors.json#/components/responses/TooManyRequests"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CheckStorefrontCheckout"
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"StorefrontProduct": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"id": {
+						"type": "string",
+						"enum": ["purchase", "subscription"]
+					},
+					"name": {
+						"type": "string"
+					},
+					"amount": {
+						"type": "integer",
+						"minimum": 1
+					},
+					"currency": {
+						"type": "string"
+					},
+					"interval": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": ["id", "name", "amount", "currency", "interval"]
+			},
+			"Storefront": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"enabled": {
+						"type": "boolean"
+					},
+					"products": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/StorefrontProduct"
+						}
+					}
+				},
+				"required": ["enabled", "products"]
+			},
+			"CreateStorefrontCheckout": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"product": {
+						"type": "string",
+						"enum": ["purchase", "subscription"]
+					},
+					"requestId": {
+						"type": "string",
+						"format": "uuid"
+					},
+					"token": {
+						"type": "string",
+						"format": "uuid"
+					}
+				},
+				"required": ["product", "requestId", "token"]
+			},
+			"StorefrontCheckout": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"sessionId": {
+						"type": "string"
+					},
+					"url": {
+						"type": "string"
+					}
+				},
+				"required": ["sessionId", "url"]
+			},
+			"CheckStorefrontCheckout": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"sessionId": {
+						"type": "string",
+						"pattern": "^cs_test_[A-Za-z0-9]+$",
+						"maxLength": 250
+					},
+					"token": {
+						"type": "string",
+						"format": "uuid"
+					}
+				},
+				"required": ["sessionId", "token"]
+			},
+			"StorefrontStatus": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"status": {
+						"type": "string",
+						"enum": ["open", "pending", "paid", "expired"]
+					},
+					"mode": {
+						"type": "string",
+						"enum": ["payment", "subscription"]
+					},
+					"amount": {
+						"type": "integer"
+					},
+					"currency": {
+						"type": "string"
+					}
+				},
+				"required": ["status", "mode", "amount", "currency"]
+			}
+		}
+	}
+}

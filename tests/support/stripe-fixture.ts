@@ -13,9 +13,11 @@ const sessionSchema = z.object({
 	payment_status: z.string(),
 	amount_total: z.number(),
 	currency: z.string(),
-	client_secret: z.string(),
+	client_secret: z.string().nullable(),
+	url: z.string().nullable(),
+	success_url: z.string().nullable(),
 	client_reference_id: z.string().nullable(),
-	metadata: z.object({ order_id: z.string().nullable() }),
+	metadata: z.record(z.string(), z.string().nullable()),
 	return_url: z.string().nullable(),
 })
 export async function stripeFixture() {
@@ -48,20 +50,33 @@ export async function stripeFixture() {
 				{ error: { message: 'Unexpected fixture credential', type: 'authentication_error' } },
 				401,
 			)
-		if (url.pathname === '/v1/prices/price_fixture')
+		if (
+			[
+				'/v1/prices/price_fixture',
+				'/v1/prices/price_demo_fixture',
+				'/v1/prices/price_subscription_fixture',
+			].includes(url.pathname)
+		)
 			return send({
-				id: 'price_fixture',
+				id: url.pathname.split('/').at(-1),
 				object: 'price',
 				livemode: false,
 				active: true,
-				type: 'one_time',
+				type: url.pathname.endsWith('price_subscription_fixture') ? 'recurring' : 'one_time',
+				recurring: url.pathname.endsWith('price_subscription_fixture')
+					? { interval: 'month' }
+					: null,
 				unit_amount: 1200,
 				currency: 'gbp',
 				product: {
 					id: 'prod_fixture',
 					object: 'product',
 					active: true,
-					name: 'API credits',
+					name: url.pathname.endsWith('price_fixture')
+						? 'API credits'
+						: url.pathname.endsWith('price_demo_fixture')
+							? 'Example product'
+							: 'Example subscription',
 					description: null,
 				},
 			})
@@ -69,10 +84,17 @@ export async function stripeFixture() {
 			const chunks = []
 			for await (const chunk of request) chunks.push(chunk)
 			const fields = new URLSearchParams(Buffer.concat(chunks).toString())
+			const hosted = fields.get('ui_mode') === 'hosted_page'
+			const subscription = fields.get('mode') === 'subscription'
+			const expectedPrice = hosted
+				? subscription
+					? 'price_subscription_fixture'
+					: 'price_demo_fixture'
+				: 'price_fixture'
 			if (
-				fields.get('ui_mode') !== 'elements' ||
-				fields.get('mode') !== 'payment' ||
-				fields.get('line_items[0][price]') !== 'price_fixture' ||
+				(!hosted && fields.get('ui_mode') !== 'elements') ||
+				(!subscription && fields.get('mode') !== 'payment') ||
+				fields.get('line_items[0][price]') !== expectedPrice ||
 				fields.get('line_items[0][quantity]') !== '1' ||
 				fields.get('allowed_payment_method_types[0]') !== 'card' ||
 				fields.get('adaptive_pricing[enabled]') !== 'false'
@@ -90,14 +112,20 @@ export async function stripeFixture() {
 				id,
 				object: 'checkout.session',
 				livemode: false,
-				mode: 'payment',
+				mode: subscription ? 'subscription' : 'payment',
 				status: 'open',
 				payment_status: 'unpaid',
 				amount_total: 1200,
 				currency: 'gbp',
-				client_secret: `${id}_secret_fixture`,
+				client_secret: hosted ? null : `${id}_secret_fixture`,
+				url: hosted ? `https://checkout.stripe.com/c/pay/${id}` : null,
+				success_url: fields.get('success_url'),
 				client_reference_id: fields.get('client_reference_id'),
-				metadata: { order_id: fields.get('metadata[order_id]') },
+				metadata: Object.fromEntries(
+					[...fields]
+						.filter(([fieldName]) => fieldName.startsWith('metadata['))
+						.map(([fieldName, value]) => [fieldName.slice(9, -1), value]),
+				),
 				return_url: fields.get('return_url'),
 			}
 			sessions.set(id, session)

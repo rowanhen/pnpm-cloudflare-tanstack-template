@@ -24,7 +24,7 @@ Use [Wrangler deployment](manual-deployment.md) for native resource, binding, se
 - PostHog: selected project, public collection token and regional host; [observability](observability.md).
 - Email: verified sender domain, restricted Worker binding and an inbox you control; [data and email](data-and-email.md).
 
-The owner may need to complete login, MFA, consent, billing or domain verification. Keep secrets out of `VITE_` settings, commits and logs. Supply Wrangler credentials through its login or environment; it does not use the template's local `.dev.vars` loader for account authentication. App credentials use Worker/Pages secrets in deployment.
+The owner may need to complete login, MFA, consent, billing or domain verification. Keep plaintext secrets and private decryption keys out of `VITE_` settings, commits and logs. Store persistent provider credentials in the dotenvx-encrypted root `.env.local`, which can be committed; `.env.keys` stays private. `pnpm setup:local` copies only development provider settings to the ignored Worker runtime file and uses `DEV_BETTER_AUTH_SECRET` for local authentication. Supply Wrangler credentials through its login or environment; it does not use the template's local `.dev.vars` loader for account authentication. App credentials use Worker/Pages secrets in deployment.
 
 Local tests create no remote resources. Review resource names before manual deletion; the maintained `showcase` deployment at https://devtemplate.leitware.com should remain. Earlier deployments may retain configuration and secrets under ignored `.wrangler/sandboxes/<name>/`. Preserve those files and use their existing Wrangler config explicitly when maintaining them; this cleanup does not migrate or delete deployments.
 

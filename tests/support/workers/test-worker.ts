@@ -46,6 +46,8 @@ export default {
 					},
 				},
 			}
+		if (request.headers.get('x-test-storefront-disabled') === 'true')
+			env = { ...env, STRIPE_DEMO_PRICE_ID: undefined }
 		if (request.headers.get('x-test-email-disabled') === 'true')
 			env = { ...env, EMAIL_FROM: undefined }
 		return worker.fetch(request, env, ctx)
