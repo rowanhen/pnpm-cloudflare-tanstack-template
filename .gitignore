@@ -32,5 +32,3 @@ dist-ssr
 .env.prod
 .dev.vars*
 !.dev.vars.example
-playwright-report/
-test-results/

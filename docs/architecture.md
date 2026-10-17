@@ -22,7 +22,7 @@ Effect handler → typed Drizzle query → Cloudflare D1
 | `packages/data/src/schema.ts`                        | Drizzle storage schema; migrations are in `apps/api/migrations/`.            |
 | `src/generated/` directories                         | Generated routes, schemas, contracts, client models, hooks and mocks.        |
 
-`orval.config.ts` uses native multi-file references, tag grouping, cleaning and formatting. `codegen/effect-handlers.ts` is the one custom extension: it adds typed Effect handler contracts, wiring and missing implementation stubs. `scripts/` contains small local setup and migration checks; `tests/` separates unit, integration, browser and shared support code. Wrangler handles deployment.
+`orval.config.ts` uses native multi-file references, tag grouping, cleaning and formatting. `codegen/effect-handlers.ts` is the one custom extension: it adds typed Effect handler contracts, wiring and missing implementation stubs. `scripts/` contains small local setup and migration checks; `tests/` separates unit, API integration and shared support code. Wrangler handles deployment.
 
 ## Add a feature
 

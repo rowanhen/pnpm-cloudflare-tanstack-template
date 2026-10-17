@@ -95,11 +95,9 @@ Cloudflare also offers an x402-based [Monetization Gateway](https://developers.c
 ## Verify and clean up
 
 ```bash
-pnpm test           # workerd + temporary D1/R2; real Stripe SDK against local HTTP fixture
-pnpm test:dev       # browser → Vite proxy → Worker → D1/R2
-pnpm test:browser   # browser → production Pages runtime → Worker → D1/R2
+pnpm test           # local workerd + temporary D1/R2; real Stripe SDK against local HTTP fixture
 ```
 
-Metering tests exercise scope isolation, input conflicts, cross-user results, concurrent duplicate IDs across keys, the last-credit race, zero-balance replay, retained history, revocation, and a forced debit failure with full rollback. Stripe tests race webhook delivery with status polling and check that unpaid/forged/mismatched events never grant credits. Browser tests create a paid key, call through the app proxy, refresh the balance, and revoke it.
+Metering tests exercise scope isolation, input conflicts, cross-user results, concurrent duplicate IDs across keys, the last-credit race, zero-balance replay, retained history, revocation, and a forced debit failure with full rollback. Stripe tests race webhook delivery with status polling and check that unpaid/forged/mismatched events never grant credits. Manually check creating a paid key in the dashboard, calling through the app proxy, refreshing the balance and revoking the key. These API suites run locally, not in CI.
 
 Local suites use the real Worker/D1 runtime with temporary storage. Stripe fixture tests create no Stripe resources and do not complete a real card payment. Follow the [sandbox payment check](payments.md) for that provider integration. Manage remote resources and obsolete Stripe test catalog/webhook entries with their native provider tools.

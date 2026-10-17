@@ -105,7 +105,7 @@ Expected failures become their declared HTTP response. Infrastructure failures a
 
 All `src/generated/` directories are owned by generation. Orval cleans those specific directories and writes formatted output directly. Handwritten feature directories are outside the clean targets. If generation fails, correct the contract and rerun it; output is not staged atomically. CI runs generation and checks Git status for tracked changes and new files, including missing handler entry points.
 
-Tests exercise a temporary second products feature, native shared references, router/type/client/mock generation, preserved implementations, TypeScript rejection of unfinished handlers, unsupported boundary rejection, and removal of stale generated outputs. Separate contract tests and Worker/browser integration tests cover response validation, authentication, CSRF, ownership, malformed requests, and real database behaviour. Mocks are development helpers rather than independent evidence of correct behaviour.
+Tests exercise a temporary second products feature, native shared references, router/type/client/mock generation, preserved implementations, TypeScript rejection of unfinished handlers, unsupported boundary rejection, and removal of stale generated outputs. Separate local contract tests and Worker integration tests cover response validation, authentication, CSRF, ownership, malformed requests, and real database behaviour. Mocks are development helpers rather than independent evidence of correct behaviour.
 
 ## Deliberate boundaries
 

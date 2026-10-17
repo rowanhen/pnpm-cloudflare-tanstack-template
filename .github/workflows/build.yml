@@ -31,14 +31,17 @@ jobs:
           pnpm api:generate
           test -z "$(git status --porcelain -- packages/contracts/src/generated apps/api/src/generated apps/dashboard/src/generated apps/api/src/features)"
 
-      - name: Pre-commit parity checks
-        run: pnpm run check
+      - name: Lint
+        run: pnpm lint
 
-      - name: Install browser
-        run: pnpm exec playwright install --with-deps chromium
+      - name: Formatting
+        run: pnpm format:check
 
-      - name: Browser end-to-end tests
-        run: pnpm test:browser
+      - name: Schema consistency
+        run: pnpm db:check
 
-      - name: Development server end-to-end tests
-        run: pnpm test:dev
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
