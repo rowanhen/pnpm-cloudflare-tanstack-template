@@ -2,6 +2,8 @@
 
 Wrangler owns resource creation, binding configuration, secrets and deployment. Package scripts are short aliases for native commands. Optional Google, Stripe, PostHog and email account setup is documented separately.
 
+The dotenvx-encrypted root `.env.local` is the source of truth for persistent deployment credentials and settings, including `CLOUDFLARE_API_TOKEN`, Google/Stripe credentials, `BETTER_AUTH_SECRET` and `API_PROXY_SECRET`. Save credentials there before uploading copies to GitHub Actions or Cloudflare; those services cannot return uploaded secret values. Commit only ciphertext and the public encryption key. Keep `.env.keys` private and gitignored. Load values with `npx --yes @dotenvx/dotenvx@1.65.0 run -f .env.local -- <command>`; loading them does not automatically synchronize remote secret stores. The local development auth secret is backed up separately as `DEV_BETTER_AUTH_SECRET`. GitHub generates its job-scoped `GITHUB_TOKEN` automatically, so it needs no saved copy.
+
 Authenticate with `pnpm exec wrangler login`, or export `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. API provisioning needs D1, Workers R2 Storage, and Workers Scripts Edit permissions; app deployment also needs Cloudflare Pages Edit.
 
 1. Choose names (`pnpm setup-project my-project`), then provision:
@@ -26,9 +28,9 @@ Authenticate with `pnpm exec wrangler login`, or export `CLOUDFLARE_ACCOUNT_ID` 
    pnpm exec wrangler secret put GOOGLE_CLIENT_SECRET --config apps/api/wrangler.json
    ```
 
-   Generate a fresh secret with `openssl rand -hex 32`; keep it in your password manager. Do not reuse the local secret. Auth fails closed until configured.
+   Generate a fresh secret with `openssl rand -hex 32` and encrypt it as `BETTER_AUTH_SECRET` in the root `.env.local` before uploading it. Do not reuse the local development secret. Auth fails closed until configured.
 
-6. Generate another random secret for `API_PROXY_SECRET`. Set the **same value** on the API Worker and both Pages projects (production and corresponding preview settings if used):
+6. Generate another random secret for `API_PROXY_SECRET` and encrypt it in the root `.env.local` first. Set the **same value** on the API Worker and both Pages projects (production and corresponding preview settings if used):
 
    ```bash
    pnpm exec wrangler secret put API_PROXY_SECRET --config apps/api/wrangler.json
