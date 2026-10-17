@@ -51,11 +51,11 @@ An agent can configure and test an existing authorized client, but the account o
 
 ## 4. Add services as needed
 
-| Service | Values you supply                                                                                                  | Setup                             | What to check                                                                       |
-| ------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------- | ----------------------------------------------------------------------------------- |
-| Stripe  | Test secret and publishable keys from the same sandbox                                                             | [Payment guide](payments.md)      | Test card succeeds, one credit pack is granted, success reload does not grant twice |
-| PostHog | Public project token and regional ingestion host; a scoped personal key only for automated project setup/reporting | [PostHog guide](observability.md) | Opt in, visit pages, find events and a masked replay in that project                |
-| Email   | A sender address on a Cloudflare email-enabled domain and authorized zone access                                   | [Email guide](data-and-email.md)  | Send to your own verified account address and check the inbox                       |
+| Service | Values you supply                                              | Setup                             | What to check                                                                       |
+| ------- | -------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------- |
+| Stripe  | Test secret and publishable keys from the same sandbox         | [Payment guide](payments.md)      | Test card succeeds, one credit pack is granted, success reload does not grant twice |
+| PostHog | Public project token and regional ingestion host               | [PostHog guide](observability.md) | Opt in, visit pages, find events and a masked replay in that project                |
+| Email   | A sender address on a verified Cloudflare email-enabled domain | [Email guide](data-and-email.md)  | Send to your own verified account address and check the inbox                       |
 
 Use `.dev.vars` for backend credentials. `VITE_` variables are public frontend configuration, embedded in the build. Never put Google/Stripe secrets or a PostHog personal API key in them. The PostHog `phc_` collection token and Stripe `pk_test_` publishable key are designed to be public.
 
@@ -63,50 +63,26 @@ For pay per request, complete Stripe setup, choose **Add credits**, buy a test p
 
 ## 5. Deploy to Cloudflare
 
-Use an existing Cloudflare account with a `workers.dev` subdomain and D1/R2/Pages access. Supply `CLOUDFLARE_ACCOUNT_ID` and an authorized `CLOUDFLARE_API_TOKEN` through your shell's secret manager or the ignored `apps/api/.dev.vars`. The token needs Workers Scripts, D1, Workers R2 Storage and Pages edit permissions for that account.
+Follow the [Wrangler deployment guide](manual-deployment.md). Use native Wrangler commands to create D1/R2 and Pages projects, configure their bindings and secrets, and deploy. Configure Google callbacks, Stripe prices/webhooks, PostHog and email through their provider tools when needed.
 
-```bash
-pnpm setup:doctor --online
-pnpm cloud:up my-demo
-pnpm cloud:check my-demo
-```
+The API uses `apps/api/wrangler.json`; each website has its own Pages `wrangler.json`. Set the final URLs before building. Register the exact dashboard callback `https://YOUR-DASHBOARD/api/auth/callback/google` in Google, then complete a real sign-in. Use Cloudflare's Pages settings for custom domains and DNS.
 
-The doctor reports missing optional services too. `configured` only means values are present. `cloud:up` creates the Worker, D1, R2 and two Pages projects, applies migrations, sets secrets and deploys. With Stripe test keys it also creates the test price and webhook. It prints the marketing URL, dashboard URL and exact Google callback.
-
-Register that new dashboard callback in Google, then complete a real login. Local and deployed URLs need separate allowlist entries. Run `pnpm cloud:up my-demo` again after changes; it updates the same environment. Keep the ignored `.wrangler/sandboxes/my-demo/` files: they identify the resources and secrets needed for updates and cleanup.
-
-To give the marketing site your own subdomain on a Cloudflare-managed zone:
-
-```bash
-pnpm cloud:domain my-demo starter.example.com
-```
-
-Use a hostname you own. This needs zone read and DNS edit permission, sets the marketing canonical URL and enables indexing. It leaves the dashboard URL and Google callback unchanged. Keep preview environments noindexed. The [manual deployment guide](manual-deployment.md) is available if you need to manage bindings yourself.
-
-## 6. Validate and clean up
+## 6. Validate
 
 ```bash
 pnpm validate
 ```
 
-This checks formatting, lint, migrations, API behavior, TypeScript, production builds, and browser flows in development and production runtimes. Its temporary auth/payment/analytics fixtures allow it to run without provider accounts. A fixture simulates a provider response; it does not prove that a real provider account is connected.
+This runs lint, formatting, migration checks, unit/API tests, TypeScript, builds and browser flows in development and production runtimes. Temporary auth/payment/analytics fixtures need no provider accounts. Live Google consent, Stripe card completion, PostHog ingestion/replay and inbox delivery use the [verification checklist](verification.md).
 
-With Cloudflare credentials, use `pnpm validate --cloud` to also test deployed D1/R2, metering and browser flows. Temporary resources are deleted and their absence checked. Use the [verification checklist](verification.md) for Google consent, real Stripe test payments, PostHog ingestion/replay and inbox delivery.
-
-To delete your own disposable demo:
-
-```bash
-pnpm cloud:down my-demo
-```
-
-This deletes the environment's database, files and deployments. It removes its owned Stripe webhook and archives its product/price. PostHog history and Cloudflare email domain configuration are retained; those are account-level setup. Never delete the ignored resource manifest before teardown succeeds. Do not tear down the maintained `showcase` environment.
+Resource creation and deletion use provider tools. Keep the names and configuration of any deployed resources you own; local tests only clean up their own temporary local storage.
 
 ## Change it for your idea
 
 - Page copy and routes: `apps/marketing/src/routes/` and `apps/dashboard/src/routes/`.
 - Marketing name/URLs: `apps/marketing/.env.local` (see `.env.example`). Dashboard display name: `packages/shared/src/project.ts`.
 - Database tables: `packages/data/src/schema.ts`; run `pnpm db:generate --name my_change`, review SQL, then `pnpm db:migrate` locally.
-- REST inputs, responses and client: `packages/contracts/src/`. Keep private database rows out of public responses.
+- REST inputs and responses: `packages/contracts/openapi/`; register new paths in `api.json`, then run `pnpm api:generate`. Keep private database rows out of public responses.
 - UI components: import from `@workspace/shared`. Use Kumo's semantic styles and the shared page shells.
 - Telemetry: `packages/observability/src/`. Keep user content and secrets out of events.
 

@@ -1,5 +1,5 @@
 {
-	"openapi": "3.0.3",
+	"openapi": "3.1.1",
 	"info": {
 		"title": "Workspace API",
 		"version": "1.0.0",
@@ -22,19 +22,54 @@
 						}
 					},
 					"400": {
-						"$ref": "#/components/responses/BadRequest"
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
 					},
 					"401": {
-						"$ref": "#/components/responses/Unauthorized"
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
 					},
 					"403": {
-						"$ref": "#/components/responses/Forbidden"
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
 					},
 					"500": {
-						"$ref": "#/components/responses/InternalError"
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
 					},
 					"503": {
-						"$ref": "#/components/responses/Unavailable"
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
 					}
 				}
 			},
@@ -53,25 +88,74 @@
 						}
 					},
 					"400": {
-						"$ref": "#/components/responses/BadRequest"
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
 					},
 					"401": {
-						"$ref": "#/components/responses/Unauthorized"
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
 					},
 					"403": {
-						"$ref": "#/components/responses/Forbidden"
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
 					},
 					"413": {
-						"$ref": "#/components/responses/PayloadTooLarge"
+						"description": "Request exceeds 16 KiB",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PayloadTooLarge"
+								}
+							}
+						}
 					},
 					"415": {
-						"$ref": "#/components/responses/UnsupportedMediaType"
+						"description": "JSON content type required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UnsupportedMediaType"
+								}
+							}
+						}
 					},
 					"500": {
-						"$ref": "#/components/responses/InternalError"
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
 					},
 					"503": {
-						"$ref": "#/components/responses/Unavailable"
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
 					}
 				},
 				"requestBody": {
@@ -114,13 +198,34 @@
 						}
 					},
 					"400": {
-						"$ref": "#/components/responses/BadRequest"
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
 					},
 					"401": {
-						"$ref": "#/components/responses/Unauthorized"
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
 					},
 					"403": {
-						"$ref": "#/components/responses/Forbidden"
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
 					},
 					"404": {
 						"description": "Todo does not exist or belongs to another user",
@@ -133,10 +238,24 @@
 						}
 					},
 					"500": {
-						"$ref": "#/components/responses/InternalError"
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
 					},
 					"503": {
-						"$ref": "#/components/responses/Unavailable"
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
 					}
 				}
 			},
@@ -155,13 +274,34 @@
 						}
 					},
 					"400": {
-						"$ref": "#/components/responses/BadRequest"
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
 					},
 					"401": {
-						"$ref": "#/components/responses/Unauthorized"
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
 					},
 					"403": {
-						"$ref": "#/components/responses/Forbidden"
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
 					},
 					"404": {
 						"description": "Todo does not exist or belongs to another user",
@@ -174,16 +314,44 @@
 						}
 					},
 					"413": {
-						"$ref": "#/components/responses/PayloadTooLarge"
+						"description": "Request exceeds 16 KiB",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PayloadTooLarge"
+								}
+							}
+						}
 					},
 					"415": {
-						"$ref": "#/components/responses/UnsupportedMediaType"
+						"description": "JSON content type required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UnsupportedMediaType"
+								}
+							}
+						}
 					},
 					"500": {
-						"$ref": "#/components/responses/InternalError"
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
 					},
 					"503": {
-						"$ref": "#/components/responses/Unavailable"
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
 					}
 				},
 				"requestBody": {
@@ -205,13 +373,34 @@
 						"description": "Deleted"
 					},
 					"400": {
-						"$ref": "#/components/responses/BadRequest"
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
 					},
 					"401": {
-						"$ref": "#/components/responses/Unauthorized"
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
 					},
 					"403": {
-						"$ref": "#/components/responses/Forbidden"
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
 					},
 					"404": {
 						"description": "Todo does not exist or belongs to another user",
@@ -224,10 +413,24 @@
 						}
 					},
 					"500": {
-						"$ref": "#/components/responses/InternalError"
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
 					},
 					"503": {
-						"$ref": "#/components/responses/Unavailable"
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
 					}
 				}
 			}
@@ -242,6 +445,94 @@
 			}
 		},
 		"schemas": {
+			"Todo": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"completed": {
+						"type": "boolean"
+					},
+					"created_at": {
+						"type": "string"
+					}
+				},
+				"required": ["id", "title", "completed", "created_at"]
+			},
+			"TodoResponse": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"todo": {
+						"$ref": "#/components/schemas/Todo"
+					}
+				},
+				"required": ["todo"]
+			},
+			"TodosResponse": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"todos": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Todo"
+						},
+						"maxItems": 100
+					}
+				},
+				"required": ["todos"]
+			},
+			"CreateTodoInput": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"title": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200,
+						"pattern": "\\S"
+					}
+				},
+				"required": ["title"]
+			},
+			"UpdateTodoInput": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"title": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200,
+						"pattern": "\\S"
+					},
+					"completed": {
+						"type": "boolean"
+					}
+				},
+				"minProperties": 1
+			},
+			"TodoNotFound": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["todo_not_found"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
 			"BadRequest": {
 				"type": "object",
 				"additionalProperties": false,
@@ -339,166 +630,6 @@
 					}
 				},
 				"required": ["code", "error"]
-			},
-			"Todo": {
-				"type": "object",
-				"additionalProperties": false,
-				"properties": {
-					"id": {
-						"type": "string"
-					},
-					"title": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 200
-					},
-					"completed": {
-						"type": "boolean"
-					},
-					"created_at": {
-						"type": "string"
-					}
-				},
-				"required": ["id", "title", "completed", "created_at"]
-			},
-			"TodoResponse": {
-				"type": "object",
-				"additionalProperties": false,
-				"properties": {
-					"todo": {
-						"$ref": "#/components/schemas/Todo"
-					}
-				},
-				"required": ["todo"]
-			},
-			"TodosResponse": {
-				"type": "object",
-				"additionalProperties": false,
-				"properties": {
-					"todos": {
-						"type": "array",
-						"items": {
-							"$ref": "#/components/schemas/Todo"
-						},
-						"maxItems": 100
-					}
-				},
-				"required": ["todos"]
-			},
-			"CreateTodoInput": {
-				"type": "object",
-				"additionalProperties": false,
-				"properties": {
-					"title": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 200,
-						"pattern": "\\S"
-					}
-				},
-				"required": ["title"]
-			},
-			"UpdateTodoInput": {
-				"type": "object",
-				"additionalProperties": false,
-				"properties": {
-					"title": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 200,
-						"pattern": "\\S"
-					},
-					"completed": {
-						"type": "boolean"
-					}
-				},
-				"minProperties": 1
-			},
-			"TodoNotFound": {
-				"type": "object",
-				"additionalProperties": false,
-				"properties": {
-					"code": {
-						"type": "string",
-						"enum": ["todo_not_found"]
-					},
-					"error": {
-						"type": "string"
-					}
-				},
-				"required": ["code", "error"]
-			}
-		},
-		"responses": {
-			"BadRequest": {
-				"description": "Invalid request",
-				"content": {
-					"application/json": {
-						"schema": {
-							"$ref": "#/components/schemas/BadRequest"
-						}
-					}
-				}
-			},
-			"Unauthorized": {
-				"description": "Sign in required",
-				"content": {
-					"application/json": {
-						"schema": {
-							"$ref": "#/components/schemas/Unauthorized"
-						}
-					}
-				}
-			},
-			"Forbidden": {
-				"description": "Untrusted origin",
-				"content": {
-					"application/json": {
-						"schema": {
-							"$ref": "#/components/schemas/Forbidden"
-						}
-					}
-				}
-			},
-			"InternalError": {
-				"description": "Unexpected server failure",
-				"content": {
-					"application/json": {
-						"schema": {
-							"$ref": "#/components/schemas/InternalError"
-						}
-					}
-				}
-			},
-			"Unavailable": {
-				"description": "Authentication unavailable",
-				"content": {
-					"application/json": {
-						"schema": {
-							"$ref": "#/components/schemas/Unavailable"
-						}
-					}
-				}
-			},
-			"PayloadTooLarge": {
-				"description": "Request exceeds 16 KiB",
-				"content": {
-					"application/json": {
-						"schema": {
-							"$ref": "#/components/schemas/PayloadTooLarge"
-						}
-					}
-				}
-			},
-			"UnsupportedMediaType": {
-				"description": "JSON content type required",
-				"content": {
-					"application/json": {
-						"schema": {
-							"$ref": "#/components/schemas/UnsupportedMediaType"
-						}
-					}
-				}
 			}
 		}
 	},

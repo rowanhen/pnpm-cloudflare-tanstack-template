@@ -16,19 +16,19 @@
 						}
 					},
 					"400": {
-						"$ref": "#/components/responses/BadRequest"
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
 					},
 					"401": {
-						"$ref": "#/components/responses/Unauthorized"
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
 					},
 					"403": {
-						"$ref": "#/components/responses/Forbidden"
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
 					},
 					"500": {
-						"$ref": "#/components/responses/InternalError"
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
 					},
 					"503": {
-						"$ref": "#/components/responses/Unavailable"
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
 					}
 				}
 			},
@@ -47,25 +47,25 @@
 						}
 					},
 					"400": {
-						"$ref": "#/components/responses/BadRequest"
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
 					},
 					"401": {
-						"$ref": "#/components/responses/Unauthorized"
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
 					},
 					"403": {
-						"$ref": "#/components/responses/Forbidden"
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
 					},
 					"500": {
-						"$ref": "#/components/responses/InternalError"
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
 					},
 					"503": {
-						"$ref": "#/components/responses/Unavailable"
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
 					},
 					"413": {
-						"$ref": "#/components/responses/PayloadTooLarge"
+						"$ref": "../shared/errors.json#/components/responses/PayloadTooLarge"
 					},
 					"415": {
-						"$ref": "#/components/responses/UnsupportedMediaType"
+						"$ref": "../shared/errors.json#/components/responses/UnsupportedMediaType"
 					}
 				},
 				"requestBody": {
@@ -108,19 +108,19 @@
 						}
 					},
 					"400": {
-						"$ref": "#/components/responses/BadRequest"
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
 					},
 					"401": {
-						"$ref": "#/components/responses/Unauthorized"
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
 					},
 					"403": {
-						"$ref": "#/components/responses/Forbidden"
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
 					},
 					"500": {
-						"$ref": "#/components/responses/InternalError"
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
 					},
 					"503": {
-						"$ref": "#/components/responses/Unavailable"
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
 					},
 					"404": {
 						"description": "Todo does not exist or belongs to another user",
@@ -149,19 +149,19 @@
 						}
 					},
 					"400": {
-						"$ref": "#/components/responses/BadRequest"
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
 					},
 					"401": {
-						"$ref": "#/components/responses/Unauthorized"
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
 					},
 					"403": {
-						"$ref": "#/components/responses/Forbidden"
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
 					},
 					"500": {
-						"$ref": "#/components/responses/InternalError"
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
 					},
 					"503": {
-						"$ref": "#/components/responses/Unavailable"
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
 					},
 					"404": {
 						"description": "Todo does not exist or belongs to another user",
@@ -174,10 +174,10 @@
 						}
 					},
 					"413": {
-						"$ref": "#/components/responses/PayloadTooLarge"
+						"$ref": "../shared/errors.json#/components/responses/PayloadTooLarge"
 					},
 					"415": {
-						"$ref": "#/components/responses/UnsupportedMediaType"
+						"$ref": "../shared/errors.json#/components/responses/UnsupportedMediaType"
 					}
 				},
 				"requestBody": {
@@ -199,19 +199,19 @@
 						"description": "Deleted"
 					},
 					"400": {
-						"$ref": "#/components/responses/BadRequest"
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
 					},
 					"401": {
-						"$ref": "#/components/responses/Unauthorized"
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
 					},
 					"403": {
-						"$ref": "#/components/responses/Forbidden"
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
 					},
 					"500": {
-						"$ref": "#/components/responses/InternalError"
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
 					},
 					"503": {
-						"$ref": "#/components/responses/Unavailable"
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
 					},
 					"404": {
 						"description": "Todo does not exist or belongs to another user",

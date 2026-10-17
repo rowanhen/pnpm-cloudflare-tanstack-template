@@ -5,7 +5,14 @@
 		"version": "1.0.0",
 		"description": "OpenAPI-first contracts with generated Hono routes, Effect handlers, and frontend clients."
 	},
-	"paths": {},
+	"paths": {
+		"/api/todos": {
+			"$ref": "./features/todos.json#/paths/~1api~1todos"
+		},
+		"/api/todos/{id}": {
+			"$ref": "./features/todos.json#/paths/~1api~1todos~1{id}"
+		}
+	},
 	"components": {
 		"securitySchemes": {
 			"session": {

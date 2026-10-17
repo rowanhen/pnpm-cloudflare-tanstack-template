@@ -5,6 +5,56 @@
  * OpenAPI-first contracts with generated Hono routes, Effect handlers, and frontend clients.
  * OpenAPI spec version: 1.0.0
  */
+export interface Todo {
+	id: string
+	/**
+	 * @minLength 1
+	 * @maxLength 200
+	 */
+	title: string
+	completed: boolean
+	created_at: string
+}
+
+export interface TodoResponse {
+	todo: Todo
+}
+
+export interface TodosResponse {
+	/** @maxItems 100 */
+	todos: Todo[]
+}
+
+export interface CreateTodoInput {
+	/**
+	 * @minLength 1
+	 * @maxLength 200
+	 * @pattern \S
+	 */
+	title: string
+}
+
+export interface UpdateTodoInput {
+	/**
+	 * @minLength 1
+	 * @maxLength 200
+	 * @pattern \S
+	 */
+	title?: string
+	completed?: boolean
+}
+
+export type TodoNotFoundCode = (typeof TodoNotFoundCode)[keyof typeof TodoNotFoundCode]
+
+export const TodoNotFoundCode = {
+	todo_not_found: 'todo_not_found',
+} as const
+
+export interface TodoNotFound {
+	code: TodoNotFoundCode
+	error: string
+}
+
 export type BadRequestCode = (typeof BadRequestCode)[keyof typeof BadRequestCode]
 
 export const BadRequestCode = {
@@ -82,88 +132,3 @@ export interface Unavailable {
 	code: UnavailableCode
 	error: string
 }
-
-export interface Todo {
-	id: string
-	/**
-	 * @minLength 1
-	 * @maxLength 200
-	 */
-	title: string
-	completed: boolean
-	created_at: string
-}
-
-export interface TodoResponse {
-	todo: Todo
-}
-
-export interface TodosResponse {
-	/** @maxItems 100 */
-	todos: Todo[]
-}
-
-export interface CreateTodoInput {
-	/**
-	 * @minLength 1
-	 * @maxLength 200
-	 * @pattern \S
-	 */
-	title: string
-}
-
-export interface UpdateTodoInput {
-	/**
-	 * @minLength 1
-	 * @maxLength 200
-	 * @pattern \S
-	 */
-	title?: string
-	completed?: boolean
-}
-
-export type TodoNotFoundCode = (typeof TodoNotFoundCode)[keyof typeof TodoNotFoundCode]
-
-export const TodoNotFoundCode = {
-	todo_not_found: 'todo_not_found',
-} as const
-
-export interface TodoNotFound {
-	code: TodoNotFoundCode
-	error: string
-}
-
-/**
- * Invalid request
- */
-export type BadRequestResponse = BadRequest
-
-/**
- * Sign in required
- */
-export type UnauthorizedResponse = Unauthorized
-
-/**
- * Untrusted origin
- */
-export type ForbiddenResponse = Forbidden
-
-/**
- * Unexpected server failure
- */
-export type InternalErrorResponse = InternalError
-
-/**
- * Authentication unavailable
- */
-export type UnavailableResponse = Unavailable
-
-/**
- * Request exceeds 16 KiB
- */
-export type PayloadTooLargeResponse = PayloadTooLarge
-
-/**
- * JSON content type required
- */
-export type UnsupportedMediaTypeResponse = UnsupportedMediaType

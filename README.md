@@ -41,15 +41,12 @@ Start with the [step-by-step guide](docs/getting-started.md). The [verification 
 ## Test and deploy
 
 ```bash
-pnpm validate             # local API, types, builds and browser tests; no provider accounts
-pnpm setup:doctor --online # check available credentials; not proof of login or payment
-pnpm cloud:up my-demo      # requires Cloudflare credentials; prints deployed URLs
-pnpm cloud:check my-demo   # read-only deployment checks
+pnpm api:generate # after changing OpenAPI contracts
+pnpm check        # lint, formatting, migrations, unit/API tests, types and builds
+pnpm validate     # check plus production and development browser tests
 ```
 
-`pnpm validate --cloud` also creates real, disposable Cloudflare resources, tests them and verifies cleanup. It does not complete Google consent, Stripe card entry, PostHog account ingestion or email inbox delivery. See [verification and cleanup](docs/verification.md).
-
-To remove an environment you no longer need, run `pnpm cloud:down my-demo`. This deletes its database and files. Keep the ignored `.wrangler/sandboxes/my-demo/` directory until cleanup finishes.
+Deploy with the [Wrangler deployment guide](docs/manual-deployment.md). Cloudflare resources, secrets and provider accounts use their native tools; this template does not maintain its own provisioning or teardown framework. Live provider checks are described in [verification](docs/verification.md).
 
 ## Guides
 
@@ -62,9 +59,9 @@ To remove an environment you no longer need, run `pnpm cloud:down my-demo`. This
 | Charge credits for a private REST endpoint        | [Pay per request](docs/pay-per-request.md)          |
 | D1 types, migrations and Cloudflare email         | [Data and email](docs/data-and-email.md)            |
 | Analytics, session replay and API errors          | [PostHog](docs/observability.md)                    |
-| Automated setup, permissions and teardown         | [Agent setup](docs/agent-setup.md)                  |
+| Agent workflow and provider access                | [Agent setup](docs/agent-setup.md)                  |
 | Component conventions, folders and REST routes    | [Code and API reference](docs/reference.md)         |
 
 Start with the [one-page structure guide](docs/architecture.md). The [detailed API walkthrough](docs/api-architecture.md) explains the OpenAPI → Orval → Hono + Effect flow, demonstrated by todos. Add or edit feature contracts, run `pnpm api:generate`, and implement the typed entry points; routes, clients, hooks, and mocks are generated automatically.
 
-Application code, configuration, scripts and tests are TypeScript. D1 schema types live in `@workspace/data`; validated public API types and the client live in `@workspace/contracts`. Both apps share the UI and observability packages. GitHub's required **Verify** check gates dependency auto-merges.
+Application code, scripts and tests are TypeScript; OpenAPI and Wrangler configuration use JSON. D1 schema types live in `@workspace/data`; validated public API types and the client live in `@workspace/contracts`. Both apps share the UI and observability packages. GitHub's required **Verify** check gates dependency auto-merges.

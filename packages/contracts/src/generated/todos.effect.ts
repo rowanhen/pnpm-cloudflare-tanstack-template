@@ -7,6 +7,7 @@
  */
 import { Schema as S } from 'effect'
 
+import type { Handler, InputOf, SuccessOf, FailureOf } from '../operation'
 export const listTodos200ResponseTodosMax = 100
 
 export const listTodos200ResponseTodosItemTitleMax = 200
@@ -47,6 +48,32 @@ export const ListTodos503Response = S.Struct({
 	error: S.String,
 })
 
+export const listTodos = {
+	operationId: 'listTodos',
+	method: 'GET',
+	path: '/api/todos',
+	hasBody: false,
+	input: S.Struct({}),
+	responses: {
+		200: ListTodos200Response,
+		400: ListTodos400Response,
+		401: ListTodos401Response,
+		403: ListTodos403Response,
+		500: ListTodos500Response,
+		503: ListTodos503Response,
+	},
+	errorCodes: {
+		400: 'bad_request',
+		401: 'unauthorized',
+		403: 'forbidden',
+		500: 'internal_error',
+		503: 'unavailable',
+	},
+} as const
+export type ListTodosInput = InputOf<typeof listTodos>
+export type ListTodosSuccess = SuccessOf<typeof listTodos>
+export type ListTodosFailure = FailureOf<typeof listTodos>
+export type ListTodosHandler<R = never> = Handler<typeof listTodos, R>
 export const createTodoBodyTitleMax = 200
 
 export const createTodoBodyTitleRegExp = new RegExp('\\S')
@@ -105,6 +132,36 @@ export const CreateTodo503Response = S.Struct({
 	error: S.String,
 })
 
+export const createTodo = {
+	operationId: 'createTodo',
+	method: 'POST',
+	path: '/api/todos',
+	hasBody: true,
+	input: S.Struct({ body: CreateTodoBody }),
+	responses: {
+		201: CreateTodo201Response,
+		400: CreateTodo400Response,
+		401: CreateTodo401Response,
+		403: CreateTodo403Response,
+		413: CreateTodo413Response,
+		415: CreateTodo415Response,
+		500: CreateTodo500Response,
+		503: CreateTodo503Response,
+	},
+	errorCodes: {
+		400: 'bad_request',
+		401: 'unauthorized',
+		403: 'forbidden',
+		413: 'payload_too_large',
+		415: 'unsupported_media_type',
+		500: 'internal_error',
+		503: 'unavailable',
+	},
+} as const
+export type CreateTodoInput = InputOf<typeof createTodo>
+export type CreateTodoSuccess = SuccessOf<typeof createTodo>
+export type CreateTodoFailure = FailureOf<typeof createTodo>
+export type CreateTodoHandler<R = never> = Handler<typeof createTodo, R>
 export const getTodoPathIdMax = 200
 
 export const GetTodoParams = S.Struct({
@@ -152,6 +209,34 @@ export const GetTodo503Response = S.Struct({
 	error: S.String,
 })
 
+export const getTodo = {
+	operationId: 'getTodo',
+	method: 'GET',
+	path: '/api/todos/{id}',
+	hasBody: false,
+	input: S.Struct({ params: GetTodoParams }),
+	responses: {
+		200: GetTodo200Response,
+		400: GetTodo400Response,
+		401: GetTodo401Response,
+		403: GetTodo403Response,
+		404: GetTodo404Response,
+		500: GetTodo500Response,
+		503: GetTodo503Response,
+	},
+	errorCodes: {
+		400: 'bad_request',
+		401: 'unauthorized',
+		403: 'forbidden',
+		404: 'todo_not_found',
+		500: 'internal_error',
+		503: 'unavailable',
+	},
+} as const
+export type GetTodoInput = InputOf<typeof getTodo>
+export type GetTodoSuccess = SuccessOf<typeof getTodo>
+export type GetTodoFailure = FailureOf<typeof getTodo>
+export type GetTodoHandler<R = never> = Handler<typeof getTodo, R>
 export const updateTodoPathIdMax = 200
 
 export const UpdateTodoParams = S.Struct({
@@ -224,6 +309,38 @@ export const UpdateTodo503Response = S.Struct({
 	error: S.String,
 })
 
+export const updateTodo = {
+	operationId: 'updateTodo',
+	method: 'PATCH',
+	path: '/api/todos/{id}',
+	hasBody: true,
+	input: S.Struct({ params: UpdateTodoParams, body: UpdateTodoBody.check(S.isMinProperties(1)) }),
+	responses: {
+		200: UpdateTodo200Response,
+		400: UpdateTodo400Response,
+		401: UpdateTodo401Response,
+		403: UpdateTodo403Response,
+		404: UpdateTodo404Response,
+		413: UpdateTodo413Response,
+		415: UpdateTodo415Response,
+		500: UpdateTodo500Response,
+		503: UpdateTodo503Response,
+	},
+	errorCodes: {
+		400: 'bad_request',
+		401: 'unauthorized',
+		403: 'forbidden',
+		404: 'todo_not_found',
+		413: 'payload_too_large',
+		415: 'unsupported_media_type',
+		500: 'internal_error',
+		503: 'unavailable',
+	},
+} as const
+export type UpdateTodoInput = InputOf<typeof updateTodo>
+export type UpdateTodoSuccess = SuccessOf<typeof updateTodo>
+export type UpdateTodoFailure = FailureOf<typeof updateTodo>
+export type UpdateTodoHandler<R = never> = Handler<typeof updateTodo, R>
 export const deleteTodoPathIdMax = 200
 
 export const DeleteTodoParams = S.Struct({
@@ -259,3 +376,32 @@ export const DeleteTodo503Response = S.Struct({
 	code: S.Literals(['unavailable']),
 	error: S.String,
 })
+
+export const deleteTodo = {
+	operationId: 'deleteTodo',
+	method: 'DELETE',
+	path: '/api/todos/{id}',
+	hasBody: false,
+	input: S.Struct({ params: DeleteTodoParams }),
+	responses: {
+		204: S.Undefined,
+		400: DeleteTodo400Response,
+		401: DeleteTodo401Response,
+		403: DeleteTodo403Response,
+		404: DeleteTodo404Response,
+		500: DeleteTodo500Response,
+		503: DeleteTodo503Response,
+	},
+	errorCodes: {
+		400: 'bad_request',
+		401: 'unauthorized',
+		403: 'forbidden',
+		404: 'todo_not_found',
+		500: 'internal_error',
+		503: 'unavailable',
+	},
+} as const
+export type DeleteTodoInput = InputOf<typeof deleteTodo>
+export type DeleteTodoSuccess = SuccessOf<typeof deleteTodo>
+export type DeleteTodoFailure = FailureOf<typeof deleteTodo>
+export type DeleteTodoHandler<R = never> = Handler<typeof deleteTodo, R>

@@ -1,6 +1,6 @@
 # Code and API reference
 
-[Start here](getting-started.md) · [Manual deployment](manual-deployment.md)
+[Start here](getting-started.md) · [Wrangler deployment](manual-deployment.md)
 
 ## Shared UI
 
@@ -29,7 +29,9 @@ packages/data/      Drizzle schema, inferred database types and server-only D1 c
 packages/contracts/ OpenAPI todo contract, generated Effect types; legacy Zod inputs and REST client
 packages/shared/    Composables exports, shadcn button, theme, page states and shared hooks
 packages/observability/ Consent, analytics, replay, error capture and API telemetry
-scripts/            TypeScript setup/deploy commands and isolated local/cloud tests
+codegen/            Orval Effect extension for typed handlers and wiring
+scripts/            Small local setup and migration checks
+tests/              Unit, API integration and browser tests, runners and fixtures
 ```
 
 Browsers call their own app's `/api` routes. The apps proxy to the configured Worker, keeping cookies on the dashboard domain and avoiding third-party cookies. In cloud deployments, they sign the original visitor IP with a separate shared `API_PROXY_SECRET`, so requests across Cloudflare zones retain individual rate limits. The Worker rejects forged or expired signatures. This secret grants no access to user data or sessions. Dashboard protection runs on the server before rendering, and the Worker independently authenticates and authorizes every private request. Private responses use `Cache-Control: no-store`.
@@ -98,9 +100,9 @@ VITE_NOINDEX=true
 
 Production builds need the final HTTPS URLs and `VITE_NOINDEX=false`. Localhost is always noindexed. Set `VITE_NOINDEX=true` explicitly for staging/preview builds; a production build copied to a preview URL still contains its production settings. `VITE_` values are public and embedded at build time.
 
-The marketing site renders titles, descriptions, canonical URLs, Open Graph/Twitter metadata, a 1200×630 social image, WebSite JSON-LD, `/robots.txt`, and `/sitemap.xml` on the server. The dashboard is always noindexed. Update page copy in `apps/marketing/src/routes/`, defaults in `src/lib/seo.ts`, and `public/favicon.svg` for each new idea. Edit `scripts/generate-social-image.ts` and run `pnpm generate:social` to regenerate `public/og.png`. Add new public pages to the sitemap. The privacy page is example copy: replace its project/contact/retention details before collecting real signups.
+The marketing site renders titles, descriptions, canonical URLs, Open Graph/Twitter metadata, a 1200×630 social image, WebSite JSON-LD, `/robots.txt`, and `/sitemap.xml` on the server. The dashboard is always noindexed. Update page copy in `apps/marketing/src/routes/`, defaults in `src/lib/seo.ts`, and `public/favicon.svg` for each new idea. Replace `apps/marketing/public/og.png` with your own 1200×630 social image. Add new public pages to the sitemap. The privacy page is example copy: replace its project/contact/retention details before collecting real signups.
 
-PostHog analytics, masked session replay, browser/API errors and a reusable reporting dashboard are included. Run `pnpm posthog:setup` with a scoped management credential, then `pnpm cloud:up NAME`. See [observability setup and privacy defaults](observability.md).
+PostHog analytics, masked session replay and browser/API errors are included. Configure a project and its public token/host through PostHog, then supply the frontend build settings and Worker bindings. See [observability setup and privacy defaults](observability.md).
 
 ## Dependency maintenance
 

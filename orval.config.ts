@@ -1,23 +1,38 @@
 import { defineConfig } from 'orval'
+import { effectHandlers, effectHono, removeUnusedEffectModels } from './codegen/effect-handlers.ts'
 
-const input = './packages/contracts/src/generated/openapi.json'
+const input = {
+	target: './packages/contracts/openapi/api.json',
+	parserOptions: { externalRefs: { allow: ['*'] } },
+}
 
 export default defineConfig({
 	server: {
 		input,
 		output: {
-			client: 'hono',
+			client: effectHono,
+			clean: ['./apps/api/src/generated'],
+			formatter: 'oxfmt',
+			tsconfig: './apps/api/tsconfig.json',
 			mode: 'tags',
 			target: './apps/api/src/generated/api.ts',
+			schemas: false,
 			override: {
-				hono: { validator: false, handlerGenerationStrategy: 'skip' },
+				hono: {
+					validator: false,
+					handlerGenerationStrategy: 'skip',
+					compositeRoute: './apps/api/src/generated/routes.ts',
+				},
 			},
 		},
 	},
 	effect: {
 		input,
+		hooks: { afterAllFilesWrite: removeUnusedEffectModels },
 		output: {
-			client: 'effect',
+			client: effectHandlers,
+			clean: ['./packages/contracts/src/generated'],
+			formatter: 'oxfmt',
 			mode: 'tags',
 			target: './packages/contracts/src/generated/api.effect.ts',
 			fileExtension: '.effect.ts',
@@ -34,6 +49,8 @@ export default defineConfig({
 		input,
 		output: {
 			client: 'react-query',
+			clean: ['./apps/dashboard/src/generated'],
+			formatter: 'oxfmt',
 			httpClient: 'fetch',
 			mode: 'tags',
 			target: './apps/dashboard/src/generated/api.ts',

@@ -37,7 +37,7 @@ pnpm db:migrate
 pnpm db:check
 ```
 
-Commit SQL and `apps/api/migrations/meta` together. Wrangler applies migrations both locally and during `cloud:up`; never use `drizzle-kit push` against an existing deployment. `db:check` checks the journal and generates into a disposable directory to detect schema changes without migrations. It does not modify your database.
+Commit SQL and `apps/api/migrations/meta` together. Wrangler applies migrations through `pnpm db:migrate` locally and `pnpm db:migrate:remote` during deployment; never use `drizzle-kit push` against an existing deployment. `db:check` checks the journal and generates into a disposable directory to detect schema changes without migrations. It does not modify your database.
 
 Migrations 0001–0005 are preserved. The timestamped `drizzle_baseline` is an intentional no-op with a snapshot of their schema; later migrations are generated normally. Fresh databases apply the legacy migrations first, and existing databases retain their data. The upgrade test seeds users, sessions, waitlist entries, todos and balances before applying the new migrations. Review table rebuilds carefully when changing SQLite columns, particularly foreign keys and constraints.
 
@@ -53,25 +53,23 @@ Signed-in users can select **Send me a test**, which posts `{ requestId: crypto.
 
 Set `EMAIL_FROM=starter@example.test` in your ignored `apps/api/.dev.vars`, then run `pnpm dev`. The tracked `send_email` binding has no `remote: true`; Wrangler simulates sending and prints paths to the text/HTML files. API and browser tests use that simulator, including injected failure tests. No real mail is sent by automated tests. See [Cloudflare's local email documentation](https://developers.cloudflare.com/email-service/local-development/sending/).
 
-### Agent setup for live sending
+### Live sending
 
-Use an authorized Cloudflare API token with the required Email Sending permissions and zone read access. Set these in your shell or ignored `.dev.vars`:
+Configure and verify your sender domain through Cloudflare Email Service using [domain configuration](https://developers.cloudflare.com/email-service/configuration/domains/). Account entitlement and DNS verification must be available. Set `EMAIL_FROM` on the API Worker with Wrangler, and restrict the binding in `apps/api/wrangler.json` to the same address:
 
-```dotenv
-CLOUDFLARE_ACCOUNT_ID=your-account-id
-CLOUDFLARE_ZONE_ID=your-zone-id
-CLOUDFLARE_API_TOKEN=your-authorized-token
-EMAIL_FROM=hello@mail.your-domain.example
+```json
+{
+	"send_email": [
+		{ "name": "EMAIL", "allowed_sender_addresses": ["hello@mail.your-domain.example"] }
+	]
+}
 ```
 
 ```bash
-pnpm email:setup
-pnpm email:check
-pnpm cloud:up my-demo
+pnpm exec wrangler secret put EMAIL_FROM --config apps/api/wrangler.json
+pnpm deploy:api
 ```
 
-`email:setup` validates zone ownership, finds the exact sending domain and creates/enables it only when needed using the [Email Sending domain API](https://developers.cloudflare.com/api/resources/email_sending/subresources/subdomains/methods/create/). Cloudflare account entitlement and domain verification must be available. It reports the DKIM selector and return-path domain; API success does not verify inbox delivery. Follow [domain configuration](https://developers.cloudflare.com/email-service/configuration/domains/) for DNS verification if Cloudflare reports an incomplete setup. `cloud:up` adds a binding restricted to `EMAIL_FROM`; without that variable, email stays disabled and the rest of the app deploys normally. No separate email API key is needed in the Worker.
-
-The sender domain is shared account configuration. It is deliberately retained when `cloud:down` removes a project. Do not use an unrelated domain for a temporary test. Automated setup tests use a fake provider transport and create no domain/DNS resources.
+No separate email API key is needed in the Worker. Without `EMAIL_FROM`, email stays disabled and waitlist signups still save. Sender-domain setup is shared account configuration; manage it through Cloudflare separately from project deployment. Local tests create no domain or DNS resources.
 
 For a real delivery check, choose an inbox you control, join the deployed waitlist with consent, and check both the inbox and provider logs. Then sign in and send yourself a test. Inspect the saved message ID/status in D1. Configure any account recipient restrictions required by Cloudflare. An agent can perform the setup and API steps with authorized access; account signup, entitlement, MFA and ownership verification cannot be bypassed.

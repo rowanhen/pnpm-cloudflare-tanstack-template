@@ -22,17 +22,17 @@ import type {
 } from '@tanstack/react-query'
 
 import type {
-	BadRequestResponse,
+	BadRequest,
 	CreateTodoInput,
-	ForbiddenResponse,
-	InternalErrorResponse,
-	PayloadTooLargeResponse,
+	Forbidden,
+	InternalError,
+	PayloadTooLarge,
 	TodoNotFound,
 	TodoResponse,
 	TodosResponse,
-	UnauthorizedResponse,
-	UnavailableResponse,
-	UnsupportedMediaTypeResponse,
+	Unauthorized,
+	Unavailable,
+	UnsupportedMediaType,
 	UpdateTodoInput,
 } from './api.schemas.ts'
 
@@ -62,27 +62,27 @@ export type listTodosResponse200 = {
 }
 
 export type listTodosResponse400 = {
-	data: BadRequestResponse
+	data: BadRequest
 	status: 400
 }
 
 export type listTodosResponse401 = {
-	data: UnauthorizedResponse
+	data: Unauthorized
 	status: 401
 }
 
 export type listTodosResponse403 = {
-	data: ForbiddenResponse
+	data: Forbidden
 	status: 403
 }
 
 export type listTodosResponse500 = {
-	data: InternalErrorResponse
+	data: InternalError
 	status: 500
 }
 
 export type listTodosResponse503 = {
-	data: UnavailableResponse
+	data: Unavailable
 	status: 503
 }
 
@@ -224,37 +224,37 @@ export type createTodoResponse201 = {
 }
 
 export type createTodoResponse400 = {
-	data: BadRequestResponse
+	data: BadRequest
 	status: 400
 }
 
 export type createTodoResponse401 = {
-	data: UnauthorizedResponse
+	data: Unauthorized
 	status: 401
 }
 
 export type createTodoResponse403 = {
-	data: ForbiddenResponse
+	data: Forbidden
 	status: 403
 }
 
 export type createTodoResponse413 = {
-	data: PayloadTooLargeResponse
+	data: PayloadTooLarge
 	status: 413
 }
 
 export type createTodoResponse415 = {
-	data: UnsupportedMediaTypeResponse
+	data: UnsupportedMediaType
 	status: 415
 }
 
 export type createTodoResponse500 = {
-	data: InternalErrorResponse
+	data: InternalError
 	status: 500
 }
 
 export type createTodoResponse503 = {
-	data: UnavailableResponse
+	data: Unavailable
 	status: 503
 }
 
@@ -390,17 +390,17 @@ export type getTodoResponse200 = {
 }
 
 export type getTodoResponse400 = {
-	data: BadRequestResponse
+	data: BadRequest
 	status: 400
 }
 
 export type getTodoResponse401 = {
-	data: UnauthorizedResponse
+	data: Unauthorized
 	status: 401
 }
 
 export type getTodoResponse403 = {
-	data: ForbiddenResponse
+	data: Forbidden
 	status: 403
 }
 
@@ -410,12 +410,12 @@ export type getTodoResponse404 = {
 }
 
 export type getTodoResponse500 = {
-	data: InternalErrorResponse
+	data: InternalError
 	status: 500
 }
 
 export type getTodoResponse503 = {
-	data: UnavailableResponse
+	data: Unavailable
 	status: 503
 }
 
@@ -570,17 +570,17 @@ export type updateTodoResponse200 = {
 }
 
 export type updateTodoResponse400 = {
-	data: BadRequestResponse
+	data: BadRequest
 	status: 400
 }
 
 export type updateTodoResponse401 = {
-	data: UnauthorizedResponse
+	data: Unauthorized
 	status: 401
 }
 
 export type updateTodoResponse403 = {
-	data: ForbiddenResponse
+	data: Forbidden
 	status: 403
 }
 
@@ -590,22 +590,22 @@ export type updateTodoResponse404 = {
 }
 
 export type updateTodoResponse413 = {
-	data: PayloadTooLargeResponse
+	data: PayloadTooLarge
 	status: 413
 }
 
 export type updateTodoResponse415 = {
-	data: UnsupportedMediaTypeResponse
+	data: UnsupportedMediaType
 	status: 415
 }
 
 export type updateTodoResponse500 = {
-	data: InternalErrorResponse
+	data: InternalError
 	status: 500
 }
 
 export type updateTodoResponse503 = {
-	data: UnavailableResponse
+	data: Unavailable
 	status: 503
 }
 
@@ -744,17 +744,17 @@ export type deleteTodoResponse204 = {
 }
 
 export type deleteTodoResponse400 = {
-	data: BadRequestResponse
+	data: BadRequest
 	status: 400
 }
 
 export type deleteTodoResponse401 = {
-	data: UnauthorizedResponse
+	data: Unauthorized
 	status: 401
 }
 
 export type deleteTodoResponse403 = {
-	data: ForbiddenResponse
+	data: Forbidden
 	status: 403
 }
 
@@ -764,12 +764,12 @@ export type deleteTodoResponse404 = {
 }
 
 export type deleteTodoResponse500 = {
-	data: InternalErrorResponse
+	data: InternalError
 	status: 500
 }
 
 export type deleteTodoResponse503 = {
-	data: UnavailableResponse
+	data: Unavailable
 	status: 503
 }
 
