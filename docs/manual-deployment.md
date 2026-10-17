@@ -13,9 +13,10 @@ Authenticate with `pnpm exec wrangler login`, or export `CLOUDFLARE_ACCOUNT_ID` 
    pnpm exec wrangler pages project create my-project-dashboard --production-branch main
    ```
 
-2. In `apps/api/wrangler.json`, set the returned D1 `database_id` and matching resource names. The all-zero UUID is a placeholder for local development. Each website's `wrangler.json` sets its Pages project name and `dist` output; `setup-project` updates those names too. Set `AUTH_URL` to `https://my-project-dashboard.pages.dev` (or your custom dashboard domain), and `ALLOWED_ORIGINS` to the exact marketing/dashboard origins, comma separated, without trailing slashes.
-3. Add the production dashboard origin and `https://my-project-dashboard.pages.dev/api/auth/callback/google` redirect URI to Google. Use separate OAuth clients and Cloudflare resources for development and production.
-4. Apply migrations, deploy, then configure Worker secrets using the interactive prompts:
+2. Attach your marketing and dashboard custom domains to their Pages projects and confirm DNS/HTTPS are active. For example, use `example.com` and `dashboard.example.com`; the Pages projects remain the hosting infrastructure.
+3. In `apps/api/wrangler.json`, set the returned D1 `database_id` and matching resource names. The all-zero UUID is a placeholder for local development. Each website's `wrangler.json` sets its Pages project name and `dist` output; `setup-project` updates those names too. Set `AUTH_URL` to `https://dashboard.example.com`, and `ALLOWED_ORIGINS` to the exact marketing/dashboard origins, comma separated, without trailing slashes.
+4. Add the production dashboard origin and `https://dashboard.example.com/api/auth/callback/google` redirect URI to Google. Use separate OAuth clients and Cloudflare resources for development and production.
+5. Apply migrations, deploy, then configure Worker secrets using the interactive prompts:
 
    ```bash
    pnpm db:migrate:remote
@@ -27,7 +28,7 @@ Authenticate with `pnpm exec wrangler login`, or export `CLOUDFLARE_ACCOUNT_ID` 
 
    Generate a fresh secret with `openssl rand -hex 32`; keep it in your password manager. Do not reuse the local secret. Auth fails closed until configured.
 
-5. Generate another random secret for `API_PROXY_SECRET`. Set the **same value** on the API Worker and both Pages projects (production and corresponding preview settings if used):
+6. Generate another random secret for `API_PROXY_SECRET`. Set the **same value** on the API Worker and both Pages projects (production and corresponding preview settings if used):
 
    ```bash
    pnpm exec wrangler secret put API_PROXY_SECRET --config apps/api/wrangler.json
@@ -37,12 +38,12 @@ Authenticate with `pnpm exec wrangler login`, or export `CLOUDFLARE_ACCOUNT_ID` 
 
    Keep this separate from `BETTER_AUTH_SECRET`. It is read from Pages runtime bindings, never from `VITE_` variables. Local development against localhost skips proxy signing; the isolated test runner supplies its own temporary secret.
 
-6. Export the build configuration and deploy both apps:
+7. Export the build configuration and deploy both apps:
 
    ```bash
    export VITE_API_URL=https://my-project-api.YOUR-SUBDOMAIN.workers.dev
-   export VITE_SITE_URL=https://my-project-marketing.pages.dev
-   export VITE_DASHBOARD_URL=https://my-project-dashboard.pages.dev
+   export VITE_SITE_URL=https://example.com
+   export VITE_DASHBOARD_URL=https://dashboard.example.com
    export VITE_SITE_NAME='My Idea'
    export VITE_NOINDEX=false
    pnpm run deploy
@@ -56,7 +57,7 @@ For schema changes, edit `packages/data/src/schema.ts`, run `pnpm db:generate --
 
 ## Custom domains and existing deployments
 
-Attach custom domains and configure DNS through Cloudflare Pages settings. Rebuild marketing with the final `VITE_SITE_URL` and `VITE_NOINDEX=false`; keep previews noindexed. A dashboard hostname change also requires updating `AUTH_URL`, allowed origins and Google's callback.
+Attach custom domains and configure DNS through Cloudflare Pages settings. Rebuild marketing with the final `VITE_SITE_URL` and `VITE_NOINDEX=false`; keep previews noindexed. A dashboard hostname change also requires updating `AUTH_URL`, allowed origins and Google's callback. Redirect the production `pages.dev` hostname to the canonical dashboard domain using Cloudflare Bulk Redirects, preserving paths and query strings.
 
 Previous helper-managed deployments retain ignored `.wrangler/sandboxes/<name>/` configuration, manifests and secrets. Preserve those files. Use the existing configuration explicitly, for example `pnpm exec wrangler deploy --config .wrangler/sandboxes/NAME/wrangler.json`, and use the matching Pages project names for uploads. The normal template config does not discover or take ownership of them. No existing resources are changed by removing the helpers.
 

@@ -21,11 +21,11 @@
 
 A Google **origin** is the base address of the dashboard. The **redirect URI** is the address Google returns to after consent. Add each exact value to the same web client whose ID and secret you use. Paths, ports and trailing slashes matter.
 
-| Environment     | Authorized JavaScript origin                            | Authorized redirect URI                                                          |
-| --------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Local           | `http://localhost:3001`                                 | `http://localhost:3001/api/auth/callback/google`                                 |
-| Your deployment | Your deployed dashboard origin                          | That URL followed by `/api/auth/callback/google`                                 |
-| Maintained demo | `https://starter-showcase-18d8b58f-dashboard.pages.dev` | `https://starter-showcase-18d8b58f-dashboard.pages.dev/api/auth/callback/google` |
+| Environment     | Authorized JavaScript origin                 | Authorized redirect URI                                               |
+| --------------- | -------------------------------------------- | --------------------------------------------------------------------- |
+| Local           | `http://localhost:3001`                      | `http://localhost:3001/api/auth/callback/google`                      |
+| Your deployment | Your deployed dashboard origin               | That URL followed by `/api/auth/callback/google`                      |
+| Maintained demo | `https://dashboard.devtemplate.leitware.com` | `https://dashboard.devtemplate.leitware.com/api/auth/callback/google` |
 
 The public marketing domain `devtemplate.leitware.com` does not handle login. A marketing custom domain does not change the dashboard callback. Google redirects through the dashboard's `/api` proxy to Better Auth in the Worker. `AUTH_URL` and the registered callback must describe that dashboard, even though the API has a separate address.
 
