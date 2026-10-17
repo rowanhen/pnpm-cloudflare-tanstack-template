@@ -45,10 +45,10 @@ Authenticate with `pnpm exec wrangler login`, or export `CLOUDFLARE_ACCOUNT_ID` 
    export VITE_DASHBOARD_URL=https://my-project-dashboard.pages.dev
    export VITE_SITE_NAME='My Idea'
    export VITE_NOINDEX=false
-   pnpm deploy
+   pnpm run deploy
    ```
 
-`pnpm deploy` migrates/deploys the API and uploads both app builds to Pages. Builds use exported environment variables or the apps' normal Vite environment files; the removed deployment wrapper no longer loads `apps/api/.dev.vars` for frontend builds. Review the URLs and origins above before deploying. `pnpm deploy:marketing` and `pnpm deploy:dashboard` deploy individual apps. The build output is `dist/`. Terraform can own Pages projects, domains, and DNS while these commands upload builds. Avoid wildcard trusted origins; each deployment should have its own OAuth callback and auth secret.
+`pnpm run deploy` migrates/deploys the API and uploads both app builds to Pages. Builds use exported environment variables or the apps' normal Vite environment files; the removed deployment wrapper no longer loads `apps/api/.dev.vars` for frontend builds. Review the URLs and origins above before deploying. `pnpm deploy:marketing` and `pnpm deploy:dashboard` deploy individual apps. The build output is `dist/`. Terraform can own Pages projects, domains, and DNS while these commands upload builds. Avoid wildcard trusted origins; each deployment should have its own OAuth callback and auth secret.
 
 After deployment, complete a real Google sign-in, confirm your profile/todo/file persist, create and revoke a key, and sign out. Automated tests do not authenticate with Google's live consent screen.
 
