@@ -39,7 +39,9 @@ export async function testStorefront(worker: LocalWorker) {
 	const checkout = await first.json()
 	const repeat = await call('/api/storefront/checkouts', input)
 	assert.deepEqual(await repeat.json(), checkout)
-	assert.ok(checkout.url.startsWith('https://checkout.stripe.com/'))
+	assert.ok(checkout.clientSecret.startsWith(checkout.sessionId + '_secret_'))
+	assert.equal(checkout.publishableKey, 'pk_test_fixture')
+	assert.equal('url' in checkout, false)
 	const subscription = await call('/api/storefront/checkouts', {
 		product: 'subscription',
 		token,

@@ -97,9 +97,14 @@ export const CreateStorefrontCheckoutBody = S.Struct({
 	),
 })
 
+export const createStorefrontCheckout200ResponsePublishableKeyRegExp = new RegExp('^pk_test_')
+
 export const CreateStorefrontCheckout200Response = S.Struct({
 	sessionId: S.String,
-	url: S.String,
+	clientSecret: S.String.check(S.isMinLength(1)),
+	publishableKey: S.String.check(
+		S.isPattern(createStorefrontCheckout200ResponsePublishableKeyRegExp),
+	),
 })
 
 export const CreateStorefrontCheckout400Response = S.Struct({

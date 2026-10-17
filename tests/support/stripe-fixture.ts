@@ -84,15 +84,21 @@ export async function stripeFixture() {
 			const chunks = []
 			for await (const chunk of request) chunks.push(chunk)
 			const fields = new URLSearchParams(Buffer.concat(chunks).toString())
-			const hosted = fields.get('ui_mode') === 'hosted_page'
+			const guest = fields.get('metadata[example]') === 'storefront'
 			const subscription = fields.get('mode') === 'subscription'
-			const expectedPrice = hosted
+			const expectedPrice = guest
 				? subscription
 					? 'price_subscription_fixture'
 					: 'price_demo_fixture'
 				: 'price_fixture'
 			if (
-				(!hosted && fields.get('ui_mode') !== 'elements') ||
+				fields.get('ui_mode') !== 'elements' ||
+				(guest &&
+					!fields
+						.get('return_url')
+						?.endsWith('/checkout/complete?session_id={CHECKOUT_SESSION_ID}')) ||
+				fields.has('success_url') ||
+				fields.has('cancel_url') ||
 				(!subscription && fields.get('mode') !== 'payment') ||
 				fields.get('line_items[0][price]') !== expectedPrice ||
 				fields.get('line_items[0][quantity]') !== '1' ||
@@ -117,8 +123,8 @@ export async function stripeFixture() {
 				payment_status: 'unpaid',
 				amount_total: 1200,
 				currency: 'gbp',
-				client_secret: hosted ? null : `${id}_secret_fixture`,
-				url: hosted ? `https://checkout.stripe.com/c/pay/${id}` : null,
+				client_secret: `${id}_secret_fixture`,
+				url: null,
 				success_url: fields.get('success_url'),
 				client_reference_id: fields.get('client_reference_id'),
 				metadata: Object.fromEntries(

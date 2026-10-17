@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
-import { Alert, Button, Skeleton, Typography } from '@workspace/shared'
+import { Alert, Button, Skeleton, Input, Label, Stack } from '@workspace/shared'
 import { useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import {
@@ -20,10 +20,18 @@ export default function PaymentForm({
 	publishableKey,
 	clientSecret,
 	sessionId,
+	collectEmail = false,
+	submitLabel,
+	onComplete,
+	onBack,
 }: {
 	publishableKey: string
 	clientSecret: string
 	sessionId: string
+	collectEmail?: boolean
+	submitLabel?: string
+	onComplete?: () => void | Promise<void>
+	onBack?: () => void
 }) {
 	const [appearance] = useState(() => {
 		if (typeof document === 'undefined') return undefined
@@ -50,20 +58,54 @@ export default function PaymentForm({
 				},
 			}}
 		>
-			<Form sessionId={sessionId} />
+			<Form
+				sessionId={sessionId}
+				collectEmail={collectEmail}
+				submitLabel={submitLabel}
+				onComplete={onComplete}
+				onBack={onBack}
+			/>
 		</CheckoutElementsProvider>
 	)
 }
-function Form({ sessionId }: { sessionId: string }) {
+function Form({
+	sessionId,
+	collectEmail,
+	submitLabel,
+	onComplete,
+	onBack,
+}: {
+	sessionId: string
+	collectEmail: boolean
+	submitLabel?: string
+	onComplete?: () => void | Promise<void>
+	onBack?: () => void
+}) {
 	const navigate = useNavigate()
 	const checkout = useCheckoutElements()
 	const [busy, setBusy] = useState(false)
 	const [error, setError] = useState('')
+	const [email, setEmail] = useState('')
+	const back = onBack && (
+		<Button type="button" variant="link" disabled={busy} onClick={onBack}>
+			Back to products
+		</Button>
+	)
 	if (checkout.type === 'loading')
-		return <Skeleton className="h-60" aria-label="Loading payment form" />
+		return (
+			<Stack gap={5}>
+				<Skeleton className="h-60" aria-label="Loading payment form" />
+				{back}
+			</Stack>
+		)
 	if (checkout.type === 'error')
 		return (
-			<Alert type="negative">Unable to load the payment form. Please refresh and try again.</Alert>
+			<Stack gap={5}>
+				<Alert type="negative">
+					Unable to load the payment form. Please refresh and try again.
+				</Alert>
+				{back}
+			</Stack>
 		)
 	return (
 		<form
@@ -73,25 +115,42 @@ function Form({ sessionId }: { sessionId: string }) {
 				setBusy(true)
 				setError('')
 				try {
-					const result = await checkout.checkout.confirm()
+					const result = await checkout.checkout.confirm({
+						redirect: 'if_required',
+						...(collectEmail ? { email: email.trim() } : {}),
+					})
 					if (result.type === 'error') {
 						setError(result.error.message)
 						setBusy(false)
-					} else await navigate({ to: '/checkout/success', search: { session_id: sessionId } })
+					} else if (onComplete) await onComplete()
+					else await navigate({ to: '/checkout/success', search: { session_id: sessionId } })
 				} catch {
 					setError('Payment could not be confirmed. Please try again.')
 					setBusy(false)
 				}
 			}}
 		>
-			<PaymentElement options={{ layout: 'tabs' }} />
+			{collectEmail && (
+				<Stack gap={2}>
+					<Label htmlFor="checkout-email">Email</Label>
+					<Input
+						id="checkout-email"
+						type="email"
+						autoComplete="email"
+						required
+						maxLength={254}
+						disabled={busy}
+						value={email}
+						onChange={(event) => setEmail(event.target.value)}
+					/>
+				</Stack>
+			)}
+			<PaymentElement options={{ layout: 'tabs', wallets: { link: 'never' } }} />
 			{error && <Alert type="negative">{error}</Alert>}
 			<Button className="w-full" size="lg" disabled={busy} type="submit">
-				{busy ? 'Confirming…' : `Pay ${checkout.checkout.total.total.amount}`}
+				{busy ? 'Confirming…' : (submitLabel ?? `Pay ${checkout.checkout.total.total.amount}`)}
 			</Button>
-			<Typography as="p" variant="caption-100" className="text-center text-content-secondary">
-				Test mode · No real charge.
-			</Typography>
+			{back}
 		</form>
 	)
 }

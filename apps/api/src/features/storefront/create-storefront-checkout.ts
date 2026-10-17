@@ -15,7 +15,7 @@ export const createStorefrontCheckout: CreateStorefrontCheckoutHandler<PublicApi
 			const tokenHash = await sha256(body.token)
 			const session = await stripe.checkout.sessions.create(
 				{
-					ui_mode: 'hosted_page',
+					ui_mode: 'elements',
 					mode: body.product === 'subscription' ? 'subscription' : 'payment',
 					allowed_payment_method_types: ['card'],
 					adaptive_pricing: { enabled: false },
@@ -24,18 +24,17 @@ export const createStorefrontCheckout: CreateStorefrontCheckoutHandler<PublicApi
 					...(body.product === 'subscription'
 						? { subscription_data: { metadata: { example: 'storefront' } } }
 						: {}),
-					success_url: `${env.AUTH_URL}/checkout/complete?session_id={CHECKOUT_SESSION_ID}`,
-					cancel_url: `${env.AUTH_URL}/checkout?cancelled=true`,
+					return_url: `${env.AUTH_URL}/checkout/complete?session_id={CHECKOUT_SESSION_ID}`,
 				},
-				{ idempotencyKey: `storefront-${tokenHash}-${body.requestId}-${body.product}` },
+				{ idempotencyKey: `storefront-elements-${tokenHash}-${body.requestId}-${body.product}` },
 			)
-			if (
-				session.livemode ||
-				!session.url ||
-				new URL(session.url).origin !== 'https://checkout.stripe.com'
-			)
+			if (session.livemode || !session.client_secret)
 				throw new HttpError(503, 'Unable to open test checkout')
-			return { sessionId: session.id, url: session.url }
+			return {
+				sessionId: session.id,
+				clientSecret: session.client_secret,
+				publishableKey: env.STRIPE_PUBLISHABLE_KEY ?? '',
+			}
 		})
 		return { status: 200, body: checkout }
 	})

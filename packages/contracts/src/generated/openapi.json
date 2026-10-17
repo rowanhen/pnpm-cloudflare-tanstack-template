@@ -1052,11 +1052,16 @@
 					"sessionId": {
 						"type": "string"
 					},
-					"url": {
-						"type": "string"
+					"clientSecret": {
+						"type": "string",
+						"minLength": 1
+					},
+					"publishableKey": {
+						"type": "string",
+						"pattern": "^pk_test_"
 					}
 				},
-				"required": ["sessionId", "url"]
+				"required": ["sessionId", "clientSecret", "publishableKey"]
 			},
 			"CheckStorefrontCheckout": {
 				"type": "object",
