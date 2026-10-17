@@ -98,6 +98,34 @@
 					}
 				},
 				"required": ["code", "error"]
+			},
+			"NotFound": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["not_found"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"TooManyRequests": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["too_many_requests"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
 			}
 		},
 		"responses": {
@@ -167,6 +195,26 @@
 					"application/json": {
 						"schema": {
 							"$ref": "#/components/schemas/UnsupportedMediaType"
+						}
+					}
+				}
+			},
+			"NotFound": {
+				"description": "Resource not found",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/NotFound"
+						}
+					}
+				}
+			},
+			"TooManyRequests": {
+				"description": "Request rate exceeded",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/TooManyRequests"
 						}
 					}
 				}

@@ -13,6 +13,11 @@ import {
 	updateTodoHandlers,
 	deleteTodoHandlers,
 } from './todos.handlers'
+import {
+	getStorefrontHandlers,
+	createStorefrontCheckoutHandlers,
+	checkStorefrontCheckoutHandlers,
+} from './storefront.handlers'
 
 const app = new Hono()
 	.get('/api/todos', ...listTodosHandlers)
@@ -20,5 +25,8 @@ const app = new Hono()
 	.get('/api/todos/:id', ...getTodoHandlers)
 	.patch('/api/todos/:id', ...updateTodoHandlers)
 	.delete('/api/todos/:id', ...deleteTodoHandlers)
+	.get('/api/storefront', ...getStorefrontHandlers)
+	.post('/api/storefront/checkouts', ...createStorefrontCheckoutHandlers)
+	.post('/api/storefront/status', ...checkStorefrontCheckoutHandlers)
 
 export default app

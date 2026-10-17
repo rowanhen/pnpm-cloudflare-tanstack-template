@@ -132,3 +132,99 @@ export interface Unavailable {
 	code: UnavailableCode
 	error: string
 }
+
+export type NotFoundCode = (typeof NotFoundCode)[keyof typeof NotFoundCode]
+
+export const NotFoundCode = {
+	not_found: 'not_found',
+} as const
+
+export interface NotFound {
+	code: NotFoundCode
+	error: string
+}
+
+export type TooManyRequestsCode = (typeof TooManyRequestsCode)[keyof typeof TooManyRequestsCode]
+
+export const TooManyRequestsCode = {
+	too_many_requests: 'too_many_requests',
+} as const
+
+export interface TooManyRequests {
+	code: TooManyRequestsCode
+	error: string
+}
+
+export type StorefrontProductId = (typeof StorefrontProductId)[keyof typeof StorefrontProductId]
+
+export const StorefrontProductId = {
+	purchase: 'purchase',
+	subscription: 'subscription',
+} as const
+
+export interface StorefrontProduct {
+	id: StorefrontProductId
+	name: string
+	/** @minimum 1 */
+	amount: number
+	currency: string
+	/** @nullable */
+	interval: string | null
+}
+
+export interface Storefront {
+	enabled: boolean
+	products: StorefrontProduct[]
+}
+
+export type CreateStorefrontCheckoutProduct =
+	(typeof CreateStorefrontCheckoutProduct)[keyof typeof CreateStorefrontCheckoutProduct]
+
+export const CreateStorefrontCheckoutProduct = {
+	purchase: 'purchase',
+	subscription: 'subscription',
+} as const
+
+export interface CreateStorefrontCheckout {
+	product: CreateStorefrontCheckoutProduct
+	requestId: string
+	token: string
+}
+
+export interface StorefrontCheckout {
+	sessionId: string
+	url: string
+}
+
+export interface CheckStorefrontCheckout {
+	/**
+	 * @maxLength 250
+	 * @pattern ^cs_test_[A-Za-z0-9]+$
+	 */
+	sessionId: string
+	token: string
+}
+
+export type StorefrontStatusStatus =
+	(typeof StorefrontStatusStatus)[keyof typeof StorefrontStatusStatus]
+
+export const StorefrontStatusStatus = {
+	open: 'open',
+	pending: 'pending',
+	paid: 'paid',
+	expired: 'expired',
+} as const
+
+export type StorefrontStatusMode = (typeof StorefrontStatusMode)[keyof typeof StorefrontStatusMode]
+
+export const StorefrontStatusMode = {
+	payment: 'payment',
+	subscription: 'subscription',
+} as const
+
+export interface StorefrontStatus {
+	status: StorefrontStatusStatus
+	mode: StorefrontStatusMode
+	amount: number
+	currency: string
+}

@@ -34,4 +34,4 @@ Effect handler → typed Drizzle query → Cloudflare D1
 
 Shared adapters validate requests and each declared status/body pair at runtime. Generated types check expected failures; business logic still owns permissions and unexpected defects become sanitized 500 responses. Drizzle's storage schema stays separate from the public contract, with query results checked against generated response types.
 
-Only todos currently use this pattern. The adapter supports cookie sessions, JSON bodies/responses, path parameters and bodyless 204 responses. See the [API walkthrough](api-architecture.md) for examples and limitations, and [deployment](manual-deployment.md) for provider setup.
+Todos and the public storefront use this pattern. Public operations explicitly declare `security: []`; all other operations require a cookie session. The adapter supports cookie sessions, JSON bodies/responses, path parameters and bodyless 204 responses. See the [API walkthrough](api-architecture.md) for examples and limitations, and [deployment](manual-deployment.md) for provider setup.

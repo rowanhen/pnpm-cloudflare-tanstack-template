@@ -1,3 +1,4 @@
+import { testStorefront } from './integration/storefront.ts'
 import { testObservability } from './integration/observability.ts'
 import { testEmail } from './integration/email.ts'
 import { localWorker } from './support/local-worker.ts'
@@ -13,6 +14,7 @@ try {
 	await testApi(worker.base, worker.fixture.cookies, worker.proxySecret)
 	await testMetering(worker.base, worker.fixture.cookies)
 	await testCheckout(worker)
+	await testStorefront(worker)
 	await testEmail(worker)
 	await testObservability(worker)
 } finally {

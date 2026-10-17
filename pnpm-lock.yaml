@@ -12,6 +12,9 @@ importers:
 
   .:
     devDependencies:
+      '@dotenvx/dotenvx':
+        specifier: ^2.38.0
+        version: 2.38.0
       '@types/node':
         specifier: 26.6.5
         version: 26.6.5
@@ -507,6 +510,19 @@ packages:
 
   '@date-fns/tz@1.5.0':
     resolution: {integrity: sha512-lwYN/vDPeNRULcepoE/LO2Pgx+7/RV+S9ARfbc9lr2DtGkOD7pAiruHvbR1RX3Qyf6ja47EWJDMsNK5vK08DJg==}
+
+  '@dotenvx/dotenvx@2.38.0':
+    resolution: {integrity: sha512-HVkCYAQ+v/h/buDNWfQnA6QkidC34QZFFGcf9A5BMidAgiNKcIGWAA0eyhXNF4Ak8971ytJLDQY/u6xSLmsR2w==}
+    hasBin: true
+
+  '@dotenvx/primitives@3.3.1':
+    resolution: {integrity: sha512-ykX29rVnHwwV6m3AMmvR+niFSwhOG2TYttJjURz3n/3iHtpWC8gEptojYY+eHgBAV4fkaGRM1Rf0wgQ6/DeUYQ==}
+
+  '@dotenvx/providers@0.3.8':
+    resolution: {integrity: sha512-e1+O9dnFQRBDvc25DVduFTZDA4WLpGrC0IgD+/ot4Cnk0xCX/ikvGCMvoGnslCr+wF509uYLEE3J5T1Tead2ww==}
+
+  '@dotenvx/tooling@1.0.5':
+    resolution: {integrity: sha512-XMAwZpxIajWaP31zLl2GQS3grIQsRY4B4VMss8fDv70XbGF/9aXSMHc3v9iJNZZVX/i0Loz1MAn6oM8dycbN4A==}
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
@@ -3295,6 +3311,10 @@ packages:
     resolution: {integrity: sha512-eKCa6bwnJhvxj14kZk5NCPc6Hb6BdsU9DZcOnmQKSnO1VKrfV0zCvtttPZUsBvjmNDn8rpcJfpwSYnHBjc95MQ==}
     engines: {node: '>=18.18.0'}
 
+  imurmurhash@0.1.4:
+    resolution: {integrity: sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==}
+    engines: {node: '>=0.8.19'}
+
   is-node-process@1.2.0:
     resolution: {integrity: sha512-Vg4o6/fqPxIjtxgUH5QLJhwZ7gW5diGCVlXpuUfELC62CuxM1iHcRe51f2W1FDy04Ai4KJkagKjx3XaqyfRKXw==}
 
@@ -4082,6 +4102,10 @@ packages:
   undici-types@8.9.0:
     resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
 
+  undici@6.29.1:
+    resolution: {integrity: sha512-EvRlUt/QqAEvXdQeRMYUfwOQsfzpDztykrG2owGEE/rBOBoYv9uF39ZzsNDh4lTFHhTr2XOZjKkYgueD12ZmGA==}
+    engines: {node: '>=18.17'}
+
   undici@7.29.1:
     resolution: {integrity: sha512-RYONW2MeafgYlkVOKYKkA/Ag7BmXqgIWCa8t1m0JcxrQg9pI9lEqRhAOruOBCbAohOa/gkCF+iPi9hrgvTzu6Q==}
     engines: {node: '>=20.18.1'}
@@ -4250,6 +4274,10 @@ packages:
     resolution: {integrity: sha512-42AtmgqjV+X1VpdOfyTGOYRi0/zsoLqtXQckTmqTeybT+BDIbM/Guxo7x3pE2vtpr1ok6xRqM9OpBe+Jyoqyww==}
     engines: {node: '>=18'}
 
+  write-file-atomic@5.0.1:
+    resolution: {integrity: sha512-+QU2zd6OTD8XWIJCbffaiQeH9U73qIqafo1x6V1snCWYGJf6cVE0cDR4D8xRzcEnfI21IFrUPzPGtcPf8AC+Rw==}
+    engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
   ws@8.21.0:
     resolution: {integrity: sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==}
     engines: {node: '>=10.0.0'}
@@ -4285,6 +4313,10 @@ packages:
   yargs@18.2.0:
     resolution: {integrity: sha512-9OpKOLeaoNFecEp7P6iYbzze/5CqWoH7N3SMs/6y1XF4nMvFMspEGZzJ6uFi9MmQwXhyzqYoSEKO3tvA3Z/o2w==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=23}
+
+  yocto-spinner@1.2.2:
+    resolution: {integrity: sha512-DODGl1wJjA/s5pnJFKau9lIYHT81lnhob1i3e1TjxZRxEhWRKl74nTbWE6H5KlkViQQTo/Z29YFdxzTZAMY3ng==}
+    engines: {node: '>=18.19'}
 
   yoctocolors@2.2.0:
     resolution: {integrity: sha512-xYqdZFUK/VYazNl/oCDYN+3WloWQwMfZxBoiNt6qNyk+xfOdi598muWE42rNZFp1kNOiqW936q5RhUdnpqElSg==}
@@ -4517,6 +4549,24 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.9
 
   '@date-fns/tz@1.5.0': {}
+
+  '@dotenvx/dotenvx@2.38.0':
+    dependencies:
+      '@dotenvx/primitives': 3.3.1
+      '@dotenvx/providers': 0.3.8
+      '@dotenvx/tooling': 1.0.5
+      undici: 6.29.1
+      write-file-atomic: 5.0.1
+      yocto-spinner: 1.2.2
+
+  '@dotenvx/primitives@3.3.1': {}
+
+  '@dotenvx/providers@0.3.8':
+    dependencies:
+      '@dotenvx/primitives': 3.3.1
+      '@dotenvx/tooling': 1.0.5
+
+  '@dotenvx/tooling@1.0.5': {}
 
   '@drizzle-team/brocli@0.10.2': {}
 
@@ -6798,6 +6848,8 @@ snapshots:
 
   human-signals@8.0.1: {}
 
+  imurmurhash@0.1.4: {}
+
   is-node-process@1.2.0: {}
 
   is-plain-obj@4.1.0: {}
@@ -7496,6 +7548,8 @@ snapshots:
 
   undici-types@8.9.0: {}
 
+  undici@6.29.1: {}
+
   undici@7.29.1: {}
 
   unenv@2.0.0-rc.24:
@@ -7604,6 +7658,11 @@ snapshots:
       string-width: 7.2.0
       strip-ansi: 7.2.0
 
+  write-file-atomic@5.0.1:
+    dependencies:
+      imurmurhash: 0.1.4
+      signal-exit: 4.1.0
+
   ws@8.21.0: {}
 
   xmlbuilder2@4.0.3:
@@ -7629,6 +7688,10 @@ snapshots:
       string-width: 8.3.0
       y18n: 5.0.8
       yargs-parser: 22.0.0
+
+  yocto-spinner@1.2.2:
+    dependencies:
+      yoctocolors: 2.2.0
 
   yoctocolors@2.2.0: {}
 

@@ -4,6 +4,8 @@ const pages = new Set([
 	'/login',
 	'/checkout',
 	'/checkout/success',
+	'/checkout/complete',
+	'/credits',
 	'/waitlist/success',
 	'/privacy',
 	'/error',
@@ -24,6 +26,9 @@ const endpoints = new Set([
 	'/api/checkout/config',
 	'/api/checkout/sessions',
 	'/api/stripe/webhook',
+	'/api/storefront',
+	'/api/storefront/checkouts',
+	'/api/storefront/status',
 ])
 export function safePath(path: string) {
 	if (pages.has(path) || endpoints.has(path)) return path

@@ -11,6 +11,15 @@
 		},
 		"/api/todos/{id}": {
 			"$ref": "./features/todos.json#/paths/~1api~1todos~1{id}"
+		},
+		"/api/storefront": {
+			"$ref": "./features/storefront.json#/paths/~1api~1storefront"
+		},
+		"/api/storefront/checkouts": {
+			"$ref": "./features/storefront.json#/paths/~1api~1storefront~1checkouts"
+		},
+		"/api/storefront/status": {
+			"$ref": "./features/storefront.json#/paths/~1api~1storefront~1status"
 		}
 	},
 	"components": {

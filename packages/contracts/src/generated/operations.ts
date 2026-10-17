@@ -28,4 +28,35 @@ export {
 	type DeleteTodoFailure,
 	type DeleteTodoHandler,
 } from './todos.effect'
-export const operations = [listTodos, createTodo, getTodo, updateTodo, deleteTodo] as const
+import {
+	getStorefront,
+	createStorefrontCheckout,
+	checkStorefrontCheckout,
+} from './storefront.effect'
+export {
+	getStorefront,
+	type GetStorefrontInput,
+	type GetStorefrontSuccess,
+	type GetStorefrontFailure,
+	type GetStorefrontHandler,
+	createStorefrontCheckout,
+	type CreateStorefrontCheckoutInput,
+	type CreateStorefrontCheckoutSuccess,
+	type CreateStorefrontCheckoutFailure,
+	type CreateStorefrontCheckoutHandler,
+	checkStorefrontCheckout,
+	type CheckStorefrontCheckoutInput,
+	type CheckStorefrontCheckoutSuccess,
+	type CheckStorefrontCheckoutFailure,
+	type CheckStorefrontCheckoutHandler,
+} from './storefront.effect'
+export const operations = [
+	listTodos,
+	createTodo,
+	getTodo,
+	updateTodo,
+	deleteTodo,
+	getStorefront,
+	createStorefrontCheckout,
+	checkStorefrontCheckout,
+] as const

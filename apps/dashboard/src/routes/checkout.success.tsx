@@ -1,10 +1,15 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute, redirect } from '@tanstack/react-router'
 
 import { Button, PageState, appTitle, Typography } from '@workspace/shared'
 
-import { checkoutSessionId } from '../lib/login'
+import { checkoutSessionId, signInPath } from '../lib/login'
+import { getSession } from '../lib/session'
 import { money, useOrderStatus } from '../hooks/use-checkout'
 export const Route = createFileRoute('/checkout/success')({
+	beforeLoad: async ({ location }) => {
+		if (!(await getSession()))
+			throw redirect({ href: signInPath(location.pathname, location.search) })
+	},
 	validateSearch: (search: Record<string, unknown>) => ({
 		session_id: checkoutSessionId(search.session_id),
 	}),
@@ -21,7 +26,7 @@ function CheckoutSuccess() {
 				<Button
 					variant="outline"
 					{...{ nativeButton: false }}
-					render={<Link aria-label="Back to checkout" role="link" to="/checkout" />}
+					render={<Link aria-label="Back to checkout" role="link" to="/credits" />}
 				>
 					Back to checkout
 				</Button>
@@ -60,7 +65,7 @@ function CheckoutSuccess() {
 			>
 				<Button
 					{...{ nativeButton: false }}
-					render={<Link aria-label="Start a new checkout" role="link" to="/checkout" />}
+					render={<Link aria-label="Start a new checkout" role="link" to="/credits" />}
 				>
 					Start a new checkout
 				</Button>
@@ -81,7 +86,7 @@ function CheckoutSuccess() {
 			<Button
 				variant="outline"
 				{...{ nativeButton: false }}
-				render={<Link aria-label="Back to checkout" role="link" to="/checkout" />}
+				render={<Link aria-label="Back to checkout" role="link" to="/credits" />}
 			>
 				Back to checkout
 			</Button>

@@ -19,7 +19,7 @@ flowchart TD
     Drizzle <--> D1[("Cloudflare D1")]
 ```
 
-Dotted arrows represent generation. Solid arrows represent runtime calls. Users and products illustrate future feature modules; only todos is currently migrated.
+Dotted arrows represent generation. Solid arrows represent runtime calls. Users and products illustrate future feature modules; todos and the public storefront are migrated.
 
 ## Contract ownership
 
@@ -109,8 +109,8 @@ Tests exercise a temporary second products feature, native shared references, ro
 
 ## Deliberate boundaries
 
-All five todo operations are migrated. Better Auth, billing/Stripe, files, keys, waitlist, and email retain their existing contracts and handlers. The free API-key todo endpoint reuses the typed query.
+All five todo operations and the three public storefront operations are migrated. Better Auth, billing/Stripe, files, keys, waitlist, and email retain their existing contracts and handlers. The free API-key todo endpoint reuses the typed query.
 
-The current adapter supports explicit 2xx/4xx/5xx statuses, required JSON request bodies, JSON responses, path parameters, cookie-session security, and bodyless 204 responses. Shared response/schema references are supported. Unsupported parameter locations, optional bodies, and media types are rejected. Every operation declares 400/401/403/500/503 responses, plus 413/415 when it accepts a body. Cookie-session security defaults come from `api.json`.
+The current adapter supports explicit 2xx/4xx/5xx statuses, required JSON request bodies, JSON responses, path parameters, cookie-session security, and bodyless 204 responses. Shared response/schema references are supported. Unsupported parameter locations, optional bodies, and media types are rejected. Every operation declares 400/401/403/500/503 responses, plus 413/415 when it accepts a body. Cookie-session security defaults come from `api.json`; only explicit `security: []` operations use the public boundary. Public handlers receive request/environment context without a user identity, retain trusted-Origin checks, and own their rate limits.
 
 Orval does not generate Effect handler signatures or preserve `minProperties` in its Effect output. The Orval extension supplies those pieces. The shared Effect boundary replaces Hono's stock response validators and covers every declared status. Effect 4 is used here; Zod remains for the integrations that have not migrated.
