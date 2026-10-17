@@ -14,7 +14,7 @@ Use this checklist after connecting an account or changing deployment URLs. The 
 | Cloudflare email             | Local HTML simulation, recipient restriction, deduplication and attempt records                                      | No sender connected; real inbox delivery unverified                                                                                                         |
 | Composables / Kumo           | Shared components, mobile layout, page states and frontend builds                                                    | Present on the public demo                                                                                                                                  |
 
-Public site: [devtemplate.leitware.com](https://devtemplate.leitware.com). Sign-in: [dashboard login](https://starter-showcase-18d8b58f-dashboard.pages.dev/login). Stripe checkout is intentionally test-only. This table is an audit record, not a runtime status monitor.
+Public site: [devtemplate.leitware.com](https://devtemplate.leitware.com). Sign-in: [dashboard login](https://dashboard.devtemplate.leitware.com/login). Stripe checkout is intentionally test-only. This table is an audit record, not a runtime status monitor.
 
 ## Historical results from this audit
 
