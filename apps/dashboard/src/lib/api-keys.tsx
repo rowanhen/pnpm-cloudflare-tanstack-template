@@ -117,6 +117,7 @@ export function ApiKeys() {
 								{key.scope === 'summary:read' ? 'Summary · paid' : 'Todos · free'}
 							</Typography>{' '}
 							<Button
+								variant="destructive"
 								disabled={!hydrated || mutation.isPending}
 								aria-label={`Delete API key ${key.name}`}
 								onClick={() =>
