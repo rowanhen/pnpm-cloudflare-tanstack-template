@@ -22,22 +22,10 @@ export function createClient(transport: Transport) {
 				}),
 			)
 		},
-		async updateTodo(id: string, body: Input<'updateTodo'>) {
-			return decode<'todo'>(
-				await transport(`/api/todos/${encodeURIComponent(id)}`, {
-					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(inputs.updateTodo.parse(body)),
-				}),
-			)
-		},
 		async order(sessionId: string) {
 			return decode<'order'>(
 				await transport(`/api/checkout/sessions/${encodeURIComponent(sessionId)}`),
 			)
-		},
-		async deleteTodo(id: string) {
-			await transport(`/api/todos/${encodeURIComponent(id)}`, { method: 'DELETE' })
 		},
 		async deleteKey(id: string) {
 			await transport(`/api/keys/${encodeURIComponent(id)}`, { method: 'DELETE' })

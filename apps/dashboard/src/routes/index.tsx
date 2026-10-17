@@ -15,7 +15,7 @@ import {
 	useHydrated,
 } from '@workspace/shared'
 import { getSession } from '../lib/session'
-import { api, client } from '../lib/api'
+import { api } from '../lib/api'
 import { ApiKeys } from '../lib/api-keys'
 import { Billing } from '../components/billing'
 import { useSignOut, useWorkspace } from '../hooks/use-workspace'
@@ -33,7 +33,7 @@ function DashboardHomePage() {
 	useAnalyticsIdentity(user.id)
 	const [title, setTitle] = useState('')
 	const [file, setFile] = useState<File | null>(null)
-	const { todos, files, mutation, busy, error } = useWorkspace(user.id)
+	const { todos, files, mutation, todoMutations, busy, error } = useWorkspace(user.id)
 	const hydrated = useHydrated()
 	const signOut = useSignOut()
 	return (
@@ -61,10 +61,7 @@ function DashboardHomePage() {
 							className="flex items-end gap-3"
 							onSubmit={(event) => {
 								event.preventDefault()
-								mutation.mutate(async () => {
-									await client.mutate('createTodo', { title })
-									setTitle('')
-								})
+								todoMutations.create.mutate({ data: { title } }, { onSuccess: () => setTitle('') })
 							}}
 						>
 							<div className="flex-1 space-y-2">
@@ -95,9 +92,10 @@ function DashboardHomePage() {
 											checked={item.completed}
 											disabled={busy}
 											onCheckedChange={() =>
-												mutation.mutate(() =>
-													client.updateTodo(item.id, { completed: !item.completed }),
-												)
+												todoMutations.update.mutate({
+													id: item.id,
+													data: { completed: !item.completed },
+												})
 											}
 										/>
 										<Label
@@ -111,7 +109,7 @@ function DashboardHomePage() {
 										variant="ghost"
 										size="sm"
 										disabled={busy}
-										onClick={() => mutation.mutate(() => client.deleteTodo(item.id))}
+										onClick={() => todoMutations.delete.mutate({ id: item.id })}
 										aria-label={`Delete todo ${item.title}`}
 									>
 										Delete

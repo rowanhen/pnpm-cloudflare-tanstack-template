@@ -90,7 +90,32 @@ export async function testApi(
 		})
 		assert.equal(response.status, 201, await response.clone().text())
 		todoId = (await response.json()).todo.id
-		assert.equal((await request(`/api/todos/${todoId}`, {}, 1)).status, 404)
+		const missing = await request(`/api/todos/${todoId}`, {}, 1)
+		assert.equal(missing.status, 404)
+		assert.deepEqual(await missing.json(), { code: 'todo_not_found', error: 'Todo not found' })
+		const publicTodo = (await (await request(`/api/todos/${todoId}`)).json()).todo
+		assert.equal(publicTodo.user_id, undefined)
+		assert.equal((await request('/api/todos', { method: 'PUT' })).status, 405)
+		assert.equal(
+			(await request(`/api/todos/${todoId}`, { method: 'PATCH', ...body({}) })).status,
+			400,
+		)
+		assert.equal(
+			(await request(`/api/todos/${todoId}`, { method: 'PATCH', ...body({ user_id: 'other' }) }))
+				.status,
+			400,
+		)
+		assert.equal(
+			(
+				await request('/api/todos', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: '{',
+				})
+			).status,
+			400,
+		)
+		assert.equal((await request('/api/todos', { method: 'POST', body: 'not JSON' })).status, 415)
 		assert.equal(
 			(await request(`/api/todos/${todoId}`, { method: 'PATCH', ...body({ completed: true }) }, 1))
 				.status,

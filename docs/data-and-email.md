@@ -4,7 +4,7 @@
 
 `packages/data/src/schema.ts` owns the SQLite schema. `database(env.DB)` creates a Drizzle D1 client; Better Auth uses its Drizzle adapter too. The adapter maps the original ISO-string `date` columns to JavaScript `Date`, preserving existing sessions and users.
 
-Use Drizzle's `$inferSelect` and `$inferInsert` exports for database code. Public REST types in `@workspace/contracts` derive from those rows with `Pick`/`Omit`. The API explicitly selects public columns; hashes, OAuth tokens, internal email addresses and owner IDs do not appear in those read models. R2 and Stripe have separate transport types because they are not database rows.
+Use Drizzle's `$inferSelect` and `$inferInsert` exports for database code. Todo REST types now come from OpenAPI, with typed Drizzle projections checked against the generated responses. Other public REST types in `@workspace/contracts` still derive from rows with `Pick`/`Omit`. The API explicitly selects public columns; hashes, OAuth tokens, internal email addresses and owner IDs do not appear in those read models. R2 and Stripe have separate transport types because they are not database rows.
 
 ```ts
 import { database } from '@workspace/data/client'
@@ -21,7 +21,9 @@ await db.insert(todos).values(values)
 const rows = await db.select().from(todos).where(eq(todos.user_id, user.id))
 ```
 
-`inputs` contains strict Zod request schemas. API handlers validate with `input(request, 'createTodo')` and return checked response contracts with `reply('todo', { todo })`. React hooks use `client.get('todos')` and `client.mutate('createTodo', { title })`; their results and request bodies infer from the same contracts. Database imports into contracts are type-only, so the browser does not bundle the D1 client or auth schema. JSON response decoding is one trusted serialization boundary in `packages/contracts/src/client.ts`; it is compile-time checked against our API, not runtime validation of a third-party server.
+Todos use the [OpenAPI, Orval, Hono and Effect workflow](api-architecture.md). Edit `packages/contracts/openapi/features/todos.json`, run `pnpm api:generate`, and implement the generated Effect handler types in `apps/api/src/features/todos/get-todo.ts`. The dashboard uses generated TanStack Query hooks and HTTP functions. Both sides validate responses against the generated Effect schemas, including declared error status/body pairs.
+
+Other integrations retain strict Zod `inputs`, `reply(...)`, and the existing typed REST client. Their client decoding is compile-time checked and does not yet have the new todo runtime guarantees. Database imports into those contracts are type-only.
 
 Credit charging and Stripe grants still use atomic Drizzle D1 batches. Guarded insert/select statements keep their conditions inside SQL, with bound parameters and schema column references. D1 does not support interactive transactions; don't turn these batches into separate awaited writes. Concurrent debit, rollback, replay and webhook/poll races are tested.
 

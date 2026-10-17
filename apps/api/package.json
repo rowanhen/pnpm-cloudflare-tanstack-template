@@ -21,6 +21,8 @@
 		"@workspace/observability": "workspace:*",
 		"better-auth": "^1.7.10",
 		"drizzle-orm": "0.45.4",
+		"effect": "4.0.5",
+		"hono": "4.13.13",
 		"stripe": "^23.0.0"
 	}
 }

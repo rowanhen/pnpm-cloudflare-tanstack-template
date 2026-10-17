@@ -1,0 +1,510 @@
+{
+	"openapi": "3.0.3",
+	"info": {
+		"title": "Workspace API",
+		"version": "1.0.0",
+		"description": "OpenAPI-first contracts with generated Hono routes, Effect handlers, and frontend clients."
+	},
+	"paths": {
+		"/api/todos": {
+			"get": {
+				"operationId": "listTodos",
+				"tags": ["todos"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TodosResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "#/components/responses/Unavailable"
+					}
+				}
+			},
+			"post": {
+				"operationId": "createTodo",
+				"tags": ["todos"],
+				"responses": {
+					"201": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TodoResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "#/components/responses/Forbidden"
+					},
+					"413": {
+						"$ref": "#/components/responses/PayloadTooLarge"
+					},
+					"415": {
+						"$ref": "#/components/responses/UnsupportedMediaType"
+					},
+					"500": {
+						"$ref": "#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "#/components/responses/Unavailable"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateTodoInput"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/todos/{id}": {
+			"parameters": [
+				{
+					"name": "id",
+					"in": "path",
+					"required": true,
+					"schema": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					}
+				}
+			],
+			"get": {
+				"operationId": "getTodo",
+				"tags": ["todos"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TodoResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "#/components/responses/Forbidden"
+					},
+					"404": {
+						"description": "Todo does not exist or belongs to another user",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TodoNotFound"
+								}
+							}
+						}
+					},
+					"500": {
+						"$ref": "#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "#/components/responses/Unavailable"
+					}
+				}
+			},
+			"patch": {
+				"operationId": "updateTodo",
+				"tags": ["todos"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TodoResponse"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "#/components/responses/Forbidden"
+					},
+					"404": {
+						"description": "Todo does not exist or belongs to another user",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TodoNotFound"
+								}
+							}
+						}
+					},
+					"413": {
+						"$ref": "#/components/responses/PayloadTooLarge"
+					},
+					"415": {
+						"$ref": "#/components/responses/UnsupportedMediaType"
+					},
+					"500": {
+						"$ref": "#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "#/components/responses/Unavailable"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateTodoInput"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "deleteTodo",
+				"tags": ["todos"],
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					},
+					"400": {
+						"$ref": "#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "#/components/responses/Forbidden"
+					},
+					"404": {
+						"description": "Todo does not exist or belongs to another user",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TodoNotFound"
+								}
+							}
+						}
+					},
+					"500": {
+						"$ref": "#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "#/components/responses/Unavailable"
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"securitySchemes": {
+			"session": {
+				"type": "apiKey",
+				"in": "cookie",
+				"name": "better-auth.session_token"
+			}
+		},
+		"schemas": {
+			"BadRequest": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["bad_request"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"Unauthorized": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["unauthorized"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"Forbidden": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["forbidden"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"PayloadTooLarge": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["payload_too_large"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"UnsupportedMediaType": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["unsupported_media_type"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"InternalError": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["internal_error"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"Unavailable": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["unavailable"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"Todo": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"title": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200
+					},
+					"completed": {
+						"type": "boolean"
+					},
+					"created_at": {
+						"type": "string"
+					}
+				},
+				"required": ["id", "title", "completed", "created_at"]
+			},
+			"TodoResponse": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"todo": {
+						"$ref": "#/components/schemas/Todo"
+					}
+				},
+				"required": ["todo"]
+			},
+			"TodosResponse": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"todos": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/Todo"
+						},
+						"maxItems": 100
+					}
+				},
+				"required": ["todos"]
+			},
+			"CreateTodoInput": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"title": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200,
+						"pattern": "\\S"
+					}
+				},
+				"required": ["title"]
+			},
+			"UpdateTodoInput": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"title": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 200,
+						"pattern": "\\S"
+					},
+					"completed": {
+						"type": "boolean"
+					}
+				},
+				"minProperties": 1
+			},
+			"TodoNotFound": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["todo_not_found"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			}
+		},
+		"responses": {
+			"BadRequest": {
+				"description": "Invalid request",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/BadRequest"
+						}
+					}
+				}
+			},
+			"Unauthorized": {
+				"description": "Sign in required",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Unauthorized"
+						}
+					}
+				}
+			},
+			"Forbidden": {
+				"description": "Untrusted origin",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Forbidden"
+						}
+					}
+				}
+			},
+			"InternalError": {
+				"description": "Unexpected server failure",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/InternalError"
+						}
+					}
+				}
+			},
+			"Unavailable": {
+				"description": "Authentication unavailable",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Unavailable"
+						}
+					}
+				}
+			},
+			"PayloadTooLarge": {
+				"description": "Request exceeds 16 KiB",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/PayloadTooLarge"
+						}
+					}
+				}
+			},
+			"UnsupportedMediaType": {
+				"description": "JSON content type required",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/UnsupportedMediaType"
+						}
+					}
+				}
+			}
+		}
+	},
+	"security": [
+		{
+			"session": []
+		}
+	]
+}

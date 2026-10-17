@@ -53,15 +53,18 @@ To remove an environment you no longer need, run `pnpm cloud:down my-demo`. This
 
 ## Guides
 
-| Task                                              | Guide                                       |
-| ------------------------------------------------- | ------------------------------------------- |
-| First project, pages and deployment               | [Getting started](docs/getting-started.md)  |
-| Google client, callback URLs and sign-in problems | [Google sign-in](docs/google-sign-in.md)    |
-| Test cards, custom checkout and webhooks          | [Payments](docs/payments.md)                |
-| Charge credits for a private REST endpoint        | [Pay per request](docs/pay-per-request.md)  |
-| D1 types, migrations and Cloudflare email         | [Data and email](docs/data-and-email.md)    |
-| Analytics, session replay and API errors          | [PostHog](docs/observability.md)            |
-| Automated setup, permissions and teardown         | [Agent setup](docs/agent-setup.md)          |
-| Component conventions, folders and REST routes    | [Code and API reference](docs/reference.md) |
+| Task                                              | Guide                                               |
+| ------------------------------------------------- | --------------------------------------------------- |
+| Project structure and adding typed API features   | [One-page architecture guide](docs/architecture.md) |
+| First project, pages and deployment               | [Getting started](docs/getting-started.md)          |
+| Google client, callback URLs and sign-in problems | [Google sign-in](docs/google-sign-in.md)            |
+| Test cards, custom checkout and webhooks          | [Payments](docs/payments.md)                        |
+| Charge credits for a private REST endpoint        | [Pay per request](docs/pay-per-request.md)          |
+| D1 types, migrations and Cloudflare email         | [Data and email](docs/data-and-email.md)            |
+| Analytics, session replay and API errors          | [PostHog](docs/observability.md)                    |
+| Automated setup, permissions and teardown         | [Agent setup](docs/agent-setup.md)                  |
+| Component conventions, folders and REST routes    | [Code and API reference](docs/reference.md)         |
+
+Start with the [one-page structure guide](docs/architecture.md). The [detailed API walkthrough](docs/api-architecture.md) explains the OpenAPI → Orval → Hono + Effect flow, demonstrated by todos. Add or edit feature contracts, run `pnpm api:generate`, and implement the typed entry points; routes, clients, hooks, and mocks are generated automatically.
 
 Application code, configuration, scripts and tests are TypeScript. D1 schema types live in `@workspace/data`; validated public API types and the client live in `@workspace/contracts`. Both apps share the UI and observability packages. GitHub's required **Verify** check gates dependency auto-merges.
