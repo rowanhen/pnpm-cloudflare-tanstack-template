@@ -15,7 +15,6 @@
 		"build:marketing": "pnpm --filter marketing build",
 		"build:dashboard": "pnpm --filter dashboard build",
 		"test": "pnpm db:check && pnpm test:unit && tsx tests/run-local.ts",
-		"test:browser": "tsx tests/run-browser.ts",
 		"typecheck": "pnpm typecheck:tools && pnpm -r --parallel run typecheck",
 		"lint": "oxlint",
 		"format": "oxfmt . --write",
@@ -28,8 +27,7 @@
 		"deploy:dashboard": "pnpm --filter dashboard build && pnpm --filter dashboard run deploy",
 		"prepare": "git config core.hooksPath .githooks",
 		"setup:local": "tsx scripts/setup-local.ts",
-		"test:dev": "tsx tests/run-browser.ts --dev",
-		"validate": "pnpm check && pnpm exec playwright install chromium && pnpm test:browser && pnpm test:dev",
+		"validate": "pnpm check",
 		"db:generate": "pnpm --filter @workspace/data db:generate",
 		"db:check": "pnpm --filter @workspace/data db:check && tsx scripts/check-schema.ts",
 		"typecheck:tools": "tsc -p tsconfig.tools.json && tsc -p tests/support/workers/tsconfig.json",
@@ -37,7 +35,6 @@
 		"test:unit": "node --import tsx --experimental-sqlite --test tests/unit/*.test.ts"
 	},
 	"devDependencies": {
-		"@playwright/test": "^1.64.1",
 		"@types/node": "26.6.5",
 		"effect": "4.0.5",
 		"orval": "8.43.0",

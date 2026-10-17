@@ -62,3 +62,24 @@ Attach custom domains and configure DNS through Cloudflare Pages settings. Rebui
 Previous helper-managed deployments retain ignored `.wrangler/sandboxes/<name>/` configuration, manifests and secrets. Preserve those files. Use the existing configuration explicitly, for example `pnpm exec wrangler deploy --config .wrangler/sandboxes/NAME/wrangler.json`, and use the matching Pages project names for uploads. The normal template config does not discover or take ownership of them. No existing resources are changed by removing the helpers.
 
 Delete obsolete resources through Wrangler or provider dashboards after checking their names and data. There is no automatic remote teardown. Keep the maintained `showcase` deployment and its retained configuration.
+
+## GitHub Actions deployment
+
+The **Verify** job runs lint/formatting, unit tests, type checks and build, in that order. Pull requests stop there. On main, the separate **Deploy** job waits for Verify, downloads its build artifact, applies D1 migrations, then publishes the prebuilt Worker and both Pages apps. It does not rebuild. Production deployments are serialized.
+
+Configure these repository Actions settings for each project:
+
+| Setting                                               | Kind               | Value                                                                                            |
+| ----------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
+| `CLOUDFLARE_API_TOKEN`                                | Secret             | Token for the target account with Workers Scripts Edit, D1 Edit and Cloudflare Pages Edit access |
+| `CLOUDFLARE_ACCOUNT_ID`                               | Variable           | Target account ID; deployment is skipped when this is unset                                      |
+| `CLOUDFLARE_WORKER_CONFIG`                            | Variable           | Production Wrangler JSON with the existing Worker name, public vars, D1 and R2 bindings          |
+| `CLOUDFLARE_MARKETING_PROJECT`                        | Variable           | Existing marketing Pages project name                                                            |
+| `CLOUDFLARE_DASHBOARD_PROJECT`                        | Variable           | Existing dashboard Pages project name                                                            |
+| `VITE_API_URL`, `VITE_SITE_URL`, `VITE_DASHBOARD_URL` | Variables          | Production HTTPS API, marketing and dashboard URLs used by the build                             |
+| `VITE_SITE_NAME`, `VITE_NOINDEX`, `VITE_APP_ENV`      | Variables          | Public title, indexing choice (`false` for production) and environment name                      |
+| `VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST`               | Optional variables | Public collection token and host when browser analytics is enabled                               |
+
+The deploy job writes `CLOUDFLARE_WORKER_CONFIG` to the ignored `apps/api/wrangler.ci.json`. Keep its `main` relative to that directory (`src/index.ts`) and D1 `migrations_dir` as `migrations`. Use the real production database ID, resource names, `AUTH_URL` and allowed origins. Keep provider/auth secrets on the existing Worker and Pages projects; do not put secrets in this JSON or in `VITE_` variables. Complete the resource and proxy-secret setup above before enabling deployment.
+
+This repository's Actions variables target the maintained showcase and its custom domains. Clones do not inherit those GitHub settings. Configure the clone's own resources before setting its account ID. Unit tests run in CI; the full local `pnpm check` additionally runs schema and API integration checks. Browser E2E tooling is not included.

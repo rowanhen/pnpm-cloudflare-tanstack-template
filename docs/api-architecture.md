@@ -57,7 +57,7 @@ Each operation has a globally unique camelCase `operationId` and one lowercase k
 2. Reference new paths from `api.json`, then run `pnpm api:generate` (the native Orval CLI). No router imports or handwritten handler registry changes are needed.
 3. Implement the new entry points created under `apps/api/src/features/<feature>/<operation-in-kebab-case>.ts`. Each is annotated with its generated Effect handler type. Regeneration never overwrites existing entry points, even when an operation is removed.
 4. Use the generated frontend hooks and functions in `apps/dashboard/src/generated/<feature>.ts`.
-5. Run `pnpm check`. The unresolved `TODO_IMPLEMENT_OPERATION` expression makes unfinished stubs fail ordinary TypeScript checking. CI also regenerates and checks for changed or untracked output. Naming conventions above are authoring conventions; there is no separate custom naming/collision scanner.
+5. Run `pnpm check`. The unresolved `TODO_IMPLEMENT_OPERATION` expression makes unfinished stubs fail ordinary TypeScript checking. Regenerate after contract changes and review changed or untracked output before committing. Naming conventions above are authoring conventions; there is no separate custom naming/collision scanner.
 
 For example, adding `getProduct` to `features/products.json` creates:
 
@@ -103,9 +103,9 @@ Expected failures become their declared HTTP response. Infrastructure failures a
 
 `orval.config.ts` uses native multi-file input and Orval's custom client and `extraFiles` extension points. Native Effect generation emits schemas; the extension adds operation contracts beside them and re-exports them through the operation registry. Native Hono generation owns the combined routes file. A post-write hook removes unused duplicate TypeScript models from the Effect output. No separate OpenAPI parser or second route generator is maintained.
 
-All `src/generated/` directories are owned by generation. Orval cleans those specific directories and writes formatted output directly. Handwritten feature directories are outside the clean targets. If generation fails, correct the contract and rerun it; output is not staged atomically. CI runs generation and checks Git status for tracked changes and new files, including missing handler entry points.
+All `src/generated/` directories are owned by generation. Orval cleans those specific directories and writes formatted output directly. Handwritten feature directories are outside the clean targets. If generation fails, correct the contract and rerun it; output is not staged atomically. Review Git status for tracked changes and new files after generation, including missing handler entry points.
 
-Tests exercise a temporary second products feature, native shared references, router/type/client/mock generation, preserved implementations, TypeScript rejection of unfinished handlers, unsupported boundary rejection, and removal of stale generated outputs. Separate contract tests and Worker/browser integration tests cover response validation, authentication, CSRF, ownership, malformed requests, and real database behaviour. Mocks are development helpers rather than independent evidence of correct behaviour.
+Tests exercise a temporary second products feature, native shared references, router/type/client/mock generation, preserved implementations, TypeScript rejection of unfinished handlers, unsupported boundary rejection, and removal of stale generated outputs. Separate local contract tests and Worker integration tests cover response validation, authentication, CSRF, ownership, malformed requests, and real database behaviour. Mocks are development helpers rather than independent evidence of correct behaviour.
 
 ## Deliberate boundaries
 

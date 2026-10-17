@@ -12,7 +12,7 @@ Use the package's actual `Button variant="ghost"` for text links. Compose intern
 
 For rendered links, pass Base UI's `nativeButton: false` and set `role="link"` on the rendered anchor, preserving link semantics. This installed Composables version forwards that Base UI option but omits it from `ButtonProps`, so the render compositions supply it through a prop spread. This is a package typing gap, not a custom component or variant. External anchors exist only as `Button` render targets. Do not nest a native button inside a link. There is no source-owned button implementation or router-button alias.
 
-Each app's registered router checks route destinations and search values during typechecking. Browser tests cover navigation, focusable links, auth boundaries and the actual workflows.
+Each app's registered router checks route destinations and search values during typechecking. Review navigation, focusable links, auth boundaries and frontend workflows manually in a browser.
 
 `packages/shared/src/styles.css` imports Tailwind theme/preflight, the Tailwind adapter and the compiled Composables stylesheet once, followed by `presets/kumo.css` and app utilities. Keep the app utilities last: otherwise the package’s compiled base utility rules can override responsive consumer layouts. The preset supplies light/dark surfaces, blue actions and orange accents. Inter is self-hosted through `@fontsource-variable/inter`; the starter opens in light mode. Keep future overrides at this theme boundary. Stripe's Appearance API reads the same theme. The existing `components.json` files support adding a source-owned shadcn component when needed; align any generated styles with this theme.
 
@@ -37,7 +37,7 @@ packages/shared/    Composables exports, theme, page states and shared hooks
 packages/observability/ Consent, analytics, replay, error capture and API telemetry
 codegen/            Orval Effect extension for typed handlers and wiring
 scripts/            Small local setup and migration checks
-tests/              Unit, API integration and browser tests, runners and fixtures
+tests/              Local unit/API integration tests, runners and fixtures
 ```
 
 Browsers call their own app's `/api` routes. The apps proxy to the configured Worker, keeping cookies on the dashboard domain and avoiding third-party cookies. In cloud deployments, they sign the original visitor IP with a separate shared `API_PROXY_SECRET`, so requests across Cloudflare zones retain individual rate limits. The Worker rejects forged or expired signatures. This secret grants no access to user data or sessions. Dashboard protection runs on the server before rendering, and the Worker independently authenticates and authorizes every private request. Private responses use `Cache-Control: no-store`.
@@ -112,7 +112,7 @@ PostHog analytics, masked session replay and browser/API errors are included. Co
 
 ## Dependency maintenance
 
-Dependabot checks the pnpm workspace and GitHub Actions daily, including major releases. Its updates are grouped and queued for squash auto-merge; the required **Verify** check must pass first. That check covers formatting, lint, schema consistency, API tests, TypeScript, production builds and both browser suites. The merge workflow only enables GitHub auto-merge and never executes pull-request code.
+Dependabot checks the pnpm workspace and GitHub Actions daily, including major releases. Its updates are grouped and queued for squash auto-merge; the required **Verify** check must pass first. That check covers lint/formatting, unit tests, TypeScript and production builds, in that order. A separate deployment job runs after it succeeds on main. API integration tests remain available locally. The merge workflow only enables GitHub auto-merge and never executes pull-request code.
 
 The repository uses the newest supported pnpm 10 release (10.34.7) because [Dependabot currently supports pnpm through v10](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories). Dependency versions are pinned in the lockfile; check for newer releases when upgrading. Scoped overrides in `pnpm-workspace.yaml` patch the esbuild bundled by Drizzle Kit's loader and Sharp used by Miniflare; remove them when upstream ranges include the fixes.
 

@@ -19,7 +19,6 @@
 		"scripts/**/*.ts",
 		"codegen/**/*.ts",
 		"tests/**/*.ts",
-		"playwright.config.ts",
 		"packages/data/drizzle.config.ts",
 		"orval.config.ts"
 	],

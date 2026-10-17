@@ -51,7 +51,7 @@ Signed-in users can select **Send me a test**, which posts `{ requestId: crypto.
 
 ### Local simulation
 
-Set `EMAIL_FROM=starter@example.test` in your ignored `apps/api/.dev.vars`, then run `pnpm dev`. The tracked `send_email` binding has no `remote: true`; Wrangler simulates sending and prints paths to the text/HTML files. API and browser tests use that simulator, including injected failure tests. No real mail is sent by automated tests. See [Cloudflare's local email documentation](https://developers.cloudflare.com/email-service/local-development/sending/).
+Set `EMAIL_FROM=starter@example.test` in your ignored `apps/api/.dev.vars`, then run `pnpm dev`. The tracked `send_email` binding has no `remote: true`; Wrangler simulates sending and prints paths to the text/HTML files. Local API tests use that simulator, including injected failure tests. No real mail is sent by automated tests. See [Cloudflare's local email documentation](https://developers.cloudflare.com/email-service/local-development/sending/).
 
 ### Live sending
 

@@ -51,10 +51,9 @@ To add an event, extend `Events` in `packages/observability/src/browser.ts`, the
 
 ```sh
 pnpm test:unit
-pnpm test:browser tests/browser/observability.spec.ts
-pnpm test:dev tests/browser/observability.spec.ts
+pnpm test
 ```
 
-Tests exercise the real SDK against intercepted/local transports, including consent, replay masking, URL/message redaction, request correlation, identity reset, SDK flushing and provider outages. Tests never send fixture events to your live project. Live ingestion and playable replay must still be checked against the connected account.
+Local tests cover consent-record validation, URL/message redaction, API request correlation, server SDK flushing and provider outages against local transports. Tests never send fixture events to your live project. Check browser consent gates, replay masking, identity reset, withdrawal, live ingestion and playable replay manually using the [verification guide](verification.md). CI runs unit tests; API integration checks run locally.
 
 References: [Workers integration](https://posthog.com/docs/libraries/cloudflare-workers), [JavaScript configuration](https://posthog.com/docs/libraries/js/config), [replay privacy](https://posthog.com/docs/session-replay/privacy), [API authentication](https://posthog.com/docs/api).

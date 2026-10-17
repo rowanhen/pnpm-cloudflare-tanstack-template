@@ -75,6 +75,5 @@ Provider-side retention is configured separately. A 180-day preference does not 
 - `packages/shared/src/components/analytics.tsx`: shared banner and preferences.
 - `apps/marketing/src/routes/privacy.tsx`: public example notice; replace its business-specific details.
 - `tests/unit/consent.test.ts`: invalid/expired/changed-policy records.
-- `tests/browser/observability.spec.ts`: intercepted real-SDK checks, granular purposes, GPC, blocked storage, withdrawal, masking and phone layout.
 
-Run `pnpm test:unit`, `pnpm test:browser observability.spec.ts` and `pnpm test:browser --dev observability.spec.ts`. Fixture events never go to your live PostHog project. Test live ingestion, storage and deletion separately using authorized test data.
+Run `pnpm test:unit` locally for consent-record validation. Manually verify browser SDK gating, granular choices, GPC, blocked storage, cross-tab withdrawal, masking, keyboard access and phone layout using the launch checklist above. Browser E2E tests are not included, and API integration suites run locally rather than in CI. Test live ingestion, storage and deletion separately using authorized test data.

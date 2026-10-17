@@ -4,38 +4,38 @@ Use this checklist after connecting an account or changing deployment URLs. The 
 
 ## Maintained demo: 8 October 2026
 
-| Integration                  | Application coverage                                                                                                 | Live provider status                                                                                                                                        |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cloudflare Worker, D1 and R2 | API, ownership, rate limiting, migrations and browser CRUD                                                           | Passed on a fresh disposable deployment; API/browser checks and resource cleanup verified                                                                   |
-| Prepaid API requests         | Debit/result transaction, rollback, concurrent retries, last credit, 402 and revocation                              | Real D1 metering is tested with seeded credits; end-to-end Stripe funding remains pending                                                                   |
-| Google / Better Auth         | Server protection, OAuth state/PKCE, callback rejection/cancellation, sign-out and return paths                      | Live sign-in returns `redirect_uri_mismatch`; register the exact dashboard callback using Google Cloud account access, then complete consent/token exchange |
-| Stripe                       | Real SDK/signature checks against local responses, order ownership, duplicate/reordered events, exact-once grants    | No test keys connected; real Payment Element card payment and webhook delivery unverified                                                                   |
-| PostHog                      | Real SDK with local/intercepted collection, consent, replay masking, errors, request correlation and outage handling | Disabled on the demo; connected account requires reauthentication, so project ingestion/reporting/replay are unverified                                     |
-| Cloudflare email             | Local HTML simulation, recipient restriction, deduplication and attempt records                                      | No sender connected; real inbox delivery unverified                                                                                                         |
-| Composables / Kumo           | Shared components, mobile layout, page states and frontend builds                                                    | Present on the public demo                                                                                                                                  |
+| Integration                  | Application coverage                                                                                              | Live provider status                                                                                                                                        |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cloudflare Worker, D1 and R2 | Local API ownership, rate limiting, migrations and CRUD                                                           | Passed on a fresh disposable deployment; API/browser checks and resource cleanup verified                                                                   |
+| Prepaid API requests         | Debit/result transaction, rollback, concurrent retries, last credit, 402 and revocation                           | Real D1 metering is tested with seeded credits; end-to-end Stripe funding remains pending                                                                   |
+| Google / Better Auth         | Server protection, OAuth state/PKCE, callback rejection/cancellation, sign-out and return paths                   | Live sign-in returns `redirect_uri_mismatch`; register the exact dashboard callback using Google Cloud account access, then complete consent/token exchange |
+| Stripe                       | Real SDK/signature checks against local responses, order ownership, duplicate/reordered events, exact-once grants | No test keys connected; real Payment Element card payment and webhook delivery unverified                                                                   |
+| PostHog                      | Consent records, telemetry redaction, server SDK flushing, API request correlation and outages                    | Disabled on the demo; connected account requires reauthentication, so project ingestion/reporting/replay are unverified                                     |
+| Cloudflare email             | Local HTML simulation, recipient restriction, deduplication and attempt records                                   | No sender connected; real inbox delivery unverified                                                                                                         |
+| Composables / Kumo           | Shared components, mobile layout, page states and frontend builds                                                 | Present on the public demo                                                                                                                                  |
 
 Public site: [devtemplate.leitware.com](https://devtemplate.leitware.com). Sign-in: [dashboard login](https://dashboard.devtemplate.leitware.com/login). Stripe checkout is intentionally test-only. This table is an audit record, not a runtime status monitor.
 
 ## Historical results from this audit
 
-- `pnpm validate`: passed lint, formatting, schema/migration checks, local API tests, TypeScript and builds; **19 production-browser + 19 development-browser tests passed**.
+- The earlier validation suite passed lint, formatting, schema/migration checks, local API tests, TypeScript and builds; **19 production-browser + 19 development-browser tests passed**.
 - The former disposable cloud runner: real Cloudflare API/metering checks passed; **13 browser tests passed, 6 provider-fixture cases skipped**. Teardown independently confirmed both Pages projects, Worker, D1 and R2 were absent.
-- `pnpm test:browser tests/browser/observability.spec.ts`: **3 passed** after moving analytics preferences out of the content area. The SDK transport tests also cover redacted provider failure logs.
+- The earlier observability browser suite: **3 passed** after moving analytics preferences out of the content area. Those browser tests have since been removed.
 - Live Google handoff reproduced `redirect_uri_mismatch`. No real Google session, Stripe card payment, PostHog project ingestion/replay or inbox delivery was recorded.
 
 ## Automated checks
 
-From the repository root, with ports 3000, 3001 and 8787 free:
+From the repository root, with the local API test port (8799 by default) free:
 
 ```bash
-pnpm validate
+pnpm check
 ```
 
-It runs lint, formatting, schema/migration checks, API tests, TypeScript, builds, and Chromium tests against both Vite development servers and production Pages runtimes. Tests create isolated local D1/R2, signed sessions and provider fixtures, then clean up. Fixtures never become a production login bypass. Analytics tests never send their events to your real project.
+It runs lint, formatting, schema/migration checks, local unit/API integration tests, TypeScript and builds. `pnpm validate` is an alias. Tests create isolated local D1/R2, signed sessions and provider fixtures, then clean up. Fixtures never become a production login bypass. Analytics fixture events do not go to your real project.
 
-Individual commands: `pnpm check`, `pnpm test:unit`, `pnpm test:browser`, `pnpm test:dev`. Browser commands accept a spec path, for example `pnpm test:browser tests/browser/checkout.spec.ts`.
+Individual local commands: `pnpm test`, `pnpm test:unit`. Browser E2E tests and their tooling have been removed; use the manual frontend checks below. CI runs lint/formatting, unit tests, TypeScript and builds, followed by deployment on main. API integration tests remain local.
 
-CI regenerates API outputs with native Orval and rejects tracked changes or new files. Local generation writes directly to generated directories; run it after contract changes and review the diff.
+Generate API outputs with native Orval after contract changes and review the diff. Generation writes directly to generated directories.
 
 The historical cloud provisioning/lifecycle runner has been removed. Use the [Wrangler deployment guide](manual-deployment.md) and live checklist below to verify a retained deployment. Local tests do not establish current provider access or deployed health. Check the API health endpoint, each app's `/api` proxy, anonymous protection, unknown-path 404s and indexing after deployment.
 

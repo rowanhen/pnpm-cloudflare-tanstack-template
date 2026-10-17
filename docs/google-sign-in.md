@@ -39,7 +39,7 @@ For a fresh project, use your own OAuth client. Separate development and product
 4. Open `/checkout` while signed out. After Google sign-in you should return to checkout. An order link at `/checkout/success?session_id=cs_test_...` must keep its order reference through sign-in; only its owner can read it.
 5. Cancel Google consent. The sign-in page should show a retry message and keep the checkout destination.
 
-A first real sign-in creates the user's D1 user/account records. Automated browser tests seed temporary sessions and check OAuth initiation, cancellation and redirects; they do not complete Google's token exchange.
+A first real sign-in creates the user's D1 user/account records. Local API tests seed temporary sessions; Google's consent/token exchange and frontend redirects are verified manually using the steps above.
 
 ## If sign-in fails
 

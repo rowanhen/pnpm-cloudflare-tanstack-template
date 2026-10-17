@@ -32,5 +32,6 @@ dist-ssr
 .env.prod
 .dev.vars*
 !.dev.vars.example
-playwright-report/
-test-results/
+
+# Runtime CI configuration comes from GitHub Actions variables.
+apps/api/wrangler.ci.json
