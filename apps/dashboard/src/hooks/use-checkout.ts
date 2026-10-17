@@ -13,9 +13,15 @@ export function useCheckoutSession() {
 	const navigate = useNavigate()
 	const hydrated = useHydrated()
 	const requestId = useRef<string | null>(null)
+	const availability = useQuery({
+		queryKey: ['app-config'],
+		enabled: hydrated,
+		retry: false,
+		queryFn: () => client.get('config'),
+	})
 	const config = useQuery({
 		queryKey: ['checkout-config'],
-		enabled: hydrated,
+		enabled: hydrated && availability.data?.checkoutEnabled === true,
 		retry: false,
 		queryFn: () => client.get('checkoutConfig'),
 	})
@@ -28,7 +34,7 @@ export function useCheckoutSession() {
 			return session
 		},
 	})
-	return { config, create }
+	return { availability, config, create }
 }
 export function useOrderStatus(sessionId: string) {
 	const hydrated = useHydrated()

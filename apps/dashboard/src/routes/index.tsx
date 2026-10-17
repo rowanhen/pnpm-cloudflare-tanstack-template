@@ -4,6 +4,12 @@ import {
 	PageSection,
 	Stack,
 	Input,
+	DropZone,
+	DropZoneArea,
+	DropZoneInput,
+	DropZoneContent,
+	DropZoneFile,
+	getRejectionMessage,
 	Label,
 	Checkbox,
 	Alert,
@@ -35,7 +41,9 @@ function DashboardHomePage() {
 	useAnalyticsIdentity(user.id)
 	const [title, setTitle] = useState('')
 	const [file, setFile] = useState<File | null>(null)
+	const [fileError, setFileError] = useState('')
 	const { todos, files, mutation, todoMutations, busy, error } = useWorkspace(user.id)
+	const replacingFile = !!file && !!files.data?.files.some((item) => item.key === file.name)
 	const hydrated = useHydrated()
 	const signOut = useSignOut()
 	return (
@@ -108,7 +116,7 @@ function DashboardHomePage() {
 										</Label>
 									</Stack>
 									<Button
-										variant="ghost"
+										variant="destructive"
 										size="sm"
 										disabled={busy}
 										onClick={() => todoMutations.delete.mutate({ id: item.id })}
@@ -133,30 +141,66 @@ function DashboardHomePage() {
 							onSubmit={(event) => {
 								event.preventDefault()
 								if (file)
-									mutation.mutate(() =>
-										api(`/api/files/${encodeURIComponent(file.name)}`, {
-											method: 'PUT',
-											headers: { 'Content-Type': file.type || 'application/octet-stream' },
-											body: file,
-										}),
+									mutation.mutate(
+										() =>
+											api(`/api/files/${encodeURIComponent(file.name)}`, {
+												method: 'PUT',
+												headers: { 'Content-Type': file.type || 'application/octet-stream' },
+												body: file,
+											}),
+										{ onSuccess: () => setFile(null) },
 									)
 							}}
 						>
 							<Stack gap={2}>
-								<Label htmlFor="file">File</Label>
-								<Input
-									id="file"
-									type="file"
-									required
+								<DropZone
+									accept={{}}
+									multiple={false}
+									maxSizeBytes={5 * 1024 * 1024}
 									disabled={busy}
-									onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-								/>
+									hasFiles={!!file}
+									hasError={!!fileError}
+									validator={(candidate) =>
+										/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$/.test(candidate.name)
+											? null
+											: {
+													code: 'invalid-name',
+													message:
+														'Use a 1–200 character filename with letters, numbers, dots, underscores or hyphens.',
+												}
+									}
+									onDrop={(accepted, rejected) => {
+										setFile(accepted[0] ?? null)
+										const rejection = rejected[0]?.errors[0]
+										setFileError(
+											rejection
+												? rejection.code === 'invalid-name'
+													? rejection.message
+													: getRejectionMessage(rejection.code, 5 * 1024 * 1024, {}, 1)
+												: '',
+										)
+									}}
+								>
+									<DropZoneArea>
+										<DropZoneInput />
+										{file ? (
+											<DropZoneFile file={file} disabled={busy} onRemove={() => setFile(null)} />
+										) : (
+											<DropZoneContent title="Upload a file" description="Up to 5 MiB." />
+										)}
+									</DropZoneArea>
+								</DropZone>
+								{fileError && <Alert type="negative">{fileError}</Alert>}
 								<Typography as="p" variant="caption-100" className="text-content-secondary">
 									Filenames: letters, numbers, . _ - only. Matching names replace existing files.
 								</Typography>
 							</Stack>
-							<Button disabled={busy || !file} type="submit" variant="secondary">
-								Upload file
+							<Button
+								disabled={busy || !file}
+								type="submit"
+								variant={replacingFile ? 'destructive' : 'secondary'}
+							>
+								{replacingFile ? 'Replace file' : 'Upload file'}
 							</Button>
 						</form>
 						{files.isPending && <Skeleton className="h-14 w-full" aria-label="Loading files" />}
@@ -195,7 +239,7 @@ function DashboardHomePage() {
 											Download
 										</Button>
 										<Button
-											variant="ghost"
+											variant="destructive"
 											size="sm"
 											disabled={busy}
 											onClick={() =>

@@ -19,7 +19,7 @@ export const Route = createFileRoute('/checkout/')({
 	component: CheckoutPage,
 })
 function CheckoutPage() {
-	const { config, create } = useCheckoutSession()
+	const { availability, config, create } = useCheckoutSession()
 	return (
 		<AppShell title="Checkout">
 			<Button
@@ -30,15 +30,24 @@ function CheckoutPage() {
 			>
 				← Back to workspace
 			</Button>
-			{config.isPending ? (
+			{availability.isPending || (availability.data?.checkoutEnabled && config.isPending) ? (
 				<Skeleton className="h-80 max-w-2xl" aria-label="Loading checkout" />
-			) : config.isError ? (
+			) : availability.isError || config.isError ? (
 				<PageSection title="Checkout is unavailable.">
-					<Button variant="outline" onClick={() => void config.refetch()}>
+					<Button
+						variant="outline"
+						onClick={() => void (availability.isError ? availability.refetch() : config.refetch())}
+					>
 						Try again
 					</Button>
 				</PageSection>
-			) : (
+			) : !availability.data?.checkoutEnabled ? (
+				<PageSection title="Checkout isn't configured.">
+					<Button variant="outline" onClick={() => void availability.refetch()}>
+						Check again
+					</Button>
+				</PageSection>
+			) : config.data ? (
 				<Stack gap={10}>
 					<PageSection title={config.data.offer.name}>
 						<Stack gap={5}>
@@ -86,7 +95,7 @@ function CheckoutPage() {
 						</Stack>
 					</PageSection>
 				</Stack>
-			)}
+			) : null}
 		</AppShell>
 	)
 }
