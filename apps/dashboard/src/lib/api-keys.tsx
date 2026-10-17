@@ -1,14 +1,17 @@
 import {
 	Button,
-	Card,
+	PageSection,
 	Stack,
 	Label,
 	Input,
 	Alert,
 	NativeSelect,
-	Badge,
 	useHydrated,
+	Grid,
+	Typography,
+	CodeBlock,
 } from '@workspace/shared'
+
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { client as apiClient } from './api'
@@ -31,7 +34,7 @@ export function ApiKeys() {
 		onSuccess: () => client.invalidateQueries({ queryKey: ['keys'] }),
 	})
 	return (
-		<Card title={<h2>API keys</h2>} description="30 requests/minute per key.">
+		<PageSection title="API keys" description="30 requests/minute per key.">
 			<Stack gap={5}>
 				<form
 					className="flex flex-wrap items-end gap-3"
@@ -56,7 +59,7 @@ export function ApiKeys() {
 							onChange={(event) => setName(event.target.value)}
 						/>
 					</Label>{' '}
-					<div className="grid gap-2">
+					<Grid gap={2} columns={1}>
 						<Label htmlFor="key-scope">Access</Label>
 						<NativeSelect
 							id="key-scope"
@@ -69,18 +72,20 @@ export function ApiKeys() {
 								{ value: 'summary:read', label: 'Summary · 1 credit' },
 							]}
 						/>
-					</div>
+					</Grid>
 					<Button disabled={!hydrated || mutation.isPending} type="submit">
 						Create API key
 					</Button>
 				</form>
 				{newToken && (
-					<div aria-live="polite" className="space-y-3 rounded-lg border bg-muted p-5">
-						<p>Copy this key now. It will not be shown again.</p>
+					<Stack gap={3} aria-live="polite" className="rounded-lg border bg-muted p-5">
+						<Typography as="p" variant="body-200">
+							Copy this key now. It will not be shown again.
+						</Typography>
 						<Label className="grid gap-2">
-							New API key <Input readOnly value={newToken} className="w-full font-mono text-xs" />
+							New API key <Input readOnly value={newToken} className="w-full font-mono" />
 						</Label>
-						<pre className="whitespace-pre-wrap break-all rounded-md bg-default p-4 text-xs">
+						<CodeBlock>
 							{[
 								`curl ${typeof window === 'undefined' ? '' : window.location.origin}/api/v1/${newScope === 'summary:read' ? 'summary' : 'todos'}`,
 								`  -H 'Authorization: Bearer ${newToken}'`,
@@ -92,20 +97,25 @@ export function ApiKeys() {
 										]
 									: []),
 							].join(' \\\n')}
-						</pre>
+						</CodeBlock>
 						<Button onClick={() => setNewToken('')}>Hide key</Button>
-					</div>
+					</Stack>
 				)}
 				{(mutation.error || keys.error) && (
 					<Alert type="negative">{(mutation.error ?? keys.error)?.message}</Alert>
 				)}
 				<ul>
 					{keys.data?.keys.map((key) => (
-						<li key={key.id} className="flex flex-wrap items-center gap-3 border-t py-3 text-sm">
-							{key.name} — <code>{key.prefix}…</code>
-							<Badge variant="outline">
+						<li key={key.id} className="flex flex-wrap items-center gap-3 border-t py-3">
+							<Typography as="span" variant="body-100">
+								{key.name}
+							</Typography>
+							<Typography as="span" variant="caption-100" className="font-mono">
+								{key.prefix}…
+							</Typography>
+							<Typography as="span" variant="body-200" className="text-content-secondary">
 								{key.scope === 'summary:read' ? 'Summary · paid' : 'Todos · free'}
-							</Badge>{' '}
+							</Typography>{' '}
 							<Button
 								disabled={!hydrated || mutation.isPending}
 								aria-label={`Delete API key ${key.name}`}
@@ -122,6 +132,6 @@ export function ApiKeys() {
 					))}
 				</ul>
 			</Stack>
-		</Card>
+		</PageSection>
 	)
 }

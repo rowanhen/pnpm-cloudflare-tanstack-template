@@ -1,6 +1,15 @@
 import { track } from '@workspace/observability/browser'
-import { createFileRoute } from '@tanstack/react-router'
-import { Badge, Button, LayerCard, Typography } from '@workspace/shared'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import {
+	Button,
+	Typography,
+	Stack,
+	Grid,
+	Section,
+	Icon,
+	ArrowDown,
+	ArrowUpRight,
+} from '@workspace/shared'
 import { repository, seo, site } from '../lib/seo'
 import { MarketingShell } from '../components/marketing-shell'
 import { WaitlistForm } from '../components/waitlist-form'
@@ -8,14 +17,16 @@ import { QuickStart } from '../components/quick-start'
 
 export const Route = createFileRoute('/')({ head: () => seo(), component: MarketingHomePage })
 const features = [
-	['01', 'Google sign-in', 'Google auth, sessions and a protected dashboard.', 'Better Auth'],
-	['02', 'Database', 'D1 tables, Drizzle migrations and shared API types.', 'D1 + Drizzle'],
-	['03', 'File storage', 'Private uploads, downloads and deletion.', 'R2'],
-	['04', 'Payments and credits', 'Custom checkout, credits and metered API requests.', 'Stripe'],
-	['05', 'API keys', 'Scoped keys, revocation and rate limits.', 'REST'],
-	['06', 'Email', 'Waitlist confirmations and transactional email.', 'Email'],
-	['07', 'Analytics and errors', 'Analytics, masked replay and API monitoring.', 'PostHog'],
+	['Google sign-in', 'Sessions and a protected dashboard.'],
+	['Database', 'D1 with Drizzle migrations.'],
+	['File storage', 'Private uploads and downloads with R2.'],
+	['Payments', 'Stripe checkout and API credits.'],
+	['API keys', 'Scoped keys and rate limits.'],
+	['Email', 'Waitlist and transactional email.'],
+	['Analytics', 'PostHog events, replay and errors.'],
 ]
+const exampleRoutes = [['Error page', '/error']] as const
+
 function MarketingHomePage() {
 	const structuredData = {
 		'@context': 'https://schema.org',
@@ -26,128 +37,143 @@ function MarketingHomePage() {
 	}
 	return (
 		<MarketingShell>
-			<section className="grid gap-12 py-16 lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-24">
-				<div className="space-y-7">
-					<Badge variant="outline">A starter by Leitware</Badge>
-					<Typography
-						as="h1"
-						variant="hero-300"
-						className="max-w-xl text-5xl leading-[1.06] tracking-tight sm:text-6xl"
-					>
+			<Section spacing="lg">
+				<Stack gap={8} align="start">
+					<Typography as="h1" variant="hero-300">
 						Cloudflare
 						<br />
-						<span className="text-brand">Starter</span>
+						Starter
 					</Typography>
-					<p className="max-w-md text-lg leading-7 text-content-secondary">
-						Auth, data, files, payments and email. One TypeScript repo, running on Cloudflare.
-					</p>
-					<div className="flex flex-wrap gap-3">
-						<Button asChild size="lg">
-							<a href={`${repository}/generate`} onClick={() => track('template.opened', {})}>
-								Use the template <span aria-hidden="true">↗</span>
-							</a>
-						</Button>
-						<Button asChild size="lg" variant="outline">
-							<a href="#examples">
-								Explore the examples <span aria-hidden="true">↓</span>
-							</a>
-						</Button>
-					</div>
-					<p className="text-xs text-content-secondary">
-						TanStack Start · Drizzle · Composables / Kumo
-					</p>
-				</div>
-				<div id="setup" className="min-w-0">
-					<QuickStart />
-				</div>
-			</section>
-			<section aria-labelledby="included-title" className="border-y py-12">
-				<div className="mb-8 flex flex-wrap items-end justify-between gap-3">
-					<h2 id="included-title" className="text-2xl font-semibold tracking-tight">
-						Included
-					</h2>
-					<a
-						href={`${repository}/blob/main/docs/reference.md`}
-						className="text-sm text-link hover:underline"
-					>
-						Read the docs ↗
-					</a>
-				</div>
-				<div className="grid gap-x-10 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
-					{features.map(([number, title, description, tag]) => (
-						<article key={number} className="space-y-3">
-							<div className="flex items-center gap-3">
-								<span className="font-mono text-xs text-content-secondary">{number}</span>
-								<Badge variant="outline">{tag}</Badge>
-							</div>
-							<h3 className="font-semibold">{title}</h3>
-							<p className="max-w-xs text-sm leading-6 text-content-secondary">{description}</p>
-						</article>
-					))}
-				</div>
-			</section>
-			<section
-				id="examples"
-				aria-labelledby="examples-title"
-				className="grid items-start gap-10 py-16 lg:grid-cols-2 lg:gap-16"
-			>
-				<div className="space-y-7">
-					<div className="space-y-3">
-						<h2 id="examples-title" className="text-3xl font-semibold tracking-tight">
-							Examples
-						</h2>
-						<p className="text-content-secondary">Try the dashboard or submit the waitlist form.</p>
-					</div>
-					<LayerCard title="Explore the demo">
-						<nav aria-label="Examples" className="divide-y">
-							{[
-								['Sign in', '', `${site.dashboard}/login`],
-								['Dashboard', 'Todos, files, keys and email', site.dashboard],
-								['Test checkout', 'Payments and API credits', `${site.dashboard}/checkout`],
-								['Waitlist success', '', '/waitlist/success'],
-								['404 page', '', '/not-a-page'],
-								['Error page', '', '/error'],
-							].map(([label, detail, href]) => (
-								<a
-									key={label}
-									href={href}
-									className="group flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
-								>
-									<span>
-										<span className="block text-sm font-medium group-hover:text-link">{label}</span>
-										{detail && (
-											<span className="mt-1 block text-xs text-content-secondary">{detail}</span>
-										)}
-									</span>
-									<span aria-hidden="true">↗</span>
-								</a>
-							))}
-						</nav>
-					</LayerCard>
-					<p className="text-xs leading-5 text-content-secondary">
-						Google, Stripe, email and PostHog need provider setup.{' '}
-						<a
-							className="text-link underline underline-offset-4"
-							href={`${repository}/blob/main/docs/getting-started.md`}
+					<Typography variant="body-300" className="text-content-secondary">
+						A TypeScript starter with auth, database, storage and payments.
+					</Typography>
+					<Stack direction="horizontal" align="center" gap={4} wrap>
+						<Button
+							size="lg"
+							{...{ nativeButton: false }}
+							render={
+								<a role="link" aria-label="Use the template" href={`${repository}/generate`} />
+							}
+							onClick={() => track('template.opened', {})}
 						>
-							Setup guide ↗
-						</a>
-					</p>
-				</div>
-				<WaitlistForm />
-			</section>
-			<section className="mb-8 flex flex-wrap items-center justify-between gap-6 rounded-xl border bg-muted p-6 sm:p-8">
-				<div className="space-y-2">
-					<h2 className="text-lg font-semibold">Run the tests</h2>
-					<p className="text-sm text-content-secondary">
-						<code>pnpm validate</code> runs the API and browser tests. Add <code>--cloud</code> to
-						test disposable cloud resources.
-					</p>
-				</div>
-				<Button asChild variant="outline">
-					<a href={`${repository}/blob/main/docs/getting-started.md`}>Setup &amp; deployment ↗</a>
-				</Button>
-			</section>
+							Use the template{' '}
+							<Icon>
+								<ArrowUpRight />
+							</Icon>
+						</Button>
+						<Button
+							variant="ghost"
+							{...{ nativeButton: false }}
+							render={<Link aria-label="Explore the examples" role="link" to="/" hash="examples" />}
+						>
+							Explore the examples{' '}
+							<Icon>
+								<ArrowDown />
+							</Icon>
+						</Button>
+					</Stack>
+				</Stack>
+			</Section>
+			<Section id="setup" aria-labelledby="setup-title" spacing="sm">
+				<Stack gap={5}>
+					<Typography as="h2" variant="heading-400" id="setup-title">
+						Setup
+					</Typography>
+					<QuickStart />
+				</Stack>
+			</Section>
+			<Section aria-labelledby="included-title" className="border-t">
+				<Stack gap={8} align="start">
+					<Typography as="h2" variant="heading-400" id="included-title">
+						Included
+					</Typography>
+					<Stack gap={0} className="w-full divide-y">
+						{features.map(([title, description]) => (
+							<article key={title} className="py-4 first:pt-0 last:pb-0">
+								<Grid columns={1} gap={2} className="sm:grid-cols-[11rem_1fr]">
+									<Typography as="h3" variant="heading-100">
+										{title}
+									</Typography>
+									<Typography variant="body-100" className="text-content-secondary">
+										{description}
+									</Typography>
+								</Grid>
+							</article>
+						))}
+					</Stack>
+					<Button
+						variant="ghost"
+						{...{ nativeButton: false }}
+						render={
+							<a
+								role="link"
+								aria-label="Read the docs"
+								href={`${repository}/blob/main/docs/reference.md`}
+							/>
+						}
+					>
+						Read the docs{' '}
+						<Icon>
+							<ArrowUpRight />
+						</Icon>
+					</Button>
+				</Stack>
+			</Section>
+			<Section id="examples" aria-labelledby="examples-title" className="border-t">
+				<Stack gap={8}>
+					<Typography as="h2" variant="heading-400" id="examples-title">
+						Examples
+					</Typography>
+					<Grid columns={1} gap={10} align="start" className="sm:grid-cols-2">
+						<nav aria-label="Examples">
+							<Stack gap={2} align="start">
+								{[
+									['Sign in', `${site.dashboard}/login`],
+									['Dashboard', site.dashboard],
+									['Test checkout', `${site.dashboard}/checkout`],
+								].map(([label, href]) => (
+									<Button
+										key={label}
+										variant="ghost"
+										{...{ nativeButton: false }}
+										render={<a role="link" aria-label={label} href={href} />}
+									>
+										{label}{' '}
+										<Icon>
+											<ArrowUpRight />
+										</Icon>
+									</Button>
+								))}
+								{exampleRoutes.map(([label, to]) => (
+									<Button
+										key={to}
+										variant="ghost"
+										{...{ nativeButton: false }}
+										render={<Link aria-label={label} role="link" to={to} />}
+									>
+										{label}{' '}
+										<Icon>
+											<ArrowUpRight />
+										</Icon>
+									</Button>
+								))}
+								{/* An HTTP navigation deliberately demonstrates an unknown route. */}
+								<Button
+									variant="ghost"
+									{...{ nativeButton: false }}
+									render={<a role="link" aria-label="404 page" href="/not-a-page" />}
+								>
+									404 page{' '}
+									<Icon>
+										<ArrowUpRight />
+									</Icon>
+								</Button>
+							</Stack>
+						</nav>
+						<WaitlistForm />
+					</Grid>
+				</Stack>
+			</Section>
 			<script
 				type="application/ld+json"
 				dangerouslySetInnerHTML={{

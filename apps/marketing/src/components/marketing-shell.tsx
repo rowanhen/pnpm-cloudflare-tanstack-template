@@ -1,50 +1,77 @@
+import { Button, Container, Stack } from '@workspace/shared'
+import { Link } from '@tanstack/react-router'
+
 import type { ReactNode } from 'react'
-import { Button, Separator } from '@workspace/shared'
+
 import { repository, site } from '../lib/seo'
 
 export function MarketingShell({ children }: { children: ReactNode }) {
 	return (
 		<div className="min-h-svh">
-			<header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-6 sm:px-8">
-				<a href="/" className="text-lg font-semibold tracking-tight">
-					{site.name}
-					<span className="text-brand">.</span>
-				</a>
-				<nav aria-label="Main navigation" className="flex items-center gap-4">
-					<a
-						href="/#setup"
-						className="hidden text-sm text-content-secondary hover:text-default sm:block"
+			<Container maxWidth="md">
+				<header className="flex items-center justify-between gap-4 border-b py-6">
+					<Button
+						variant="ghost"
+						{...{ nativeButton: false }}
+						render={<Link aria-label={site.name} role="link" to="/" />}
 					>
-						Setup
-					</a>
-					<a
-						href={repository}
-						className="hidden text-sm text-content-secondary hover:text-default sm:block"
-					>
-						GitHub ↗
-					</a>
-					<Button asChild variant="outline" size="sm">
-						<a href={site.dashboard}>Sign in ↗</a>
+						{site.name}
 					</Button>
-				</nav>
-			</header>
-			<main className="mx-auto max-w-6xl px-5 sm:px-8">{children}</main>
-			<footer className="mx-auto max-w-6xl space-y-6 px-5 pb-8 pt-16 sm:px-8">
-				<Separator />
-				<div className="flex flex-wrap justify-between gap-4 text-sm text-content-secondary">
-					<a href="https://leitware.com" className="hover:text-default">
-						Built by Leitware ↗
-					</a>
-					<nav aria-label="Footer navigation" className="flex gap-5">
-						<a className="hover:text-default" href="/privacy">
-							Privacy
-						</a>
-						<a className="hover:text-default" href={site.dashboard}>
-							Sign in
-						</a>
+					<nav aria-label="Main navigation" className="flex items-center gap-4">
+						<Button
+							variant="ghost"
+							{...{ nativeButton: false }}
+							render={<Link aria-label="Setup" role="link" to="/" hash="setup" />}
+							className="hidden sm:inline-flex"
+						>
+							Setup
+						</Button>
+						<Button
+							variant="ghost"
+							{...{ nativeButton: false }}
+							render={<a role="link" aria-label="GitHub" href={repository} />}
+							className="hidden sm:inline-flex"
+						>
+							GitHub ↗
+						</Button>
+						<Button
+							variant="ghost"
+							{...{ nativeButton: false }}
+							render={<a role="link" aria-label="Sign in" href={site.dashboard} />}
+						>
+							Sign in ↗
+						</Button>
 					</nav>
-				</div>
-			</footer>
+				</header>
+				<main>{children}</main>
+				<footer className="border-t py-8">
+					<Stack gap={4} direction="horizontal" justify="between" wrap>
+						<Button
+							variant="ghost"
+							{...{ nativeButton: false }}
+							render={<a role="link" aria-label="Built by Leitware" href="https://leitware.com" />}
+						>
+							Built by Leitware ↗
+						</Button>
+						<nav aria-label="Footer navigation" className="flex gap-5">
+							<Button
+								variant="ghost"
+								{...{ nativeButton: false }}
+								render={<Link aria-label="Privacy" role="link" to="/privacy" />}
+							>
+								Privacy
+							</Button>
+							<Button
+								variant="ghost"
+								{...{ nativeButton: false }}
+								render={<a role="link" aria-label="Sign in" href={site.dashboard} />}
+							>
+								Sign in
+							</Button>
+						</nav>
+					</Stack>
+				</footer>
+			</Container>
 		</div>
 	)
 }

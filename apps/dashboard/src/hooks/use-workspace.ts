@@ -1,3 +1,4 @@
+import { useRouter } from '@tanstack/react-router'
 import { resetUser } from '@workspace/observability/browser'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useHydrated } from '@workspace/shared'
@@ -50,6 +51,7 @@ export function useWorkspace(userId: string) {
 	}
 }
 export function useSignOut() {
+	const router = useRouter()
 	const client = useQueryClient()
 	return useMutation({
 		mutationFn: async () => {
@@ -60,7 +62,8 @@ export function useSignOut() {
 			})
 			resetUser()
 			client.clear()
-			window.location.assign('/login')
+			await router.invalidate()
+			await router.navigate({ to: '/login', search: {} })
 		},
 	})
 }

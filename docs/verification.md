@@ -69,7 +69,7 @@ The one-credit price is application billing. Cloudflare separately bills your in
 Connect the selected project using the [PostHog guide](observability.md). Record its region, project ID and environment so you do not inspect another project's traffic.
 
 1. Deploy after configuring the public collection token and ingestion host. In a fresh browser session, decline analytics; there must be no browser PostHog requests. Server API operational events are independent of browser consent and contain no user content.
-2. Choose **Analytics preferences**, allow analytics, then visit the landing and privacy pages. Follow **Use the template** and return. Check `$pageview` and `template.opened` in the selected project's live events.
+2. Choose **Privacy preferences**, choose **Accept all**, then visit the landing and privacy pages. Follow **Use the template** and return. Check `$pageview` and `template.opened` in the selected project's live events.
 3. Submit the waitlist with an address you control. Check `waitlist.joined` contains no submitted name/email. Inspect its session replay: input values, page text and attributes must be masked; payment frames and media must be blocked.
 4. On the dashboard origin, opt in separately. Sign in, navigate, then sign out. Verify the opaque signed-in ID resets. Marketing and dashboard sessions are intentionally separate.
 5. Trigger a harmless unauthorized request to `/api/v1/todos` without a key. Find `api.request` with route `/api/v1/todos`, status 401 and its response's `X-Request-Id`. Use the same ID when investigating browser/API failures.
@@ -88,3 +88,5 @@ Connect the sender using the [email guide](data-and-email.md). Sign in with your
 Save command results and the provider/project/environment used, together with what actually passed. Do not put keys, cookies, authorization codes or real user data in logs or screenshots. Delete manual test todos/files and revoke temporary keys.
 
 Local test runners remove their temporary D1/R2 storage and stop fixture servers. Remote resource cleanup is manual through Wrangler and provider tools; record the resources created before deleting them. Preserve existing deployment configuration and secrets, including earlier ignored `.wrangler/sandboxes/<name>/` files. Keep the maintained `showcase` deployment. Stripe retains payment history; PostHog projects and email domains have their own lifecycle.
+
+For the consent example, also verify **Manage → Analytics only** sends events without recordings, **Session replay only** sends masked recordings without page events or identification, and **Reject all** stops both. With Global Privacy Control enabled, both must remain disabled even after an earlier acceptance. Revoke in a second same-origin tab and confirm the first tab stops. Use the consent launch guidance in [privacy and consent](privacy-consent.md); local tests do not demonstrate provider-side erasure or a retained consent audit trail.

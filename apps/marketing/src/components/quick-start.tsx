@@ -1,4 +1,5 @@
-import { ClipboardText, LayerCard, useHydrated } from '@workspace/shared'
+import { ClipboardText, useHydrated, Typography } from '@workspace/shared'
+
 import { repository } from '../lib/seo'
 
 const commands = [
@@ -9,21 +10,13 @@ const commands = [
 export function QuickStart() {
 	const hydrated = useHydrated()
 	return (
-		<LayerCard
-			title={<span className="font-mono text-xs">~/my-idea</span>}
-			footer={
-				<span className="text-xs text-content-secondary">
-					Node 26.12.0 · pnpm 10.34.7 · No cloud account needed locally
-				</span>
-			}
-		>
-			<ol className="space-y-6 py-2">
-				{commands.map((command, index) => (
+		<div className="overflow-hidden rounded-lg border bg-surface-default">
+			<ol className="space-y-5 p-5 sm:p-6">
+				{commands.map((command) => (
 					<li key={command.label} className="min-w-0 space-y-2">
-						<p className="text-xs text-content-secondary">
-							<span className="mr-2 font-mono">0{index + 1}</span>
+						<Typography as="p" variant="caption-100" className="text-content-secondary">
 							{command.label}
-						</p>
+						</Typography>
 						<ClipboardText
 							disabled={!hydrated}
 							text={command.value}
@@ -33,6 +26,6 @@ export function QuickStart() {
 					</li>
 				))}
 			</ol>
-		</LayerCard>
+		</div>
 	)
 }

@@ -1,8 +1,13 @@
+@layer theme, base, components, utilities;
+
 @import '@fontsource-variable/inter';
-@import 'tailwindcss';
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css' layer(base);
 @import '@leitware/composables/tailwind.css';
 @import '@leitware/composables/styles.css';
 @import '@leitware/composables/presets/kumo.css';
+/* App utilities follow the package's compiled utilities, so responsive layout wins. */
+@import 'tailwindcss/utilities.css' layer(utilities);
 @source '../../../apps/dashboard/src';
 @source '../../../apps/marketing/src';
 @source './';

@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
+
 import { Button, PageState } from '@workspace/shared'
 import { site } from '../lib/seo'
 
@@ -12,11 +13,18 @@ export const Route = createFileRoute('/waitlist/success')({
 	component: () => (
 		<div>
 			<PageState kind="success" title="You're on the list.">
-				<Button asChild>
-					<a href={site.dashboard}>Open workspace</a>
+				<Button
+					{...{ nativeButton: false }}
+					render={<a role="link" aria-label="Open workspace" href={site.dashboard} />}
+				>
+					Open workspace
 				</Button>
-				<Button variant="outline" asChild>
-					<a href="/">Back to home</a>
+				<Button
+					variant="outline"
+					{...{ nativeButton: false }}
+					render={<Link aria-label="Back to home" role="link" to="/" />}
+				>
+					Back to home
 				</Button>
 			</PageState>
 		</div>
