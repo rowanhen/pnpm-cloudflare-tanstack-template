@@ -7,7 +7,7 @@ export const Route = createFileRoute('/checkout/complete')({
 	validateSearch: (search: Record<string, unknown>) => ({
 		session_id: checkoutSessionId(search.session_id),
 	}),
-	head: () => ({ meta: [{ title: appTitle('Test payment') }] }),
+	head: () => ({ meta: [{ title: appTitle('Payment') }] }),
 	component: Complete,
 })
 function Complete() {
@@ -26,20 +26,21 @@ function Complete() {
 			query.state.data?.status === 'pending' && query.state.dataUpdateCount < 12 ? 2500 : false,
 	})
 	const complete = status.data?.status === 'paid'
-	const title =
-		!session_id || status.isError
-			? "We couldn't find that checkout."
+	const title = !session_id
+		? 'Checkout not found.'
+		: status.isError
+			? "Couldn't confirm your payment."
 			: status.isPending
 				? 'Checking your payment…'
 				: complete
 					? status.data.mode === 'subscription'
-						? 'Test subscription started.'
-						: 'Test payment successful.'
+						? 'Subscription started.'
+						: 'Payment successful.'
 					: status.data.status === 'expired'
 						? 'This checkout has expired.'
 						: status.data.status === 'open'
 							? 'Checkout is incomplete.'
-							: 'Your test payment is processing.'
+							: 'Your payment is processing.'
 	return (
 		<PageState
 			kind={
@@ -50,7 +51,6 @@ function Complete() {
 						: 'loading'
 			}
 			title={title}
-			description={complete ? 'No real charge was made.' : undefined}
 		>
 			{!complete && !!session_id && (
 				<Button onClick={() => void status.refetch()} disabled={status.isFetching}>
@@ -60,14 +60,7 @@ function Complete() {
 			<Button
 				variant={complete ? 'default' : 'outline'}
 				{...{ nativeButton: false }}
-				render={
-					<Link
-						role="link"
-						aria-label="Back to products"
-						to="/checkout"
-						search={{ cancelled: undefined }}
-					/>
-				}
+				render={<Link role="link" aria-label="Back to products" to="/checkout" />}
 			>
 				Back to products
 			</Button>

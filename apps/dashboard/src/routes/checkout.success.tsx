@@ -1,6 +1,6 @@
 import { Link, createFileRoute, redirect } from '@tanstack/react-router'
 
-import { Button, PageState, appTitle, Typography } from '@workspace/shared'
+import { Button, PageState, appTitle } from '@workspace/shared'
 
 import { checkoutSessionId, signInPath } from '../lib/login'
 import { getSession } from '../lib/session'
@@ -39,15 +39,8 @@ function CheckoutSuccess() {
 			<PageState
 				kind="success"
 				title="Payment successful."
-				description={`${order.credits.toLocaleString('en-GB')} credits added · ${money(order.amount, order.currency)} test payment.`}
+				description={`${order.credits.toLocaleString('en-GB')} credits added · ${money(order.amount, order.currency)}.`}
 			>
-				<Typography
-					as="p"
-					variant="caption-100"
-					className="w-full break-all font-mono text-content-secondary"
-				>
-					Order {order.id}
-				</Typography>
 				<Button
 					{...{ nativeButton: false }}
 					render={<Link aria-label="Back to workspace" role="link" to="/" />}

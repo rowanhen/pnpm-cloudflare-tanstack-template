@@ -8,6 +8,7 @@ import { rateLimit } from '../../rate-limit'
 export function storefrontEnabled(env: Env) {
 	return Boolean(
 		env.STRIPE_SECRET_KEY?.match(/^(sk|rk)_test_/) &&
+		env.STRIPE_PUBLISHABLE_KEY?.startsWith('pk_test_') &&
 		env.STRIPE_DEMO_PRICE_ID &&
 		env.STRIPE_SUBSCRIPTION_PRICE_ID,
 	)

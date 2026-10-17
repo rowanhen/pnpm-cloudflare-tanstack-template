@@ -69,9 +69,6 @@ function CheckoutPage() {
 							<Typography as="p" variant="body-200">
 								{config.data.offer.credits.toLocaleString('en-GB')} credits
 							</Typography>
-							<Typography as="p" variant="caption-100" className="text-content-secondary">
-								Test payment. No real charge.
-							</Typography>
 						</Stack>
 					</PageSection>
 					<PageSection title="Payment details">

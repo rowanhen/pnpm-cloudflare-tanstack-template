@@ -35,7 +35,8 @@ export const getCreateStorefrontCheckoutResponseMock = (
 	overrideResponse: Partial<Extract<StorefrontCheckout, object>> = {},
 ): StorefrontCheckout => ({
 	sessionId: faker.string.alpha({ length: { min: 10, max: 20 } }),
-	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	clientSecret: faker.string.alpha({ length: { min: 1, max: 20 } }),
+	publishableKey: faker.helpers.fromRegExp('^pk_test_'),
 	...overrideResponse,
 })
 

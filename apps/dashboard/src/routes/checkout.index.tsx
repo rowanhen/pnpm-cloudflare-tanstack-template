@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
 	Alert,
 	AppShell,
@@ -10,33 +10,64 @@ import {
 	appTitle,
 	useHydrated,
 } from '@workspace/shared'
-import { useRef } from 'react'
+import { useRef, lazy, Suspense } from 'react'
 import { useGetStorefront, useCreateStorefrontCheckout } from '../generated/storefront'
 import { money } from '../hooks/use-checkout'
+const PaymentForm = lazy(() => import('../components/payment-form'))
 export const Route = createFileRoute('/checkout/')({
-	validateSearch: (search: Record<string, unknown>) => ({
-		cancelled: search.cancelled === true || search.cancelled === 'true' ? true : undefined,
-	}),
-	head: () => ({ meta: [{ title: appTitle('Test checkout') }] }),
+	head: () => ({ meta: [{ title: appTitle('Checkout') }] }),
 	component: Storefront,
 })
 function Storefront() {
 	const hydrated = useHydrated()
-	const { cancelled } = Route.useSearch()
+	const navigate = useNavigate()
 	const catalogue = useGetStorefront({ query: { enabled: hydrated, retry: false } })
 	const attempts = useRef(new Map<string, { requestId: string; token: string }>())
 	const checkout = useCreateStorefrontCheckout({
 		mutation: {
 			onSuccess: ({ data }, variables) => {
 				sessionStorage.setItem(`storefront:${data.sessionId}`, variables.data.token)
-				window.location.assign(data.url)
 			},
 		},
 	})
+	const selected = catalogue.data?.data.products.find(
+		(item) => item.id === checkout.variables?.data.product,
+	)
 	return (
-		<AppShell title="Test checkout" description="No sign-in. No real charges.">
-			{cancelled && <Alert>Checkout cancelled.</Alert>}
-			{catalogue.isPending ? (
+		<AppShell title="Checkout">
+			{checkout.data && selected ? (
+				<Stack gap={8}>
+					<PageSection title={selected.name}>
+						<Typography variant="heading-400">
+							{money(selected.amount, selected.currency)}
+							{selected.interval ? ` / ${selected.interval}` : ''}
+						</Typography>
+					</PageSection>
+					<PageSection title="Payment details">
+						<Suspense fallback={<Skeleton className="h-80" aria-label="Loading payment form" />}>
+							<PaymentForm
+								key={checkout.data.data.sessionId}
+								publishableKey={checkout.data.data.publishableKey}
+								clientSecret={checkout.data.data.clientSecret}
+								sessionId={checkout.data.data.sessionId}
+								collectEmail
+								submitLabel={
+									selected.id === 'subscription'
+										? 'Subscribe'
+										: `Pay ${money(selected.amount, selected.currency)}`
+								}
+								onBack={() => checkout.reset()}
+								onComplete={() =>
+									navigate({
+										to: '/checkout/complete',
+										search: { session_id: checkout.data.data.sessionId },
+									})
+								}
+							/>
+						</Suspense>
+					</PageSection>
+				</Stack>
+			) : catalogue.isPending ? (
 				<Skeleton className="h-64" aria-label="Loading products" />
 			) : catalogue.isError ? (
 				<PageSection title="Checkout is unavailable.">
@@ -79,9 +110,6 @@ function Storefront() {
 							</Stack>
 						</PageSection>
 					))}
-					<Typography as="p" variant="caption-100" className="text-content-secondary">
-						Test card: 4242 4242 4242 4242 · Any future expiry and CVC.
-					</Typography>
 				</Stack>
 			)}
 			{checkout.isError && <Alert type="negative">Couldn't open checkout. Please try again.</Alert>}

@@ -193,7 +193,10 @@ export interface CreateStorefrontCheckout {
 
 export interface StorefrontCheckout {
 	sessionId: string
-	url: string
+	/** @minLength 1 */
+	clientSecret: string
+	/** @pattern ^pk_test_ */
+	publishableKey: string
 }
 
 export interface CheckStorefrontCheckout {
