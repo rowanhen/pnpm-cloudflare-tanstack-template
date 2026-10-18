@@ -1,5 +1,6 @@
-import { database } from '@workspace/data/client'
-import { orders, creditAccounts, creditGrants, stripeEvents, now } from '@workspace/data/schema'
+import { now } from '@workspace/data/columns'
+import { billingDatabase } from '@workspace/data/client'
+import { orders, creditAccounts, creditGrants, stripeEvents } from '@workspace/data/billing'
 import { and, eq, sql } from 'drizzle-orm'
 import Stripe from 'stripe'
 import type { Env } from './env'
@@ -57,7 +58,7 @@ async function offer(env: Env, stripe: Stripe) {
 }
 
 async function reconcile(env: Env, session: Stripe.Checkout.Session, eventId?: string) {
-	const db = database(env.DB)
+	const db = billingDatabase(env.BILLING_DB)
 	const order = await db
 		.select()
 		.from(orders)
@@ -156,7 +157,7 @@ export async function stripeWebhook(request: Request, env: Env) {
 		].includes(event.type)
 	) {
 		if (
-			await database(env.DB)
+			await billingDatabase(env.BILLING_DB)
 				.select({ id: stripeEvents.id })
 				.from(stripeEvents)
 				.where(eq(stripeEvents.id, event.id))
@@ -178,7 +179,7 @@ export async function checkoutRoute(
 	user: { id: string; email: string },
 ) {
 	const url = new URL(request.url)
-	const db = database(env.DB)
+	const db = billingDatabase(env.BILLING_DB)
 	const stripe = stripeClient(env)
 	if (url.pathname === '/api/checkout/config') {
 		if (request.method !== 'GET') return methodNotAllowed('GET')
@@ -190,7 +191,7 @@ export async function checkoutRoute(
 	if (url.pathname === '/api/checkout/sessions') {
 		if (request.method !== 'POST') return methodNotAllowed('POST')
 		const body = await input(request, 'createCheckout')
-		await rateLimit(env.DB, `checkout:${user.id}`, 10, 60)
+		await rateLimit(env.IDENTITY_DB, `checkout:${user.id}`, 10, 60)
 		const product = await offer(env, stripe)
 		await db
 			.insert(orders)
@@ -246,7 +247,7 @@ export async function checkoutRoute(
 			.where(and(eq(orders.stripe_session_id, match[1]), eq(orders.user_id, user.id)))
 			.get()
 		if (!order) throw new HttpError(404, 'Checkout not found')
-		await rateLimit(env.DB, `checkout-status:${user.id}`, 60, 60)
+		await rateLimit(env.IDENTITY_DB, `checkout-status:${user.id}`, 60, 60)
 		const session = await stripe.checkout.sessions.retrieve(match[1])
 		await reconcile(env, session)
 		const saved = await db

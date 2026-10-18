@@ -1,17 +1,17 @@
 # Data, API contracts and email
 
-## One schema across the stack
+## Domain schemas across the stack
 
-`packages/data/src/schema.ts` owns the SQLite schema. `database(env.DB)` creates a Drizzle D1 client; Better Auth uses its Drizzle adapter too. The adapter maps the original ISO-string `date` columns to JavaScript `Date`, preserving existing sessions and users.
+The [three domain schemas](databases.md) own identity, billing and product storage. `productDatabase(env.PRODUCT_DB)` creates a product Drizzle client; Better Auth uses `identityDatabase(env.IDENTITY_DB)` with its Drizzle adapter. The adapter maps the original ISO-string `date` columns to JavaScript `Date`, preserving existing sessions and users.
 
 Use Drizzle's `$inferSelect` and `$inferInsert` exports for database code. Todo REST types now come from OpenAPI, with typed Drizzle projections checked against the generated responses. Other public REST types in `@workspace/contracts` still derive from rows with `Pick`/`Omit`. The API explicitly selects public columns; hashes, OAuth tokens, internal email addresses and owner IDs do not appear in those read models. R2 and Stripe have separate transport types because they are not database rows.
 
 ```ts
-import { database } from '@workspace/data/client'
-import { todos, type NewTodo } from '@workspace/data/schema'
+import { productDatabase } from '@workspace/data/client'
+import { todos, type NewTodo } from '@workspace/data/product'
 import { eq } from 'drizzle-orm'
 
-const db = database(env.DB)
+const db = productDatabase(env.PRODUCT_DB)
 const values = {
 	id: crypto.randomUUID(),
 	user_id: user.id,
@@ -30,16 +30,16 @@ Credit charging and Stripe grants still use atomic Drizzle D1 batches. Guarded i
 ## Migrations
 
 ```bash
-# Edit packages/data/src/schema.ts first.
-pnpm db:generate --name add_my_feature
+# Edit packages/data/src/product.ts first.
+pnpm db:generate --domain product --name add_my_feature
 # Review generated SQL, then apply it locally.
 pnpm db:migrate
 pnpm db:check
 ```
 
-Commit SQL and `apps/api/migrations/meta` together. Wrangler applies migrations through `pnpm db:migrate` locally and `pnpm db:migrate:remote` during deployment; never use `drizzle-kit push` against an existing deployment. `db:check` checks the journal and generates into a disposable directory to detect schema changes without migrations. It does not modify your database.
+Commit SQL and the selected domain’s `apps/api/migrations/<domain>/meta` together. Wrangler applies migrations through `pnpm db:migrate` locally and `pnpm db:migrate:remote` during deployment; never use `drizzle-kit push` against an existing deployment. `db:check` checks the journal and generates into a disposable directory to detect schema changes without migrations. It does not modify your database.
 
-Migrations 0001–0005 are preserved. The timestamped `drizzle_baseline` is an intentional no-op with a snapshot of their schema; later migrations are generated normally. Fresh databases apply the legacy migrations first, and existing databases retain their data. The upgrade test seeds users, sessions, waitlist entries, todos and balances before applying the new migrations. Review table rebuilds carefully when changing SQLite columns, particularly foreign keys and constraints.
+The original single-database migrations are preserved under `apps/api/legacy-migrations/`. New projects use independent domain baselines. Existing deployments must follow the [verified copy and cutover procedure](databases.md#upgrading-the-original-single-database); do not point a fresh binding at an old mixed schema.
 
 ## Cloudflare email
 

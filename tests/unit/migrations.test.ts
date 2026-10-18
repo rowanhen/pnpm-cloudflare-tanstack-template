@@ -8,11 +8,12 @@ test('Drizzle adoption preserves existing auth sessions, private data and balanc
 	const db = new DatabaseSync(':memory:')
 	try {
 		db.exec('PRAGMA foreign_keys=ON')
-		const directory = new URL('../../apps/api/migrations/', import.meta.url)
+		const directory = new URL('../../apps/api/legacy-migrations/', import.meta.url)
 		const files = (await readdir(directory)).filter((name) => name.endsWith('.sql')).sort()
 		for (const file of files.filter((name) => name.startsWith('000')))
 			db.exec(await readFile(new URL(file, directory), 'utf8'))
-		db.exec(fixtures('migration-test-secret').sql)
+		const fixture = fixtures('migration-test-secret')
+		db.exec(fixture.sql + fixture.billingSql)
 		db.exec(
 			"INSERT INTO todos(id,title,user_id) VALUES ('preserved','Existing idea','e2e-alice'); INSERT INTO waitlist(id,email,consent) VALUES ('signup','Alice@example.test',1)",
 		)

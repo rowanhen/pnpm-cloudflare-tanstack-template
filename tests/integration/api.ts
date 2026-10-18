@@ -22,6 +22,13 @@ export async function testApi(
 	proxySecret: string,
 	authOrigin = 'http://localhost:3001',
 ) {
+	for (const path of ['/api/todos', '/api/storefront', '/api/stripe/webhook']) {
+		const paused = await fetch(`${base}${path}`, { headers: { 'x-test-maintenance': 'true' } })
+		assert.equal(paused.status, 503)
+		assert.equal(paused.headers.get('Retry-After'), '60')
+	}
+	const health = await fetch(`${base}/api/health`, { headers: { 'x-test-maintenance': 'true' } })
+	assert.deepEqual(await health.json(), { ok: true, maintenance: true })
 	const request = (path: string, init: TestRequestInit = {}, user = 0) =>
 		fetch(`${base}${path}`, {
 			...init,

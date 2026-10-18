@@ -81,7 +81,7 @@ Resource creation and deletion use provider tools. Keep the names and configurat
 
 - Page copy and routes: `apps/marketing/src/routes/` and `apps/dashboard/src/routes/`.
 - Marketing name/URLs: `apps/marketing/.env.local` (see `.env.example`). Dashboard display name: `packages/shared/src/project.ts`.
-- Database tables: `packages/data/src/schema.ts`; run `pnpm db:generate --name my_change`, review SQL, then `pnpm db:migrate` locally.
+- Database tables: `packages/data/src/{identity,billing,product}.ts`; run `pnpm db:generate --domain product --name my_change`, review SQL, then `pnpm db:migrate` locally.
 - REST inputs and responses: `packages/contracts/openapi/`; register new paths in `api.json`, then run `pnpm api:generate`. Keep private database rows out of public responses.
 - UI components: import from `@workspace/shared`. Use Kumo's semantic styles and the shared page shells.
 - Telemetry: `packages/observability/src/`. Keep user content and secrets out of events.

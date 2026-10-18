@@ -9,8 +9,8 @@
 		"dev:api": "pnpm setup:local && pnpm db:migrate && pnpm --filter api dev",
 		"dev:marketing": "pnpm --filter marketing dev",
 		"dev:dashboard": "pnpm --filter dashboard dev",
-		"db:migrate": "pnpm --filter api db:migrate",
-		"db:migrate:remote": "pnpm --filter api db:migrate:remote",
+		"db:migrate": "tsx scripts/database.ts migrate --local",
+		"db:migrate:remote": "tsx scripts/database.ts migrate --remote",
 		"build": "pnpm -r run build",
 		"build:marketing": "pnpm --filter marketing build",
 		"build:dashboard": "pnpm --filter dashboard build",
@@ -28,11 +28,12 @@
 		"prepare": "git config core.hooksPath .githooks",
 		"setup:local": "tsx scripts/setup-local.ts",
 		"validate": "pnpm check",
-		"db:generate": "pnpm --filter @workspace/data db:generate",
-		"db:check": "pnpm --filter @workspace/data db:check && tsx scripts/check-schema.ts",
+		"db:generate": "tsx scripts/database.ts generate",
+		"db:check": "tsx scripts/database.ts check && tsx scripts/check-schema.ts",
 		"typecheck:tools": "tsc -p tsconfig.tools.json && tsc -p tests/support/workers/tsconfig.json",
 		"api:generate": "orval --config orval.config.ts",
-		"test:unit": "node --import tsx --experimental-sqlite --test tests/unit/*.test.ts"
+		"test:unit": "node --import tsx --experimental-sqlite --test tests/unit/*.test.ts",
+		"db:split": "tsx scripts/split-database.ts"
 	},
 	"devDependencies": {
 		"@dotenvx/dotenvx": "^2.38.0",

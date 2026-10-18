@@ -15,7 +15,7 @@ import {
 } from '../../packages/contracts/src/http.ts'
 import { getTodo as getTodoHandler } from '../../apps/api/src/features/todos/get-todo.ts'
 import { ApiRequest } from '../../apps/api/src/contract/context.ts'
-import { database } from '../../packages/data/src/client.ts'
+import { productDatabase } from '../../packages/data/src/client.ts'
 import {
 	ApiError,
 	ContractViolation,
@@ -55,14 +55,14 @@ test('enforces generated inputs, strict fields, and nonempty updates', () => {
 })
 
 test('a missing database row produces a typed Effect failure, not a rejected promise', async () => {
-	const db = database({
+	const db = productDatabase({
 		prepare: () => ({
 			bind() {
 				return this
 			},
 			raw: async () => [],
 		}),
-	} as unknown as Parameters<typeof database>[0])
+	} as unknown as Parameters<typeof productDatabase>[0])
 	const response = await Effect.runPromise(
 		getTodoHandler({ params: { id: 'missing' } }).pipe(
 			Effect.provideService(ApiRequest, { db, userId: 'owner' }),

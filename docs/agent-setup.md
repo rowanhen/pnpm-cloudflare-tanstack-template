@@ -28,4 +28,4 @@ The owner may need to complete login, MFA, consent, billing or domain verificati
 
 Local tests create no remote resources. Review resource names before manual deletion; the maintained `showcase` deployment at https://devtemplate.leitware.com should remain. Earlier deployments may retain configuration and secrets under ignored `.wrangler/sandboxes/<name>/`. Preserve those files and use their existing Wrangler config explicitly when maintaining them; this cleanup does not migrate or delete deployments.
 
-For schema changes, edit `packages/data/src/schema.ts`, generate and review SQL, then migrate. For API changes, edit OpenAPI, reference new paths in `api.json`, regenerate, implement typed handlers and run the checks. Never edit generated files.
+For schema changes, edit `packages/data/src/{identity,billing,product}.ts`, generate and review SQL, then migrate. For API changes, edit OpenAPI, reference new paths in `api.json`, regenerate, implement typed handlers and run the checks. Never edit generated files.

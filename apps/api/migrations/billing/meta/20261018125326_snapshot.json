@@ -1,0 +1,370 @@
+{
+	"version": "6",
+	"dialect": "sqlite",
+	"id": "4db23573-43f1-40fe-84a9-dcbe3258b4c0",
+	"prevId": "00000000-0000-0000-0000-000000000000",
+	"tables": {
+		"credit_accounts": {
+			"name": "credit_accounts",
+			"columns": {
+				"user_id": {
+					"name": "user_id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"balance": {
+					"name": "balance",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": 0
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {
+				"credit_accounts_balance": {
+					"name": "credit_accounts_balance",
+					"value": "\"credit_accounts\".\"balance\" BETWEEN 0 AND 9007199254740991"
+				}
+			}
+		},
+		"credit_grants": {
+			"name": "credit_grants",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"order_id": {
+					"name": "order_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"credits": {
+					"name": "credits",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+				}
+			},
+			"indexes": {
+				"credit_grants_order_id_unique": {
+					"name": "credit_grants_order_id_unique",
+					"columns": ["order_id"],
+					"isUnique": true
+				},
+				"credit_grants_user": {
+					"name": "credit_grants_user",
+					"columns": ["user_id", "\"created_at\" desc"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {
+				"credit_grants_order_id_orders_id_fk": {
+					"name": "credit_grants_order_id_orders_id_fk",
+					"tableFrom": "credit_grants",
+					"tableTo": "orders",
+					"columnsFrom": ["order_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {
+				"credit_grants_credits": {
+					"name": "credit_grants_credits",
+					"value": "\"credit_grants\".\"credits\" > 0"
+				}
+			}
+		},
+		"orders": {
+			"name": "orders",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"request_id": {
+					"name": "request_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"stripe_session_id": {
+					"name": "stripe_session_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"amount": {
+					"name": "amount",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"currency": {
+					"name": "currency",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"status": {
+					"name": "status",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "'pending'"
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+				},
+				"credits": {
+					"name": "credits",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": 0
+				},
+				"price_id": {
+					"name": "price_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"orders_stripe_session_id_unique": {
+					"name": "orders_stripe_session_id_unique",
+					"columns": ["stripe_session_id"],
+					"isUnique": true
+				},
+				"orders_user": {
+					"name": "orders_user",
+					"columns": ["user_id", "created_at"],
+					"isUnique": false
+				},
+				"orders_user_id_request_id_unique": {
+					"name": "orders_user_id_request_id_unique",
+					"columns": ["user_id", "request_id"],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {
+				"orders_status": {
+					"name": "orders_status",
+					"value": "\"orders\".\"status\" IN ('pending','paid','expired','failed')"
+				},
+				"orders_credits": {
+					"name": "orders_credits",
+					"value": "\"orders\".\"credits\" >= 0"
+				}
+			}
+		},
+		"paid_requests": {
+			"name": "paid_requests",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"key_id": {
+					"name": "key_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"idempotency_key": {
+					"name": "idempotency_key",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"operation": {
+					"name": "operation",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"input_hash": {
+					"name": "input_hash",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"credits": {
+					"name": "credits",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"response": {
+					"name": "response",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+				}
+			},
+			"indexes": {
+				"paid_requests_user": {
+					"name": "paid_requests_user",
+					"columns": ["user_id", "\"created_at\" desc"],
+					"isUnique": false
+				},
+				"paid_requests_user_id_idempotency_key_unique": {
+					"name": "paid_requests_user_id_idempotency_key_unique",
+					"columns": ["user_id", "idempotency_key"],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {
+				"paid_requests_credits": {
+					"name": "paid_requests_credits",
+					"value": "\"paid_requests\".\"credits\" > 0"
+				},
+				"paid_requests_response": {
+					"name": "paid_requests_response",
+					"value": "json_valid(\"paid_requests\".\"response\")"
+				}
+			}
+		},
+		"stripe_events": {
+			"name": "stripe_events",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		}
+	},
+	"views": {},
+	"enums": {},
+	"_meta": {
+		"schemas": {},
+		"tables": {},
+		"columns": {}
+	},
+	"internal": {
+		"indexes": {
+			"credit_grants_user": {
+				"columns": {
+					"\"created_at\" desc": {
+						"isExpression": true
+					}
+				}
+			},
+			"paid_requests_user": {
+				"columns": {
+					"\"created_at\" desc": {
+						"isExpression": true
+					}
+				}
+			}
+		}
+	}
+}

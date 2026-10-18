@@ -1,7 +1,7 @@
 import { Context, Effect, Exit, Schema } from 'effect'
 import type { Handler, Operation } from '@workspace/contracts/operation'
 import { contractError, contractResponse } from '@workspace/contracts/http'
-import { database } from '@workspace/data/client'
+import { productDatabase } from '@workspace/data/client'
 import type { Context as HonoContext, Handler as HonoHandler } from 'hono'
 import { createAuth } from '../auth'
 import type { Env } from '../env'
@@ -15,7 +15,10 @@ export const effectHandler = <O extends Operation>(operation: O, handler: Handle
 		if (!c.env.BETTER_AUTH_SECRET) throw new HttpError(503, 'Authentication is not configured')
 		const session = await createAuth(c.env).api.getSession({ headers: c.req.raw.headers })
 		if (!session) throw new HttpError(401, 'Sign in to continue')
-		return Context.make(ApiRequest, { db: database(c.env.DB), userId: session.user.id })
+		return Context.make(ApiRequest, {
+			db: productDatabase(c.env.PRODUCT_DB),
+			userId: session.user.id,
+		})
 	})
 
 export const publicEffectHandler = <O extends Operation>(

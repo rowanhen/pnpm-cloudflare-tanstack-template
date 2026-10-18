@@ -1,5 +1,5 @@
-import { database } from '@workspace/data/client'
-import { rateLimits } from '@workspace/data/schema'
+import { identityDatabase } from '@workspace/data/client'
+import { rateLimits } from '@workspace/data/identity'
 import { sql } from 'drizzle-orm'
 import { HttpError } from './http'
 
@@ -7,7 +7,7 @@ import { HttpError } from './http'
 export async function rateLimit(db: D1Database, key: string, limit: number, seconds = 60) {
 	const now = Math.floor(Date.now() / 1000)
 	const window = Math.floor(now / seconds) * seconds
-	const result = await database(db)
+	const result = await identityDatabase(db)
 		.insert(rateLimits)
 		.values({ key, window_start: window, count: 1 })
 		.onConflictDoUpdate({
