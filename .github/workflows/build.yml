@@ -115,7 +115,7 @@ jobs:
           printf '%s\n' "$WORKER_CONFIG" > apps/api/wrangler.ci.json
 
       - name: Apply migrations
-        run: pnpm exec wrangler d1 migrations apply DB --remote --config apps/api/wrangler.ci.json
+        run: pnpm db:migrate:remote --config wrangler.ci.json
 
       - name: Deploy API
         run: pnpm exec wrangler deploy apps/api/dist/index.js --no-bundle --config apps/api/wrangler.ci.json

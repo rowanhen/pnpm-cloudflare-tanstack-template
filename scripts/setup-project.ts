@@ -36,7 +36,8 @@ await writeFile(
 const workerPath = new URL('../apps/api/wrangler.json', import.meta.url)
 const worker = structuredClone(apiConfig)
 worker.name = `${projectName}-api`
-worker.d1_databases[0].database_name = `${projectName}-db`
+for (const database of worker.d1_databases)
+	database.database_name = `${projectName}-${database.binding.replace('_DB', '').toLowerCase()}`
 worker.r2_buckets[0].bucket_name = `${projectName}-files`
 await writeFile(workerPath, `${JSON.stringify(worker, null, '\t')}\n`)
 for (const [app, initialConfig] of [

@@ -1,0 +1,267 @@
+{
+	"version": "6",
+	"dialect": "sqlite",
+	"id": "0a72acd4-6460-49a6-b129-a7e7780b573f",
+	"prevId": "00000000-0000-0000-0000-000000000000",
+	"tables": {
+		"email_deliveries": {
+			"name": "email_deliveries",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"dedupe_key": {
+					"name": "dedupe_key",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"to_email": {
+					"name": "to_email",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"template": {
+					"name": "template",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"status": {
+					"name": "status",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "'sending'"
+				},
+				"message_id": {
+					"name": "message_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"error_code": {
+					"name": "error_code",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+				}
+			},
+			"indexes": {
+				"email_deliveries_dedupe_key_unique": {
+					"name": "email_deliveries_dedupe_key_unique",
+					"columns": ["dedupe_key"],
+					"isUnique": true
+				},
+				"email_deliveries_user": {
+					"name": "email_deliveries_user",
+					"columns": ["user_id", "created_at"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {
+				"email_deliveries_status": {
+					"name": "email_deliveries_status",
+					"value": "\"email_deliveries\".\"status\" IN ('sending','accepted','failed')"
+				},
+				"email_deliveries_template": {
+					"name": "email_deliveries_template",
+					"value": "\"email_deliveries\".\"template\" IN ('waitlist','test')"
+				}
+			}
+		},
+		"todos": {
+			"name": "todos",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"title": {
+					"name": "title",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"completed": {
+					"name": "completed",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"todos_created_at": {
+					"name": "todos_created_at",
+					"columns": ["\"created_at\" desc", "\"id\" desc"],
+					"isUnique": false
+				},
+				"todos_user_created": {
+					"name": "todos_user_created",
+					"columns": ["user_id", "\"created_at\" desc", "\"id\" desc"],
+					"isUnique": false
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {
+				"todos_title_length": {
+					"name": "todos_title_length",
+					"value": "length(\"todos\".\"title\") BETWEEN 1 AND 200"
+				},
+				"todos_completed": {
+					"name": "todos_completed",
+					"value": "\"todos\".\"completed\" IN (0,1)"
+				}
+			}
+		},
+		"waitlist": {
+			"name": "waitlist",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"email": {
+					"name": "email",
+					"type": "text collate nocase",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "''"
+				},
+				"consent": {
+					"name": "consent",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+				}
+			},
+			"indexes": {
+				"waitlist_email_unique": {
+					"name": "waitlist_email_unique",
+					"columns": ["email"],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {
+				"waitlist_consent": {
+					"name": "waitlist_consent",
+					"value": "\"waitlist\".\"consent\" = 1"
+				}
+			}
+		}
+	},
+	"views": {},
+	"enums": {},
+	"_meta": {
+		"schemas": {},
+		"tables": {},
+		"columns": {}
+	},
+	"internal": {
+		"indexes": {
+			"todos_created_at": {
+				"columns": {
+					"\"created_at\" desc": {
+						"isExpression": true
+					},
+					"\"id\" desc": {
+						"isExpression": true
+					}
+				}
+			},
+			"todos_user_created": {
+				"columns": {
+					"\"created_at\" desc": {
+						"isExpression": true
+					},
+					"\"id\" desc": {
+						"isExpression": true
+					}
+				}
+			}
+		}
+	}
+}

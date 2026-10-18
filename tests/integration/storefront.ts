@@ -70,7 +70,8 @@ export async function testStorefront(worker: LocalWorker) {
 	assert.equal((await status(checkout.sessionId)).status, 404)
 	await patch(checkout.sessionId, { livemode: false })
 	// Guest purchases deliberately never fulfil a workspace credit order.
-	const before = worker.query('SELECT SUM(balance) AS balance FROM credit_accounts')[0].balance
+	const before = worker.query('SELECT SUM(balance) AS balance FROM credit_accounts', 'billing')[0]
+		.balance
 	const payload = JSON.stringify({
 		id: 'evt_guest_' + randomUUID(),
 		type: 'checkout.session.completed',
@@ -88,7 +89,7 @@ export async function testStorefront(worker: LocalWorker) {
 	})
 	assert.equal(event.status, 200)
 	assert.equal(
-		worker.query('SELECT SUM(balance) AS balance FROM credit_accounts')[0].balance,
+		worker.query('SELECT SUM(balance) AS balance FROM credit_accounts', 'billing')[0].balance,
 		before,
 	)
 	for (let i = 0; i < 10; i++)

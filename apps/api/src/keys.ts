@@ -1,5 +1,6 @@
-import { database } from '@workspace/data/client'
-import { apiKeys, now } from '@workspace/data/schema'
+import { now } from '@workspace/data/columns'
+import { identityDatabase } from '@workspace/data/client'
+import { apiKeys } from '@workspace/data/identity'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import type { KeyScope } from '@workspace/contracts'
 import type { Env } from './env'
@@ -7,7 +8,7 @@ import { HttpError, reply, input, sha256, methodNotAllowed } from './http'
 import { rateLimit } from './rate-limit'
 
 export async function keysRoute(request: Request, env: Env, userId: string) {
-	const db = database(env.DB)
+	const db = identityDatabase(env.IDENTITY_DB)
 	const path = new URL(request.url).pathname
 	if (path === '/api/keys') {
 		if (request.method === 'GET') {
@@ -26,7 +27,7 @@ export async function keysRoute(request: Request, env: Env, userId: string) {
 			return reply('keys', { keys })
 		}
 		if (request.method === 'POST') {
-			await rateLimit(env.DB, `key-create:${userId}`, 10)
+			await rateLimit(env.IDENTITY_DB, `key-create:${userId}`, 10)
 			const { name, scope } = await input(request, 'createKey')
 			const token = `idea_${[...crypto.getRandomValues(new Uint8Array(32))].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`
 			const id = crypto.randomUUID()
@@ -67,7 +68,7 @@ export async function keysRoute(request: Request, env: Env, userId: string) {
 	return new Response(null, { status: 204 })
 }
 export async function apiKeyUser(request: Request, env: Env, scope: KeyScope = 'todos:read') {
-	const db = database(env.DB)
+	const db = identityDatabase(env.IDENTITY_DB)
 	const token = request.headers.get('authorization')?.match(/^Bearer (idea_[a-f0-9]{64})$/)?.[1]
 	if (!token) throw new HttpError(401, 'A valid API key is required')
 	const key = await db
@@ -77,7 +78,7 @@ export async function apiKeyUser(request: Request, env: Env, scope: KeyScope = '
 		.get()
 	if (!key) throw new HttpError(401, 'Invalid or deleted API key')
 	if (key.scope !== scope) throw new HttpError(403, `This endpoint requires ${scope}`)
-	const headers = await rateLimit(env.DB, `api-key:${key.id}`, 30)
+	const headers = await rateLimit(env.IDENTITY_DB, `api-key:${key.id}`, 30)
 	await db.update(apiKeys).set({ last_used_at: now }).where(eq(apiKeys.id, key.id))
 	return { userId: key.user_id, keyId: key.id, headers }
 }

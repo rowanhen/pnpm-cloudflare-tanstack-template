@@ -1,12 +1,13 @@
-import { database } from '@workspace/data/client'
-import { creditAccounts, creditGrants, paidRequests, now } from '@workspace/data/schema'
-import { and, desc, eq, sql, type SQL } from 'drizzle-orm'
+import { now } from '@workspace/data/columns'
+import { billingDatabase } from '@workspace/data/client'
+import { creditAccounts, creditGrants, paidRequests } from '@workspace/data/billing'
+import { and, desc, eq, sql } from 'drizzle-orm'
 import { HttpError, reply } from './http'
 
 export const CREDIT_PACK = 1_000
 export const SUMMARY_COST = 1
 
-/** For operations whose result lives entirely in D1. No network calls here. */
+/** Store a prepared result and debit atomically in the billing database. */
 export async function chargeForResult(
 	binding: D1Database,
 	options: {
@@ -16,11 +17,11 @@ export async function chargeForResult(
 		operation: string
 		inputHash: string
 		cost: number
-		// Application-owned, parameterized SQL yielding one JSON value.
-		result: SQL<string>
+		// A product snapshot, persisted unchanged on idempotent replay.
+		result: string
 	},
 ) {
-	const db = database(binding)
+	const db = billingDatabase(binding)
 	const { userId, keyId, idempotencyKey, operation, inputHash, cost, result } = options
 	if (!Number.isSafeInteger(cost) || cost <= 0) throw new Error('Invalid request cost')
 	const attemptId = crypto.randomUUID()
@@ -43,7 +44,7 @@ export async function chargeForResult(
 						operation: sql<string>`${operation}`.as('operation'),
 						input_hash: sql<string>`${inputHash}`.as('input_hash'),
 						credits: sql<number>`${cost}`.as('credits'),
-						response: sql<string>`(${result})`.as('response'),
+						response: sql<string>`${result}`.as('response'),
 						created_at: now.as('created_at'),
 					})
 					.from(sql`(select 1)`)
@@ -88,7 +89,7 @@ export async function chargeForResult(
 }
 
 export async function billingStatus(binding: D1Database, userId: string) {
-	const db = database(binding)
+	const db = billingDatabase(binding)
 	const activity = db
 		.select({
 			id: creditGrants.id,

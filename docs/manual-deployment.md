@@ -9,14 +9,16 @@ Authenticate with `pnpm exec wrangler login`, or export `CLOUDFLARE_ACCOUNT_ID` 
 1. Choose names (`pnpm setup-project my-project`), then provision:
 
    ```bash
-   pnpm exec wrangler d1 create my-project-db --config apps/api/wrangler.json
+   pnpm exec wrangler d1 create my-project-identity --config apps/api/wrangler.json
+   pnpm exec wrangler d1 create my-project-billing --config apps/api/wrangler.json
+   pnpm exec wrangler d1 create my-project-product --config apps/api/wrangler.json
    pnpm exec wrangler r2 bucket create my-project-files
    pnpm exec wrangler pages project create my-project-marketing --production-branch main
    pnpm exec wrangler pages project create my-project-dashboard --production-branch main
    ```
 
 2. Attach your marketing and dashboard custom domains to their Pages projects and confirm DNS/HTTPS are active. For example, use `example.com` and `dashboard.example.com`; the Pages projects remain the hosting infrastructure.
-3. In `apps/api/wrangler.json`, set the returned D1 `database_id` and matching resource names. The all-zero UUID is a placeholder for local development. Each website's `wrangler.json` sets its Pages project name and `dist` output; `setup-project` updates those names too. Set `AUTH_URL` to `https://dashboard.example.com`, and `ALLOWED_ORIGINS` to the exact marketing/dashboard origins, comma separated, without trailing slashes.
+3. In `apps/api/wrangler.json`, set each returned D1 `database_id` on its matching `IDENTITY_DB`, `BILLING_DB` and `PRODUCT_DB` binding. The checked-in UUIDs are placeholders for local development. Each website's `wrangler.json` sets its Pages project name and `dist` output; `setup-project` updates those names too. Set `AUTH_URL` to `https://dashboard.example.com`, and `ALLOWED_ORIGINS` to the exact marketing/dashboard origins, comma separated, without trailing slashes.
 4. Add the production dashboard origin and `https://dashboard.example.com/api/auth/callback/google` redirect URI to Google. Use separate OAuth clients and Cloudflare resources for development and production.
 5. Apply migrations, deploy, then configure Worker secrets using the interactive prompts:
 
@@ -55,7 +57,7 @@ Authenticate with `pnpm exec wrangler login`, or export `CLOUDFLARE_ACCOUNT_ID` 
 
 After deployment, complete a real Google sign-in, confirm your profile/todo/file persist, create and revoke a key, and sign out. Automated tests do not authenticate with Google's live consent screen.
 
-For schema changes, edit `packages/data/src/schema.ts`, run `pnpm db:generate --name my_change`, and review the generated SQL in `apps/api/migrations/`. The auth schema matches the installed Better Auth version; review its migration output when upgrading. Migration 0003 preserves old anonymous demo todos with no owner, making them inaccessible to signed-in users. Old unprefixed R2 objects are also inaccessible; deliberately migrate or delete that legacy demo data. D1 rate-limit rows are reused per identifier; periodically remove stale counters and expired auth records for a long-lived deployment.
+For schema changes, edit the appropriate `packages/data/src/{identity,billing,product}.ts`, run `pnpm db:generate --domain product --name my_change`, and review the generated SQL in `apps/api/migrations/<domain>/`. The auth schema matches the installed Better Auth version; review its migration output when upgrading. Migration 0003 preserves old anonymous demo todos with no owner, making them inaccessible to signed-in users. Old unprefixed R2 objects are also inaccessible; deliberately migrate or delete that legacy demo data. D1 rate-limit rows are reused per identifier; periodically remove stale counters and expired auth records for a long-lived deployment.
 
 ## Custom domains and existing deployments
 
@@ -82,6 +84,8 @@ Configure these repository Actions settings for each project:
 | `VITE_SITE_NAME`, `VITE_NOINDEX`, `VITE_APP_ENV`      | Variables          | Public title, indexing choice (`false` for production) and environment name                      |
 | `VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST`               | Optional variables | Public collection token and host when browser analytics is enabled                               |
 
-The deploy job writes `CLOUDFLARE_WORKER_CONFIG` to the ignored `apps/api/wrangler.ci.json`. Keep its `main` relative to that directory (`src/index.ts`) and D1 `migrations_dir` as `migrations`. Use the real production database ID, resource names, `AUTH_URL` and allowed origins. Keep provider/auth secrets on the existing Worker and Pages projects; do not put secrets in this JSON or in `VITE_` variables. Complete the resource and proxy-secret setup above before enabling deployment.
+The deploy job writes `CLOUDFLARE_WORKER_CONFIG` to the ignored `apps/api/wrangler.ci.json`. Keep its `main` relative to that directory (`src/index.ts`) and each D1 `migrations_dir` as `migrations/identity`, `migrations/billing` or `migrations/product`. Use the real production database ID, resource names, `AUTH_URL` and allowed origins. Keep provider/auth secrets on the existing Worker and Pages projects; do not put secrets in this JSON or in `VITE_` variables. Complete the resource and proxy-secret setup above before enabling deployment.
 
 This repository's Actions variables target the maintained showcase and its custom domains. Clones do not inherit those GitHub settings. Configure the clone's own resources before setting its account ID. Unit tests run in CI; the full local `pnpm check` additionally runs schema and API integration checks. Browser E2E tooling is not included.
+
+For an existing single-database deployment, follow [database cutover](databases.md#upgrading-the-original-single-database) before updating the bindings. Fresh baselines are not in-place upgrades.

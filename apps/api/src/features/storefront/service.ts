@@ -49,7 +49,7 @@ export async function product(env: Env, id: 'purchase' | 'subscription', stripe 
 }
 export async function limit(env: Env, request: Request, action: string, maximum: number) {
 	const ip = request.headers.get('cf-connecting-ip') ?? 'local'
-	await rateLimit(env.DB, `storefront:${action}:${await sha256(ip)}`, maximum)
+	await rateLimit(env.IDENTITY_DB, `storefront:${action}:${await sha256(ip)}`, maximum)
 }
 // Expected provider/configuration errors retain the generated status/body contract.
 export const attempt = <A>(run: () => Promise<A>) =>

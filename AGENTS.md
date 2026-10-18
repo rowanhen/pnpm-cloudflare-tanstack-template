@@ -20,3 +20,5 @@ Read [the one-page structure guide](docs/architecture.md) before changing applic
 - Run Orval after contract changes and review generated output. Generation cleans only generated directories; never put handwritten code there.
 - Use Wrangler and provider tools for provisioning and deployment; see `docs/manual-deployment.md`.
 - Keep provider setup/deployment instructions in the existing docs. Follow the actual scope of the migrated feature; other integrations still use their existing handlers.
+
+- Keep database ownership explicit: `IDENTITY_DB` for auth/API keys/rate limits, `BILLING_DB` for orders and the credit ledger, `PRODUCT_DB` for application examples. Import the matching domain schema and client from `@workspace/data`. Add migrations with `pnpm db:generate --domain <identity|billing|product> --name <change>`. Never use a cross-database join/foreign key or split a billing transaction across bindings. See [database boundaries and migration](docs/databases.md).

@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 
 export async function testEmail(worker: LocalWorker) {
-	const { base, fixture, query } = worker
+	const { base, fixture } = worker
+	const query = (statement: string) => worker.query(statement, 'product')
 	const call = (body: unknown, { user = 0, headers = {}, method = 'POST' } = {}) =>
 		fetch(`${base}/api/email`, {
 			method,
@@ -26,11 +27,11 @@ export async function testEmail(worker: LocalWorker) {
 		(await call({ requestId: id }, { headers: { 'x-test-email-disabled': 'true' } })).status,
 		503,
 	)
-	query("UPDATE users SET emailVerified=0 WHERE id='e2e-bob'")
+	worker.query("UPDATE users SET emailVerified=0 WHERE id='e2e-bob'", 'identity')
 	try {
 		assert.equal((await call({ requestId: id }, { user: 1 })).status, 403)
 	} finally {
-		query("UPDATE users SET emailVerified=1 WHERE id='e2e-bob'")
+		worker.query("UPDATE users SET emailVerified=1 WHERE id='e2e-bob'", 'identity')
 	}
 	const attempts = await Promise.all([call({ requestId: id }), call({ requestId: id })])
 	assert.ok(attempts.some((r) => r.status === 202))

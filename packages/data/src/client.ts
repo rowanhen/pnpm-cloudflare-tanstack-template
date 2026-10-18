@@ -1,5 +1,9 @@
 import { drizzle } from 'drizzle-orm/d1'
-import * as schema from './schema'
 import type { D1Database } from '@cloudflare/workers-types'
-export const database = (binding: D1Database) => drizzle(binding, { schema })
-export type Database = ReturnType<typeof database>
+import * as identity from './identity'
+import * as billing from './billing'
+import * as product from './product'
+
+export const identityDatabase = (binding: D1Database) => drizzle(binding, { schema: identity })
+export const billingDatabase = (binding: D1Database) => drizzle(binding, { schema: billing })
+export const productDatabase = (binding: D1Database) => drizzle(binding, { schema: product })
