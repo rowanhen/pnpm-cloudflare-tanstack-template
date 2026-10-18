@@ -7,7 +7,7 @@ import { copySql, verifyCopy } from '../../scripts/database-copy.ts'
 import { fixtures } from '../support/test-fixtures.ts'
 
 async function migrate(database: DatabaseSync, directory: URL) {
-	for (const file of (await readdir(directory)).filter((file) => file.endsWith('.sql')).sort())
+	for (const file of (await readdir(directory)).filter((name) => name.endsWith('.sql')).sort())
 		database.exec(await readFile(new URL(file, directory), 'utf8'))
 }
 test('legacy data splits into isolated databases without losing sessions, payments or private data', async () => {

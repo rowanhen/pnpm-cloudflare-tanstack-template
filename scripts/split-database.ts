@@ -91,7 +91,7 @@ async function exportDb(binding: string, config: string, name: string) {
 	await chmod(path, 0o600)
 	return readDump(await readFile(path, 'utf8'))
 }
-const source = await exportDb(values['source-binding']!, sourceConfig, 'source.sql')
+const source = await exportDb(values['source-binding'] ?? 'DB', sourceConfig, 'source.sql')
 try {
 	const known = new Set(Object.values(domains).flatMap((domain) => [...domain.tables]) as string[])
 	for (const { name } of source
