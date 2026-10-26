@@ -11,9 +11,9 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@opentelemetry/api": "1.9.1",
-		"posthog-js": "1.438.12",
-		"posthog-node": "5.56.2"
+		"@opentelemetry/api": "1.10.0",
+		"posthog-js": "1.438.19",
+		"posthog-node": "5.57.0"
 	},
 	"devDependencies": {
 		"typescript": "^7.0.2"

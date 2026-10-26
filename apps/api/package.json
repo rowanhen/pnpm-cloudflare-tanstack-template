@@ -11,18 +11,18 @@
 		"deploy": "wrangler deploy"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^5.20261019.1",
+		"@cloudflare/workers-types": "^5.20261023.1",
 		"typescript": "^7.0.2",
-		"wrangler": "^4.151.2"
+		"wrangler": "^4.152.0"
 	},
 	"dependencies": {
 		"@workspace/contracts": "workspace:*",
 		"@workspace/data": "workspace:*",
 		"@workspace/observability": "workspace:*",
-		"better-auth": "^1.7.11",
+		"better-auth": "^1.7.12",
 		"drizzle-orm": "0.45.4",
-		"effect": "4.0.5",
+		"effect": "4.0.6",
 		"hono": "4.13.13",
-		"stripe": "^23.0.0"
+		"stripe": "^23.0.1"
 	}
 }
