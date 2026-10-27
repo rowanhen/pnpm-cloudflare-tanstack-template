@@ -40,7 +40,7 @@
 		"cloud:check": "tsx scripts/cloud.ts check",
 		"cloud:down": "tsx scripts/cloud.ts down",
 		"test:cloud-setup": "tsx scripts/test-cloud-setup.ts",
-		"test:setup": "node --import tsx --experimental-sqlite --test scripts/setup.test.ts scripts/migrations.test.ts scripts/site-domain.test.ts scripts/observability.test.ts",
+		"test:setup": "node --import tsx --experimental-sqlite --test scripts/setup.test.ts scripts/migrations.test.ts scripts/site-domain.test.ts scripts/observability.test.ts scripts/marketing-content.test.ts",
 		"db:generate": "pnpm --filter @workspace/data db:generate",
 		"db:check": "pnpm --filter @workspace/data db:check && tsx scripts/check-schema.ts",
 		"email:setup": "tsx scripts/email-domain.ts setup",

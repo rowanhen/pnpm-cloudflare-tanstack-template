@@ -1,0 +1,17 @@
+# Marketing content
+
+Each public page owns one `apps/marketing/src/routes/**/-content.ts` file. Its directory is its canonical URL: `routes/-content.ts` is `/`, and `routes/guides/getting-started/-content.ts` is `/guides/getting-started`. Use lowercase, hyphenated path segments. TanStack ignores the `-content` files; the publishing catch-all renders their pages. Explicit application routes (API, success, error) remain separate and take priority. Do not place content under those reserved routes or give an explicit route the same path as a content page.
+
+Export a default object using `satisfies MarketingPage` from `publishing/model.ts`. Keep page copy, links, sections and SEO in this file. Shared site identity and default social image remain in `lib/seo.ts`; interactive form labels and navigation remain in their components. `kind` selects landing, guide or legal presentation. Set `status: 'published'` to release; drafts are inaccessible in HTML and Markdown, including in development. Content is discovered on the server and changes require a build/deploy in production.
+
+The shared template renders headings, paragraphs, lists, commands, features, links and the waitlist form. Content is plain text, not raw HTML or inline Markdown. Markdown pages and `llms.txt` are serialized by `mdast-util-to-markdown` from typed mdast nodes; the package owns escaping, link syntax, lists and code fences. Add a discriminated block variant to the model and implement it in both `publishing/page.tsx` and `publishing/markdown.ts` when a new presentation is needed. Keep interactive behaviour in components; give each widget a useful Markdown representation.
+
+Published pages automatically receive:
+
+- Canonical, description, Open Graph, Twitter and JSON-LD metadata.
+- A Markdown alternate at `<page>.md` (`/index.md` for the homepage).
+- An entry in `/llms.txt` and `/sitemap.xml`, unless `seo.noindex` is set.
+
+`VITE_NOINDEX=true` and localhost deployments disable indexing globally and emit an empty sitemap. Markdown responses carry `X-Robots-Tag: noindex` to avoid duplicate indexed content. Noindex is discovery policy, not access control; use draft status to withhold a page. The site URL configured with `VITE_SITE_URL` is authoritative for generated absolute links.
+
+To add a guide, copy `routes/guides/getting-started/-content.ts` into a new directory, edit its content and publish it. No registry or additional route file is needed. Link to it from relevant page content or site navigation. Validate with `pnpm --filter marketing typecheck`, `pnpm build:marketing`, and the marketing Playwright tests.

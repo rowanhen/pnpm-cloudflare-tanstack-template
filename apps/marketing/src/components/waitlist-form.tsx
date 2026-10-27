@@ -1,14 +1,14 @@
 import { Button, Card, Input, Label, Checkbox, Alert, Stack, Typography } from '@workspace/shared'
 import { useWaitlist } from '../hooks/use-waitlist'
 
-export function WaitlistForm() {
+export function WaitlistForm({ title }: { title: string }) {
 	const { disabled, busy, error, submit } = useWaitlist()
 	return (
 		<Card
 			id="waitlist"
 			title={
 				<Typography as="h2" variant="heading-400" id="waitlist-title">
-					Try the waitlist
+					{title}
 				</Typography>
 			}
 			aria-labelledby="waitlist-title"

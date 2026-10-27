@@ -16,14 +16,16 @@ export function seo(
 	path = '/',
 	title = `${site.name} — By Leitware`,
 	description = site.description,
+	noindex = false,
+	article = false,
 ) {
 	const url = `${site.url}${path}`
 	return {
 		meta: [
 			{ title },
 			{ name: 'description', content: description },
-			{ name: 'robots', content: indexable ? 'index, follow' : 'noindex, nofollow' },
-			{ property: 'og:type', content: 'website' },
+			{ name: 'robots', content: indexable && !noindex ? 'index, follow' : 'noindex, nofollow' },
+			{ property: 'og:type', content: article ? 'article' : 'website' },
 			{ property: 'og:site_name', content: site.name },
 			{ property: 'og:title', content: title },
 			{ property: 'og:description', content: description },
