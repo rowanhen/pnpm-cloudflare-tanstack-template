@@ -12,8 +12,8 @@
 	},
 	"dependencies": {
 		"@opentelemetry/api": "1.10.0",
-		"posthog-js": "1.438.19",
-		"posthog-node": "5.57.0"
+		"posthog-js": "1.438.21",
+		"posthog-node": "5.57.1"
 	},
 	"devDependencies": {
 		"typescript": "^7.0.2"
