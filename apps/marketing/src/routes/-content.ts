@@ -25,7 +25,7 @@ export default {
 						{ label: 'Install', value: 'cd my-idea && corepack enable && pnpm install' },
 						{ label: 'Run', value: 'pnpm dev' },
 					],
-					note: 'Node 22.12+ · pnpm 10 · No cloud account needed locally',
+					note: 'Node 26.12.0 · pnpm 10.34.7 · No cloud account needed locally',
 				},
 				{ kind: 'paragraph', text: 'TanStack Start · Drizzle · Composables / Kumo' },
 			],

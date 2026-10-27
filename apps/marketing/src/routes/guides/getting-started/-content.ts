@@ -20,7 +20,7 @@ export default {
 					ordered: true,
 					items: [
 						'Use the template to create your repository.',
-						'Install Node 22.12 or newer and enable Corepack.',
+						'Install Node 26.12.0 and pnpm 10.34.7.',
 						'Run pnpm install, then pnpm dev.',
 						'Open the marketing site on port 3000 and the dashboard on port 3001.',
 					],
