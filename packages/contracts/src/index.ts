@@ -1,15 +1,14 @@
 import { z } from 'zod'
 import type {
 	ApiKey,
-	Todo as TodoRow,
 	User as UserRow,
 	Order as OrderRow,
 	WaitlistEntry,
 	EmailDelivery,
 } from '@workspace/data/schema'
 
-// Public projections are derived from Drizzle. No hashes, tokens or owner IDs in read DTOs.
-export type Todo = Omit<TodoRow, 'user_id'>
+// Todo DTOs come from OpenAPI. Other integrations retain their existing contracts.
+export type Todo = import('./generated/operations').GetTodoSuccess['body']['todo']
 export type User = Pick<UserRow, 'id' | 'name' | 'email' | 'emailVerified' | 'image'>
 export type Key = Omit<ApiKey, 'user_id' | 'key_hash'>
 export type KeyScope = ApiKey['scope']
@@ -39,16 +38,8 @@ export type CheckoutSession = {
 }
 export type OrderStatus = { order: Order; checkoutStatus: CheckoutSession['status'] }
 
-const title = z.string().trim().min(1).max(200)
 export const keyScope = z.enum(['todos:read', 'summary:read']) satisfies z.ZodType<KeyScope>
 export const inputs = {
-	createTodo: z.strictObject({ title }),
-	updateTodo: z
-		.strictObject({ title: title.optional(), completed: z.boolean().optional() })
-		.refine(
-			(value) => value.title !== undefined || value.completed !== undefined,
-			'Provide title or completed',
-		),
 	createKey: z.strictObject({
 		name: z.string().trim().min(1).max(60),
 		scope: keyScope.default('todos:read'),
@@ -88,7 +79,6 @@ export interface Responses {
 }
 export const routes = {
 	config: '/api/config',
-	todos: '/api/todos',
 	files: '/api/files',
 	keys: '/api/keys',
 	billing: '/api/billing',
@@ -99,7 +89,6 @@ export const routes = {
 } as const satisfies Partial<Record<keyof Responses, string>>
 
 export const mutations = {
-	createTodo: { path: '/api/todos', method: 'POST', response: 'todo' },
 	createKey: { path: '/api/keys', method: 'POST', response: 'createKey' },
 	createCheckout: { path: '/api/checkout/sessions', method: 'POST', response: 'createCheckout' },
 	waitlist: { path: '/api/waitlist', method: 'POST', response: 'waitlist' },

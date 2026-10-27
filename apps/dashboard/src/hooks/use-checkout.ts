@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router'
 import { useRef } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useHydrated } from '@workspace/shared'
@@ -9,11 +10,18 @@ export function money(amount: number, currency: string) {
 	return format.format(amount / 10 ** (format.resolvedOptions().maximumFractionDigits ?? 2))
 }
 export function useCheckoutSession() {
+	const navigate = useNavigate()
 	const hydrated = useHydrated()
 	const requestId = useRef<string | null>(null)
+	const availability = useQuery({
+		queryKey: ['app-config'],
+		enabled: hydrated,
+		retry: false,
+		queryFn: () => client.get('config'),
+	})
 	const config = useQuery({
 		queryKey: ['checkout-config'],
-		enabled: hydrated,
+		enabled: hydrated && availability.data?.checkoutEnabled === true,
 		retry: false,
 		queryFn: () => client.get('checkoutConfig'),
 	})
@@ -22,13 +30,11 @@ export function useCheckoutSession() {
 			requestId.current ??= crypto.randomUUID()
 			const session = await client.mutate('createCheckout', { requestId: requestId.current })
 			if (session.status !== 'open')
-				window.location.assign(
-					`/checkout/success?session_id=${encodeURIComponent(session.sessionId)}`,
-				)
+				await navigate({ to: '/checkout/success', search: { session_id: session.sessionId } })
 			return session
 		},
 	})
-	return { config, create }
+	return { availability, config, create }
 }
 export function useOrderStatus(sessionId: string) {
 	const hydrated = useHydrated()

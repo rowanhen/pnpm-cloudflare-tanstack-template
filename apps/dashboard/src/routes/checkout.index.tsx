@@ -1,94 +1,125 @@
-import { lazy, Suspense } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
-	AppShell,
-	appTitle,
 	Alert,
-	Badge,
+	AppShell,
 	Button,
-	Card,
+	PageSection,
 	Skeleton,
 	Stack,
 	Typography,
+	appTitle,
+	useHydrated,
 } from '@workspace/shared'
-import { money, useCheckoutSession } from '../hooks/use-checkout'
+import { useRef, lazy, Suspense } from 'react'
+import { useGetStorefront, useCreateStorefrontCheckout } from '../generated/storefront'
+import { money } from '../hooks/use-checkout'
 const PaymentForm = lazy(() => import('../components/payment-form'))
 export const Route = createFileRoute('/checkout/')({
-	head: () => ({ meta: [{ title: appTitle('Test checkout') }] }),
-	component: CheckoutPage,
+	head: () => ({ meta: [{ title: appTitle('Checkout') }] }),
+	component: Storefront,
 })
-function CheckoutPage() {
-	const { config, create } = useCheckoutSession()
+function Storefront() {
+	const hydrated = useHydrated()
+	const navigate = useNavigate()
+	const catalogue = useGetStorefront({ query: { enabled: hydrated, retry: false } })
+	const attempts = useRef(new Map<string, { requestId: string; token: string }>())
+	const checkout = useCreateStorefrontCheckout({
+		mutation: {
+			onSuccess: ({ data }, variables) => {
+				sessionStorage.setItem(`storefront:${data.sessionId}`, variables.data.token)
+			},
+		},
+	})
+	const selected = catalogue.data?.data.products.find(
+		(item) => item.id === checkout.variables?.data.product,
+	)
 	return (
 		<AppShell title="Checkout">
-			<Button variant="link" className="px-0" asChild>
-				<a href="/">← Back to workspace</a>
-			</Button>
-			{config.isPending ? (
-				<Skeleton className="h-80 max-w-2xl" aria-label="Loading checkout" />
-			) : config.isError ? (
-				<Card className="max-w-lg" title="Checkout is unavailable.">
-					<Button variant="outline" onClick={() => void config.refetch()}>
+			{checkout.data && selected ? (
+				<Stack gap={8}>
+					<PageSection title={selected.name}>
+						<Typography variant="heading-400">
+							{money(selected.amount, selected.currency)}
+							{selected.interval ? ` / ${selected.interval}` : ''}
+						</Typography>
+					</PageSection>
+					<PageSection title="Payment details">
+						<Suspense fallback={<Skeleton className="h-80" aria-label="Loading payment form" />}>
+							<PaymentForm
+								key={checkout.data.data.sessionId}
+								publishableKey={checkout.data.data.publishableKey}
+								clientSecret={checkout.data.data.clientSecret}
+								sessionId={checkout.data.data.sessionId}
+								collectEmail
+								submitLabel={
+									selected.id === 'subscription'
+										? 'Subscribe'
+										: `Pay ${money(selected.amount, selected.currency)}`
+								}
+								onBack={() => checkout.reset()}
+								onComplete={() =>
+									navigate({
+										to: '/checkout/complete',
+										search: { session_id: checkout.data.data.sessionId },
+									})
+								}
+							/>
+						</Suspense>
+					</PageSection>
+				</Stack>
+			) : catalogue.isPending ? (
+				<Skeleton className="h-64" aria-label="Loading products" />
+			) : catalogue.isError ? (
+				<PageSection title="Checkout is unavailable.">
+					<Button variant="outline" onClick={() => void catalogue.refetch()}>
 						Try again
 					</Button>
-				</Card>
+				</PageSection>
+			) : !catalogue.data.data.enabled ? (
+				<PageSection title="Checkout isn't configured.">
+					<Button variant="outline" onClick={() => void catalogue.refetch()}>
+						Check again
+					</Button>
+				</PageSection>
 			) : (
-				<div className="grid items-start gap-8 lg:grid-cols-[.8fr_1fr]">
-					<Card
-						title={
-							<Typography as="h2" variant="heading-400">
-								{config.data.offer.name}
-							</Typography>
-						}
-						description={config.data.offer.description || undefined}
-						action={<Badge variant="outline">Test mode</Badge>}
-					>
-						<Stack gap={5}>
-							<div className="flex flex-wrap items-baseline gap-2">
-								<Typography variant="heading-500">
-									{money(config.data.offer.amount, config.data.offer.currency)}
+				<Stack gap={8}>
+					{catalogue.data.data.products.map((item) => (
+						<PageSection key={item.id} title={item.name}>
+							<Stack direction="horizontal" align="center" justify="between" wrap gap={5}>
+								<Typography variant="heading-400">
+									{money(item.amount, item.currency)}
+									{item.interval ? ` / ${item.interval}` : ''}
 								</Typography>
-								<span className="text-content-secondary">one time</span>
-							</div>
-							<p>{config.data.offer.credits.toLocaleString('en-GB')} credits</p>
-							<p className="text-xs text-content-secondary">Test payment. No real charge.</p>
-						</Stack>
-					</Card>
-					<Card
-						title={
-							<Typography as="h2" variant="heading-300">
-								Payment details
-							</Typography>
-						}
-					>
-						<Stack gap={5}>
-							{create.data?.clientSecret ? (
-								<Suspense
-									fallback={<Skeleton className="h-60" aria-label="Loading payment form" />}
-								>
-									<PaymentForm
-										publishableKey={config.data.publishableKey}
-										clientSecret={create.data.clientSecret}
-										sessionId={create.data.sessionId}
-									/>
-								</Suspense>
-							) : (
 								<Button
-									className="w-full"
-									size="lg"
-									onClick={() => create.mutate()}
-									disabled={create.isPending}
+									disabled={checkout.isPending}
+									onClick={() => {
+										let attempt = attempts.current.get(item.id)
+										if (!attempt) {
+											attempt = { requestId: crypto.randomUUID(), token: crypto.randomUUID() }
+											attempts.current.set(item.id, attempt)
+										}
+										checkout.mutate({ data: { product: item.id, ...attempt } })
+									}}
 								>
-									{create.isPending ? 'Opening checkout…' : 'Continue to payment'}
+									{checkout.isPending && checkout.variables?.data.product === item.id
+										? 'Opening checkout…'
+										: item.id === 'subscription'
+											? 'Subscribe'
+											: 'Buy'}
 								</Button>
-							)}
-							{create.error && (
-								<Alert type="negative" message="Couldn't start checkout. Please try again." />
-							)}
-						</Stack>
-					</Card>
-				</div>
+							</Stack>
+						</PageSection>
+					))}
+				</Stack>
 			)}
+			{checkout.isError && <Alert type="negative">Couldn't open checkout. Please try again.</Alert>}
+			<Button
+				variant="link"
+				{...{ nativeButton: false }}
+				render={<Link role="link" aria-label="Buy workspace credits" to="/credits" />}
+			>
+				Buy workspace credits
+			</Button>
 		</AppShell>
 	)
 }

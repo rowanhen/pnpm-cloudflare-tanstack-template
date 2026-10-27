@@ -14,6 +14,6 @@ Published pages automatically receive:
 
 `VITE_NOINDEX=true` and localhost deployments disable indexing globally and emit an empty sitemap. Markdown responses carry `X-Robots-Tag: noindex` to avoid duplicate indexed content. Noindex is discovery policy, not access control; use draft status to withhold a page. The site URL configured with `VITE_SITE_URL` is authoritative for generated absolute links.
 
-To add a guide, copy `routes/guides/getting-started/-content.ts` into a new directory, edit its content and publish it. No registry or additional route file is needed. Link to it from relevant page content or site navigation. Validate with `pnpm --filter marketing typecheck`, `pnpm build:marketing`, and the marketing Playwright tests.
+To add a guide, copy `routes/guides/getting-started/-content.ts` into a new directory, edit its content and publish it. No registry or additional route file is needed. Link to it from relevant page content or site navigation. Validate with `pnpm --filter marketing typecheck`, `pnpm build:marketing`, and `pnpm test:unit`. Review navigation and rendering in the browser; the current template intentionally has no browser E2E tooling.
 
 The publishing layer has five modules: `model.ts` defines and validates content, `catalog.server.ts` discovers published pages on the server, `catalog.ts` exposes the server loader used during SSR and client navigation, `page.tsx` renders HTML and metadata, and `markdown.ts` generates text/discovery outputs. The server boundary keeps the full catalog and draft content out of browser bundles.

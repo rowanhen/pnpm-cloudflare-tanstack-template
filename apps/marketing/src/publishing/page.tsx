@@ -1,6 +1,15 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- Composables renders anchors below; override Base UI's default button role. */
-import { Badge, Button, ClipboardText, LayerCard, Typography } from '@leitware/composables'
-import { useHydrated } from '@workspace/shared'
+import {
+	Badge,
+	Button,
+	ClipboardText,
+	LayerCard,
+	Typography,
+	useHydrated,
+	Stack,
+	Section,
+	Grid,
+} from '@workspace/shared'
 import { Link } from '@tanstack/react-router'
 import { track } from '@workspace/observability/browser'
 import { MarketingShell } from '../components/marketing-shell'
@@ -104,7 +113,7 @@ function Block({ block }: { block: ContentBlock }) {
 			)
 		case 'features':
 			return (
-				<div className="grid gap-9 sm:grid-cols-2 lg:grid-cols-3">
+				<Grid columns={1} className="sm:grid-cols-2 lg:grid-cols-3" gap={8}>
 					{block.items.map((item) => (
 						<article key={item.title} className="space-y-3">
 							<Badge variant="outline">{item.tag}</Badge>
@@ -116,7 +125,7 @@ function Block({ block }: { block: ContentBlock }) {
 							</Typography>
 						</article>
 					))}
-				</div>
+				</Grid>
 			)
 		case 'waitlist':
 			return (
@@ -140,68 +149,73 @@ export function ContentPage({ page }: { page: PublishedPage }) {
 	return (
 		<MarketingShell>
 			<div className={page.kind === 'landing' ? '' : 'mx-auto max-w-2xl'}>
-				<header className="space-y-7 py-16">
-					{page.eyebrow && <Badge variant="outline">{page.eyebrow}</Badge>}
-					<Typography as="h1" variant="hero-300" className="text-5xl tracking-tight sm:text-6xl">
-						{page.title}
-						{page.accent && (
-							<>
-								<br />
-								<Typography as="span" variant="hero-300" className="text-brand">
-									{page.accent}
-								</Typography>
-							</>
-						)}
-					</Typography>
-					{page.intro && (
-						<Typography
-							as="p"
-							variant="body-300"
-							className="max-w-xl leading-7 text-content-secondary"
-						>
-							{page.intro}
+				<header className="py-16">
+					<Stack gap={8}>
+						{page.eyebrow && <Badge variant="outline">{page.eyebrow}</Badge>}
+						<Typography as="h1" variant="hero-300">
+							{page.title}
+							{page.accent && (
+								<>
+									<br />
+									<Typography as="span" variant="hero-300" className="text-brand">
+										{page.accent}
+									</Typography>
+								</>
+							)}
 						</Typography>
-					)}
-					<div className="flex flex-wrap gap-3">
-						{page.actions?.map((action, i) => (
-							<Button
-								role="link"
-								{...{ nativeButton: false }}
-								key={action.href}
-								size="lg"
-								variant={i === 0 ? 'default' : 'outline'}
-								render={
-									action.href.startsWith('#') ? (
-										<Link to="." hash={action.href.slice(1)} />
-									) : action.href.startsWith('/') && !action.href.startsWith('//') ? (
-										<Link to={action.href} />
-									) : (
-										<a href={action.href} aria-label={action.label} />
-									)
-								}
-								onClick={() => {
-									if (action.event) track(action.event, {})
-								}}
+						{page.intro && (
+							<Typography
+								as="p"
+								variant="body-300"
+								className="max-w-xl leading-7 text-content-secondary"
 							>
-								{action.label}
-							</Button>
-						))}
-					</div>
+								{page.intro}
+							</Typography>
+						)}
+						<div className="flex flex-wrap gap-3">
+							{page.actions?.map((action, i) => (
+								<Button
+									role="link"
+									{...{ nativeButton: false }}
+									key={action.href}
+									size="lg"
+									variant={i === 0 ? 'default' : 'outline'}
+									render={
+										action.href.startsWith('#') ? (
+											<Link to="." hash={action.href.slice(1)} />
+										) : action.href.startsWith('/') && !action.href.startsWith('//') ? (
+											<Link to={action.href} />
+										) : (
+											<a href={action.href} aria-label={action.label} />
+										)
+									}
+									onClick={() => {
+										if (action.event) track(action.event, {})
+									}}
+								>
+									{action.label}
+								</Button>
+							))}
+						</div>
+					</Stack>
 				</header>
 				{page.sections.map((section) => (
-					<section
+					<Section
+						spacing="lg"
 						key={section.id}
 						id={section.id}
 						aria-labelledby={`${section.id}-title`}
-						className="space-y-7 border-t py-12"
+						className="border-t"
 					>
-						<Typography as="h2" variant="heading-400" id={`${section.id}-title`}>
-							{section.title}
-						</Typography>
-						{section.blocks.map((block, i) => (
-							<Block key={i} block={block} />
-						))}
-					</section>
+						<Stack gap={8}>
+							<Typography as="h2" variant="heading-400" id={`${section.id}-title`}>
+								{section.title}
+							</Typography>
+							{section.blocks.map((block, i) => (
+								<Block key={i} block={block} />
+							))}
+						</Stack>
+					</Section>
 				))}
 				<script
 					type="application/ld+json"

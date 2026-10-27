@@ -1,15 +1,20 @@
+import { useRouter } from '@tanstack/react-router'
 import { resetUser } from '@workspace/observability/browser'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useHydrated } from '@workspace/shared'
 import { api, client as apiClient } from '../lib/api'
+import { useListTodos, useCreateTodo, useUpdateTodo, useDeleteTodo } from '../generated/todos'
+import type { TodosResponse } from '../generated/api.schemas'
 
 export function useWorkspace(userId: string) {
 	const hydrated = useHydrated()
 	const client = useQueryClient()
-	const todos = useQuery({
-		queryKey: ['todos', userId],
-		queryFn: () => apiClient.get('todos'),
-		retry: false,
+	const todos = useListTodos<TodosResponse>({
+		query: {
+			queryKey: ['todos', userId],
+			select: (response) => response.data,
+			retry: false,
+		},
 	})
 	const files = useQuery({
 		queryKey: ['files', userId],
@@ -22,15 +27,31 @@ export function useWorkspace(userId: string) {
 			await client.invalidateQueries()
 		},
 	})
+	const onSuccess = async () => {
+		await client.invalidateQueries()
+	}
+	const createTodo = useCreateTodo({ mutation: { onSuccess } })
+	const updateTodo = useUpdateTodo({ mutation: { onSuccess } })
+	const deleteTodo = useDeleteTodo({ mutation: { onSuccess } })
+	const latestMutation = [mutation, createTodo, updateTodo, deleteTodo].reduce((latest, current) =>
+		current.submittedAt > latest.submittedAt ? current : latest,
+	)
 	return {
 		todos,
 		files,
 		mutation,
-		busy: !hydrated || mutation.isPending,
-		error: mutation.error ?? todos.error ?? files.error,
+		todoMutations: { create: createTodo, update: updateTodo, delete: deleteTodo },
+		busy:
+			!hydrated ||
+			mutation.isPending ||
+			createTodo.isPending ||
+			updateTodo.isPending ||
+			deleteTodo.isPending,
+		error: latestMutation.error ?? todos.error ?? files.error,
 	}
 }
 export function useSignOut() {
+	const router = useRouter()
 	const client = useQueryClient()
 	return useMutation({
 		mutationFn: async () => {
@@ -41,7 +62,8 @@ export function useSignOut() {
 			})
 			resetUser()
 			client.clear()
-			window.location.assign('/login')
+			await router.invalidate()
+			await router.navigate({ to: '/login', search: {} })
 		},
 	})
 }

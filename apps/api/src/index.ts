@@ -1,10 +1,12 @@
 import { reportRequest } from '@workspace/observability/server'
 import { safeError, safePath } from '@workspace/observability/privacy'
 import { emailEnabled, emailRoute } from './email'
-import { database } from '@workspace/data/client'
-import { waitlist } from '@workspace/data/schema'
+import { productDatabase } from '@workspace/data/client'
+import { waitlist } from '@workspace/data/product'
 import { eq } from 'drizzle-orm'
-import { listTodos, todosRoute } from './todos'
+import { listTodos } from './features/todos/repository'
+import generatedApi from './generated/routes'
+import { allowedMethods, contractError, findOperation } from '@workspace/contracts/http'
 import { waitlistRoute } from './waitlist'
 import type { Env } from './env'
 import { trustedProxyRequest } from './proxy'
@@ -15,10 +17,23 @@ import { checkoutEnabled, checkoutRoute, stripeWebhook } from './checkout'
 import { billingStatus } from './billing'
 import { summaryRoute } from './summary'
 
+generatedApi.onError((error) => {
+	throw error
+})
+generatedApi.notFound((c) => {
+	const methods = allowedMethods(c.req.path)
+	return methods.length ? methodNotAllowed(methods.join(', ')) : json({ error: 'Not found' }, 404)
+})
+
 async function route(request: Request, env: Env): Promise<Response> {
 	const url = new URL(request.url)
 	const path = url.pathname
 	const method = request.method
+	if (env.DATABASE_MAINTENANCE === 'true') {
+		if (path === '/api/health') return json({ ok: true, maintenance: true })
+		throw new HttpError(503, 'Temporarily unavailable', { 'Retry-After': '60' })
+	}
+	if (allowedMethods(path).length) return generatedApi.fetch(request, env)
 	if (path === '/api/health') return method === 'GET' ? json({ ok: true }) : methodNotAllowed('GET')
 	if (path === '/api/config')
 		return reply('config', {
@@ -37,7 +52,7 @@ async function route(request: Request, env: Env): Promise<Response> {
 	if (path === '/api/v1/todos') {
 		if (method !== 'GET') return methodNotAllowed('GET')
 		const { userId, headers } = await apiKeyUser(request, env)
-		const response = reply('todos', { todos: await listTodos(env.DB, userId) })
+		const response = reply('todos', { todos: await listTodos(env.PRODUCT_DB, userId) })
 		for (const [name, value] of Object.entries(headers)) response.headers.set(name, value)
 		return response
 	}
@@ -46,7 +61,7 @@ async function route(request: Request, env: Env): Promise<Response> {
 	if (!session) throw new HttpError(401, 'Sign in to continue')
 	const userId = session.user.id
 	if (path === '/api/billing')
-		return method === 'GET' ? billingStatus(env.DB, userId) : methodNotAllowed('GET')
+		return method === 'GET' ? billingStatus(env.BILLING_DB, userId) : methodNotAllowed('GET')
 	if (path === '/api/me' && method === 'GET')
 		return reply('me', {
 			user: {
@@ -74,7 +89,7 @@ async function route(request: Request, env: Env): Promise<Response> {
 	if (path.startsWith('/api/checkout/')) return checkoutRoute(request, env, session.user)
 	if (path === '/api/waitlist/me' && method === 'GET') {
 		const entry = session.user.emailVerified
-			? ((await database(env.DB)
+			? ((await productDatabase(env.PRODUCT_DB)
 					.select({ created_at: waitlist.created_at })
 					.from(waitlist)
 					.where(eq(waitlist.email, session.user.email))
@@ -82,8 +97,6 @@ async function route(request: Request, env: Env): Promise<Response> {
 			: null
 		return reply('waitlistStatus', { joined: Boolean(entry), entry })
 	}
-	if (path === '/api/todos' || path.startsWith('/api/todos/'))
-		return todosRoute(request, env, userId)
 	if (path === '/api/files') {
 		if (method !== 'GET') return methodNotAllowed('GET')
 		const limit = Number(url.searchParams.get('limit') ?? 100)
@@ -166,10 +179,12 @@ export default {
 					: await route(request, env)
 		} catch (error) {
 			if (!(error instanceof HttpError)) unexpectedError = error
-			response = json(
-				{ error: error instanceof HttpError ? error.message : 'Internal server error' },
-				error instanceof HttpError ? error.status : 500,
-			)
+			const status = error instanceof HttpError ? error.status : 500
+			const message = error instanceof HttpError ? error.message : 'Internal server error'
+			const operation = findOperation(request.method, path)
+			response = operation
+				? contractError(operation, status, message)
+				: json({ error: message }, status)
 			if (error instanceof HttpError)
 				for (const [name, value] of Object.entries(error.headers)) response.headers.set(name, value)
 		}

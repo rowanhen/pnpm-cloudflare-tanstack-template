@@ -12,15 +12,32 @@
 		"react/no-danger": "off",
 		"react/react-in-jsx-scope": "off",
 		"typescript/no-explicit-any": "warn",
-		"typescript/no-non-null-assertion": "warn"
+		"typescript/no-non-null-assertion": "warn",
+		"jsx-a11y/anchor-is-valid": [
+			"warn",
+			{
+				"specialLink": ["to"]
+			}
+		],
+		"jsx-a11y/no-redundant-roles": [
+			"warn",
+			{
+				"a": ["link"]
+			}
+		]
 	},
 	"ignorePatterns": [
 		"apps/*/src/routeTree.gen.ts",
 		"node_modules",
 		"dist",
 		"**/.output/**",
-		"**/.wrangler/**",
-		"playwright-report",
-		"test-results"
-	]
+		"**/.wrangler/**"
+	],
+	"settings": {
+		"jsx-a11y": {
+			"components": {
+				"Link": "a"
+			}
+		}
+	}
 }

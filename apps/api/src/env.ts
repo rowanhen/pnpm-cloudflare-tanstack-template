@@ -1,9 +1,13 @@
+import type { D1Database, R2Bucket, SendEmail } from '@cloudflare/workers-types'
 import type { ServerConfig } from '@workspace/observability/server'
 export interface Env extends ServerConfig {
 	API_PROXY_SECRET?: string
 	EMAIL?: SendEmail
 	EMAIL_FROM?: string
-	DB: D1Database
+	IDENTITY_DB: D1Database
+	BILLING_DB: D1Database
+	PRODUCT_DB: D1Database
+	DATABASE_MAINTENANCE?: string
 	FILES: R2Bucket
 	ALLOWED_ORIGINS: string
 	AUTH_URL: string
@@ -13,5 +17,7 @@ export interface Env extends ServerConfig {
 	STRIPE_SECRET_KEY?: string
 	STRIPE_PUBLISHABLE_KEY?: string
 	STRIPE_PRICE_ID?: string
+	STRIPE_DEMO_PRICE_ID?: string
+	STRIPE_SUBSCRIPTION_PRICE_ID?: string
 	STRIPE_WEBHOOK_SECRET?: string
 }

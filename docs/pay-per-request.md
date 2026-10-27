@@ -60,13 +60,13 @@ Non-successful requests spend no credits. A lost HTTP response may still represe
 
 ## Backend map
 
-| File                                                          | Responsibility                                                                                 |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [`summary.ts`](../apps/api/src/summary.ts)                    | Scope check, input validation, server-selected price, private business query                   |
-| [`billing.ts`](../apps/api/src/billing.ts)                    | Credit pack size, per-operation price, atomic charge and replay, account history               |
-| [`checkout.ts`](../apps/api/src/checkout.ts)                  | Server-selected Stripe price, order snapshot, payment verification, one credit grant per order |
-| [`keys.ts`](../apps/api/src/keys.ts)                          | Hashed keys, explicit single-endpoint scopes, revocation, rate limiting                        |
-| [`0005_credits.sql`](../apps/api/migrations/0005_credits.sql) | Account balances, immutable grants/receipts, uniqueness and non-negative-balance constraints   |
+| File                                                                 | Responsibility                                                                                 |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [`summary.ts`](../apps/api/src/summary.ts)                           | Scope check, input validation, server-selected price, private business query                   |
+| [`billing.ts`](../apps/api/src/billing.ts)                           | Credit pack size, per-operation price, atomic charge and replay, account history               |
+| [`checkout.ts`](../apps/api/src/checkout.ts)                         | Server-selected Stripe price, order snapshot, payment verification, one credit grant per order |
+| [`keys.ts`](../apps/api/src/keys.ts)                                 | Hashed keys, explicit single-endpoint scopes, revocation, rate limiting                        |
+| [`0005_credits.sql`](../apps/api/legacy-migrations/0005_credits.sql) | Account balances, immutable grants/receipts, uniqueness and non-negative-balance constraints   |
 
 `GET /api/billing` requires the user's session and returns `balance`, `summaryCost`, `packCredits`, and the latest ten grants/debits. API keys cannot read it or manage billing. New accounts start at zero. There is no public endpoint for minting credits. The isolated automated-test fixture seeds three credits per user directly into its temporary database.
 
@@ -77,10 +77,10 @@ Stripe orders snapshot the price ID, amount, currency, and credit quantity. A ca
 ## Adapt it for another idea
 
 - Set `CREDIT_PACK` and `SUMMARY_COST` in `billing.ts`, then configure your one-time Stripe price. Credits are integer product units, not a currency balance. Existing orders retain their purchased pack size.
-- Replace the SQL in `summary.ts` with your private, bounded database result, keeping the owner filter and parameter bindings. `chargeForResult` accepts application-owned SQL that yields one JSON value. Never pass SQL from an HTTP caller. Keep responses small because D1 stores each one for retries.
+- Replace the product query in `summary.ts` with your private, bounded database result, keeping owner filters and parameter bindings. `chargeForResult` accepts a server-produced JSON string, saved atomically with its debit. Never accept a caller-supplied billing result. Keep responses small because D1 stores each one for retries.
 - For another paid operation, add an explicit scope in the schema and key UI, register its route, and give it a stable operation name. Hash a canonical representation of every input that changes the result. Version operation names when behavior changes incompatibly.
 - Keep grants and paid receipts as your audit history. Deleting a key preserves receipts; deleting receipt IDs allows old requests to charge again. Define a documented retention/retry window before introducing pruning. Account deletion is a separate deliberate operation; no public account-deletion endpoint is included.
-- This atomic helper covers **D1 query results**. An R2 write, AI call, or third-party API cannot join a D1 transaction. For those, introduce a durable job with reservation, idempotent execution, and settle/refund states (plus an outbox/Queue) before charging for completion. The current R2 file example keeps its independent session permissions.
+- This atomic helper covers **persisting a prepared result and its credit debit within billing**. An R2 write, AI call, or third-party API cannot join a D1 transaction. For those, introduce a durable job with reservation, idempotent execution, and settle/refund states (plus an outbox/Queue) before charging for completion. The current R2 file example keeps its independent session permissions.
 
 The checkout stays in **Stripe test mode**. Before taking real payments, implement and test refund/dispute adjustments, account suspension, reconciliation, and your credit terms, then deliberately change the test-only key/event guards. These are not implemented by switching an environment variable. No subscriptions, per-call card charges, wallets, or currency conversion are involved in this example.
 
@@ -88,19 +88,18 @@ The checkout stays in **Stripe test mode**. Before taking real payments, impleme
 
 Your customer's one-credit request price is independent of your Cloudflare bill. [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) covers request/CPU usage and plan minimums; [D1](https://developers.cloudflare.com/d1/platform/pricing/) and [R2](https://developers.cloudflare.com/r2/pricing/) meter database/storage operations and storage. Auth, rate-limit writes, retries, and rejected API requests still use infrastructure. This is usage-based infrastructure without a dedicated server; it does not promise zero idle cost or one Cloudflare operation per paid request.
 
-The example uses the existing Worker, D1, R2 and Pages deployment from the [getting-started guide](getting-started.md). `pnpm setup-project my-project` sets project names; run `pnpm cloud:up my-demo` to provision those bindings. No separate metering service, cron job, or additional paid resource is required. Review those providers' current prices when choosing your own credit price.
+The example uses the existing Worker, D1, R2 and Pages deployment from the [getting-started guide](getting-started.md). `pnpm setup-project my-project` sets project names; follow the [Wrangler deployment guide](manual-deployment.md) to provision those bindings. No separate metering service, cron job, or additional paid resource is required. Review those providers' current prices when choosing your own credit price.
 
 Cloudflare also offers an x402-based [Monetization Gateway](https://developers.cloudflare.com/monetization-gateway/). Its [current eligibility](https://developers.cloudflare.com/monetization-gateway/eligibility/) requires both buyers and sellers to be US-based. This starter's `402` response reports an empty prepaid account; it is **not an x402 payment challenge**. A wallet/protocol integration would be a separate example.
 
 ## Verify and clean up
 
 ```bash
-pnpm test           # workerd + temporary D1/R2; real Stripe SDK against local HTTP fixture
-pnpm test:dev       # browser → Vite proxy → Worker → D1/R2
-pnpm test:browser   # browser → production Pages runtime → Worker → D1/R2
-pnpm test:remote    # requires Cloudflare credentials; creates and deletes temporary resources
+pnpm test           # local workerd + temporary D1/R2; real Stripe SDK against local HTTP fixture
 ```
 
-Metering tests exercise scope isolation, input conflicts, cross-user results, concurrent duplicate IDs across keys, the last-credit race, zero-balance replay, retained history, revocation, and a forced debit failure with full rollback. Stripe tests race webhook delivery with status polling and check that unpaid/forged/mismatched events never grant credits. Browser tests create a paid key, call through the app proxy, refresh the balance, and revoke it.
+Metering tests exercise scope isolation, input conflicts, cross-user results, concurrent duplicate IDs across keys, the last-credit race, zero-balance replay, retained history, revocation, and a forced debit failure with full rollback. Stripe tests race webhook delivery with status polling and check that unpaid/forged/mismatched events never grant credits. Manually check creating a paid key in the dashboard, calling through the app proxy, refreshing the balance and revoking the key. These API suites run locally, not in CI.
 
-The cloud run uses a real deployed Worker and D1 for the paid endpoint; seed credits and a test-only SQL trigger live only in its disposable database. It deletes and verifies absence of the Worker, D1, R2, and both Pages projects. Stripe fixture tests create no Stripe resources and do not complete a real card payment. Follow the [sandbox payment check](payments.md) for that final provider integration, then use `pnpm stripe:cleanup` for any sandbox resources you created.
+Local suites use the real Worker/D1 runtime with temporary storage. Stripe fixture tests create no Stripe resources and do not complete a real card payment. Follow the [sandbox payment check](payments.md) for that provider integration. Manage remote resources and obsolete Stripe test catalog/webhook entries with their native provider tools.
+
+The credit ledger now lives in `BILLING_DB`; product summary data is read from `PRODUCT_DB` before its response snapshot and debit are saved atomically. See [database consistency](databases.md#references-and-consistency).

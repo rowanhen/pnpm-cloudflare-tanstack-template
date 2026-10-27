@@ -1,14 +1,4 @@
-import { Link } from '@tanstack/react-router'
-import {
-	Button,
-	Card,
-	Input,
-	Label,
-	Checkbox,
-	Alert,
-	Stack,
-	Typography,
-} from '@leitware/composables'
+import { Button, Card, Input, Label, Checkbox, Alert, Stack, Typography } from '@workspace/shared'
 import { useWaitlist } from '../hooks/use-waitlist'
 
 export function WaitlistForm({ title }: { title: string }) {
@@ -16,6 +6,7 @@ export function WaitlistForm({ title }: { title: string }) {
 	return (
 		<Card
 			id="waitlist"
+			className="shadow-none"
 			title={
 				<Typography as="h2" variant="heading-400" id="waitlist-title">
 					{title}
@@ -54,16 +45,10 @@ export function WaitlistForm({ title }: { title: string }) {
 				</div>
 				<Stack direction="horizontal" align="start" gap={3}>
 					<Checkbox id="consent" name="consent" required disabled={disabled} />
-					<Label
-						htmlFor="consent"
-						className="block text-xs font-normal leading-5 text-content-secondary"
-					>
-						Save my email in this demo.{' '}
-						<Link to="/privacy">
-							<Typography as="span" variant="link-100">
-								Privacy details
-							</Typography>
-						</Link>
+					<Label htmlFor="consent" className="block text-content-secondary">
+						<Typography as="span" variant="caption-100">
+							Save my email in this demo.
+						</Typography>{' '}
 					</Label>
 				</Stack>
 				<Button type="submit" disabled={disabled} className="w-full" size="lg">

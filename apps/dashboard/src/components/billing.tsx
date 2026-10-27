@@ -1,30 +1,35 @@
-import { Alert, Badge, Button, Card, Skeleton, Stack, Typography } from '@workspace/shared'
+import { Link } from '@tanstack/react-router'
+import { Alert, Button, PageSection, Skeleton, Stack, Typography } from '@workspace/shared'
+
 import { useBilling } from '../hooks/use-billing'
 
 export function Billing() {
 	const billing = useBilling()
 	return (
-		<Card title={<h2>API credits</h2>} action={<Badge variant="outline">Test mode</Badge>}>
+		<PageSection title="API credits">
 			<Stack gap={4}>
 				{billing.isPending ? (
 					<Skeleton className="h-10 w-40" aria-label="Loading credits" />
 				) : (
 					billing.data && (
-						<div className="flex flex-wrap items-baseline gap-3">
+						<Stack gap={3} direction="horizontal" align="baseline" wrap>
 							<Typography variant="heading-400" aria-live="polite" data-testid="credit-balance">
 								{billing.data.balance.toLocaleString('en-GB')}{' '}
 								{billing.data.balance === 1 ? 'credit' : 'credits'}
 							</Typography>
-							<span className="text-sm text-content-secondary">
+							<Typography as="span" variant="body-100" className="text-content-secondary">
 								{billing.data.summaryCost} credit / summary
-							</span>
-						</div>
+							</Typography>
+						</Stack>
 					)
 				)}
 				{billing.error && <Alert type="negative">{billing.error.message}</Alert>}
 				<Stack direction="horizontal" gap={3} wrap>
-					<Button asChild>
-						<a href="/checkout">Add credits</a>
+					<Button
+						{...{ nativeButton: false }}
+						render={<Link aria-label="Add credits" role="link" to="/credits" />}
+					>
+						Add credits
 					</Button>
 					<Button
 						variant="outline"
@@ -35,6 +40,6 @@ export function Billing() {
 					</Button>
 				</Stack>
 			</Stack>
-		</Card>
+		</PageSection>
 	)
 }

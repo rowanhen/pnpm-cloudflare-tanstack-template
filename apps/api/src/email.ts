@@ -1,5 +1,6 @@
-import { database } from '@workspace/data/client'
-import { emailDeliveries, now, type EmailDelivery } from '@workspace/data/schema'
+import { now } from '@workspace/data/columns'
+import { productDatabase } from '@workspace/data/client'
+import { emailDeliveries, type EmailDelivery } from '@workspace/data/product'
 import { desc, eq } from 'drizzle-orm'
 import type { User } from '@workspace/contracts'
 import type { Env } from './env'
@@ -31,7 +32,7 @@ export async function sendEmail(
 ) {
 	if (!emailEnabled(env) || !env.EMAIL || !env.EMAIL_FROM)
 		throw new HttpError(503, 'Email is not configured')
-	const db = database(env.DB)
+	const db = productDatabase(env.PRODUCT_DB)
 	const delivery = await db
 		.insert(emailDeliveries)
 		.values({
@@ -90,7 +91,7 @@ export async function sendEmail(
 
 export async function emailRoute(request: Request, env: Env, user: User) {
 	if (request.method === 'GET') {
-		const emails = await database(env.DB)
+		const emails = await productDatabase(env.PRODUCT_DB)
 			.select({
 				id: emailDeliveries.id,
 				status: emailDeliveries.status,
@@ -106,7 +107,7 @@ export async function emailRoute(request: Request, env: Env, user: User) {
 	if (!user.emailVerified) throw new HttpError(403, 'Verify your email before sending a test')
 	const { requestId } = await input(request, 'sendEmail')
 	if (!emailEnabled(env)) throw new HttpError(503, 'Email is not configured')
-	await rateLimit(env.DB, `email-test:${user.id}`, 3, 3600)
+	await rateLimit(env.IDENTITY_DB, `email-test:${user.id}`, 3, 3600)
 	const email = await sendEmail(env, {
 		to: user.email,
 		userId: user.id,

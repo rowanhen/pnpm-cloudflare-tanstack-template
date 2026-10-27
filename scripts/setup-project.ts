@@ -1,4 +1,6 @@
-import { workerConfig } from './tooling.ts'
+import apiConfig from '../apps/api/wrangler.json' with { type: 'json' }
+import marketingConfig from '../apps/marketing/wrangler.json' with { type: 'json' }
+import dashboardConfig from '../apps/dashboard/wrangler.json' with { type: 'json' }
 import packageManifest from '../package.json' with { type: 'json' }
 import { createInterface } from 'node:readline/promises'
 import { readFile, writeFile } from 'node:fs/promises'
@@ -32,11 +34,21 @@ await writeFile(
 )
 
 const workerPath = new URL('../apps/api/wrangler.json', import.meta.url)
-const worker = workerConfig()
+const worker = structuredClone(apiConfig)
 worker.name = `${projectName}-api`
-worker.d1_databases[0].database_name = `${projectName}-db`
+for (const database of worker.d1_databases)
+	database.database_name = `${projectName}-${database.binding.replace('_DB', '').toLowerCase()}`
 worker.r2_buckets[0].bucket_name = `${projectName}-files`
 await writeFile(workerPath, `${JSON.stringify(worker, null, '\t')}\n`)
+for (const [app, initialConfig] of [
+	['marketing', marketingConfig],
+	['dashboard', dashboardConfig],
+] as const) {
+	const path = new URL(`../apps/${app}/wrangler.json`, import.meta.url)
+	const config = structuredClone(initialConfig)
+	config.name = `${projectName}-${app}`
+	await writeFile(path, `${JSON.stringify(config, null, '\t')}\n`)
+}
 
 console.log(`Initialized project as "${projectName}".`)
 console.log('Next steps:')

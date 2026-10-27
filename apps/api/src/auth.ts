@@ -1,13 +1,19 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { database } from '@workspace/data/client'
-import { users, sessions, accounts, verifications, auth_rate_limits } from '@workspace/data/schema'
+import { identityDatabase } from '@workspace/data/client'
+import {
+	users,
+	sessions,
+	accounts,
+	verifications,
+	auth_rate_limits,
+} from '@workspace/data/identity'
 import type { Env } from './env'
 
 export function createAuth(env: Env) {
 	return betterAuth({
 		appName: 'Cloudflare Starter',
-		database: drizzleAdapter(database(env.DB), {
+		database: drizzleAdapter(identityDatabase(env.IDENTITY_DB), {
 			provider: 'sqlite',
 			schema: { users, sessions, accounts, verifications, auth_rate_limits },
 		}),

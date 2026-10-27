@@ -10,10 +10,22 @@
 	},
 	"d1_databases": [
 		{
-			"binding": "DB",
-			"database_name": "pnpm-cloudflare-tanstack-template-db",
-			"database_id": "00000000-0000-0000-0000-000000000000",
-			"migrations_dir": "migrations"
+			"binding": "IDENTITY_DB",
+			"database_name": "pnpm-cloudflare-tanstack-template-identity",
+			"database_id": "00000000-0000-0000-0000-000000000001",
+			"migrations_dir": "migrations/identity"
+		},
+		{
+			"binding": "BILLING_DB",
+			"database_name": "pnpm-cloudflare-tanstack-template-billing",
+			"database_id": "00000000-0000-0000-0000-000000000002",
+			"migrations_dir": "migrations/billing"
+		},
+		{
+			"binding": "PRODUCT_DB",
+			"database_name": "pnpm-cloudflare-tanstack-template-product",
+			"database_id": "00000000-0000-0000-0000-000000000003",
+			"migrations_dir": "migrations/product"
 		}
 	],
 	"r2_buckets": [

@@ -21,13 +21,13 @@
 
 A Google **origin** is the base address of the dashboard. The **redirect URI** is the address Google returns to after consent. Add each exact value to the same web client whose ID and secret you use. Paths, ports and trailing slashes matter.
 
-| Environment     | Authorized JavaScript origin                            | Authorized redirect URI                                                          |
-| --------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Local           | `http://localhost:3001`                                 | `http://localhost:3001/api/auth/callback/google`                                 |
-| Your deployment | The dashboard URL printed by `pnpm cloud:up my-demo`    | That URL followed by `/api/auth/callback/google`                                 |
-| Maintained demo | `https://starter-showcase-18d8b58f-dashboard.pages.dev` | `https://starter-showcase-18d8b58f-dashboard.pages.dev/api/auth/callback/google` |
+| Environment     | Authorized JavaScript origin                 | Authorized redirect URI                                               |
+| --------------- | -------------------------------------------- | --------------------------------------------------------------------- |
+| Local           | `http://localhost:3001`                      | `http://localhost:3001/api/auth/callback/google`                      |
+| Your deployment | Your deployed dashboard origin               | That URL followed by `/api/auth/callback/google`                      |
+| Maintained demo | `https://dashboard.devtemplate.leitware.com` | `https://dashboard.devtemplate.leitware.com/api/auth/callback/google` |
 
-The public marketing domain `devtemplate.leitware.com` does not handle login. `cloud:domain` changes the marketing address only. Google redirects through the dashboard's `/api` proxy to Better Auth in the Worker. `AUTH_URL` and the registered callback must describe that dashboard, even though the API has a separate address.
+The public marketing domain `devtemplate.leitware.com` does not handle login. A marketing custom domain does not change the dashboard callback. Google redirects through the dashboard's `/api` proxy to Better Auth in the Worker. `AUTH_URL` and the registered callback must describe that dashboard, even though the API has a separate address.
 
 For a fresh project, configure an OAuth client you control. Leitware products can reuse the same web client in `leitware-auth` by adding each exact callback. A provider may require the account owner to sign in, pass MFA, or approve consent. Credentials alone do not prove that a callback is registered.
 
@@ -38,14 +38,16 @@ The chosen Google Cloud project is `leitware-auth`. The agreed setup is to reuse
 For each new project:
 
 1. Supply the same `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` through that project's ignored environment file or secret manager.
-2. Keep a fresh, project-specific `BETTER_AUTH_SECRET`. `setup:local` generates one locally and `cloud:up` generates a separate one for each deployment.
+2. Keep a fresh, project-specific `BETTER_AUTH_SECRET`. `setup:local` generates one locally; generate and encrypt a separate production secret before deploying.
 3. Add the exact dashboard URL plus `/api/auth/callback/google` to the shared client's authorized redirect URIs. Add its JavaScript origin where required and configure production consent-screen authorized domains for your own domains. A domain entry alone does not register a callback.
-4. Set the app's `AUTH_URL` to its dashboard origin and include the app origins in `ALLOWED_ORIGINS`. The existing cloud setup does this automatically.
+4. Set the app's `AUTH_URL` to its dashboard origin and include the app origins in `ALLOWED_ORIGINS`. Set these explicitly in the production Worker configuration.
 5. Check the client's audience/test-user settings, then complete a real sign-in on that dashboard.
 
 The local callback stays `http://localhost:3001/api/auth/callback/google` when new projects use the same development port. Each deployed dashboard needs its own exact registered callback. Configure the shared client once, then extend its allowlist as products are deployed; do not rotate its secret merely to add a product.
 
 Each product retains its own D1 users, sessions, permissions, data and billing. Users sign in with the same Google account, but logging into one product does not create a session in another. Shared Leitware sessions would be a separate single-sign-on feature; it is not needed for the agreed setup.
+
+Keep deployment credentials (`GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`) encrypted with dotenvx in the repository-root `.env.local`. This encrypted file can be committed; the matching `.env.keys` must remain private and is gitignored. Cloudflare Worker secrets hold the deployed copies. Load the encrypted file with `npx --yes @dotenvx/dotenvx@1.65.0 run -f .env.local -- <command>` when using these credentials. Local Wrangler development still uses the ignored `apps/api/.dev.vars` with its own development credentials.
 
 ## Verify it in a browser
 
@@ -55,13 +57,13 @@ Each product retains its own D1 users, sessions, permissions, data and billing. 
 4. Open `/checkout` while signed out. After Google sign-in you should return to checkout. An order link at `/checkout/success?session_id=cs_test_...` must keep its order reference through sign-in; only its owner can read it.
 5. Cancel Google consent. The sign-in page should show a retry message and keep the checkout destination.
 
-A first real sign-in creates the user's D1 user/account records. Automated browser tests seed temporary sessions and check OAuth initiation, cancellation and redirects; they do not complete Google's token exchange.
+A first real sign-in creates the user's D1 user/account records. Local API tests seed temporary sessions; Google's consent/token exchange and frontend redirects are verified manually using the steps above.
 
 ## If sign-in fails
 
 | What you see                            | What to check                                                                                                                                                            |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Google sign-in is unavailable           | Both Google values in `apps/api/.dev.vars`; restart `pnpm dev` or rerun `pnpm cloud:up my-demo`.                                                                         |
+| Google sign-in is unavailable           | Both Google values in `apps/api/.dev.vars`; restart `pnpm dev`, or update Worker secrets and redeploy.                                                                   |
 | `redirect_uri_mismatch` at Google       | Copy the exact `redirect_uri` from Google's error details into that web client's authorized redirect URIs. Check that you edited the client matching `GOOGLE_CLIENT_ID`. |
 | Access blocked / testing restriction    | Configure the Google audience and add the signing-in account as a test user.                                                                                             |
 | Sign-in returns but no session persists | Use one dashboard hostname throughout. Check `AUTH_URL`, `ALLOWED_ORIGINS` and HTTPS; do not start on a temporary Pages preview hostname.                                |

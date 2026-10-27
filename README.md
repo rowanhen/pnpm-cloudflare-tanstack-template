@@ -6,17 +6,19 @@ A TypeScript starter with a waitlist website, Google sign-in, a private dashboar
 
 ## Run locally
 
-Install [Node.js 24 LTS](https://nodejs.org/en/download) and [Git](https://git-scm.com/downloads), then run:
+Install [Node.js 26.12.0](https://nodejs.org/en/download) and [Git](https://git-scm.com/downloads), then run:
 
 ```bash
 git clone https://github.com/rowanhen/pnpm-cloudflare-tanstack-template.git my-project
 cd my-project
-corepack enable
+nvm install
+nvm use
+npm install --global pnpm@10.34.7
 pnpm install
 pnpm dev
 ```
 
-If `corepack` is missing, run `npm install --global corepack` first. Node 22.12+ is supported; the repository selects pnpm 10.34.6. Run commands from the repository root. Leave `pnpm dev` running and open:
+The repository pins Node 26.12.0 in `.nvmrc` and pnpm 10.34.7 in `package.json`. `pnpm install` also installs the pinned Node runtime for project scripts. The `nvm` commands use [Node Version Manager](https://github.com/nvm-sh/nvm); if you install Node directly, use the pinned version and skip those two commands. Run commands from the repository root. Leave `pnpm dev` running and open:
 
 | App       | Local address                    | What works first                                    |
 | --------- | -------------------------------- | --------------------------------------------------- |
@@ -41,27 +43,29 @@ For account credentials, local payments, Google callbacks and a repeatable new-p
 ## Test and deploy
 
 ```bash
-pnpm validate             # local API, types, builds and browser tests; no provider accounts
-pnpm setup:doctor --online # check available credentials; not proof of login or payment
-pnpm cloud:up my-demo      # requires Cloudflare credentials; prints deployed URLs
-pnpm cloud:check my-demo   # read-only deployment checks
+pnpm api:generate # after changing OpenAPI contracts
+pnpm check        # lint, formatting, migrations, unit/API tests, types and builds
+pnpm validate     # alias for pnpm check
 ```
 
-`pnpm validate --cloud` also creates real, disposable Cloudflare resources, tests them and verifies cleanup. It does not complete Google consent, Stripe card entry, PostHog account ingestion or email inbox delivery. See [verification and cleanup](docs/verification.md).
-
-To remove an environment you no longer need, run `pnpm cloud:down my-demo`. This deletes its database and files. Keep the ignored `.wrangler/sandboxes/my-demo/` directory until cleanup finishes.
+CI runs lint, unit tests, type checks and build. On main, a separate job deploys the verified build when Cloudflare Actions settings are configured. See the [Wrangler deployment guide](docs/manual-deployment.md#github-actions-deployment). Cloudflare resources, secrets and provider accounts use their native tools; this template does not maintain its own provisioning or teardown framework. Live provider checks are described in [verification](docs/verification.md).
 
 ## Guides
 
-| Task                                              | Guide                                       |
-| ------------------------------------------------- | ------------------------------------------- |
-| First project, pages and deployment               | [Getting started](docs/getting-started.md)  |
-| Google client, callback URLs and sign-in problems | [Google sign-in](docs/google-sign-in.md)    |
-| Test cards, custom checkout and webhooks          | [Payments](docs/payments.md)                |
-| Charge credits for a private REST endpoint        | [Pay per request](docs/pay-per-request.md)  |
-| D1 types, migrations and Cloudflare email         | [Data and email](docs/data-and-email.md)    |
-| Analytics, session replay and API errors          | [PostHog](docs/observability.md)            |
-| Automated setup, permissions and teardown         | [Agent setup](docs/agent-setup.md)          |
-| Component conventions, folders and REST routes    | [Code and API reference](docs/reference.md) |
+| Task                                              | Guide                                               |
+| ------------------------------------------------- | --------------------------------------------------- |
+| Project structure and adding typed API features   | [One-page architecture guide](docs/architecture.md) |
+| First project, pages and deployment               | [Getting started](docs/getting-started.md)          |
+| Google client, callback URLs and sign-in problems | [Google sign-in](docs/google-sign-in.md)            |
+| Test cards, custom checkout and webhooks          | [Payments](docs/payments.md)                        |
+| Charge credits for a private REST endpoint        | [Pay per request](docs/pay-per-request.md)          |
+| D1 types, migrations and Cloudflare email         | [Data and email](docs/data-and-email.md)            |
+| Analytics, session replay and API errors          | [PostHog](docs/observability.md)                    |
+| Agent workflow and provider access                | [Agent setup](docs/agent-setup.md)                  |
+| Component conventions, folders and REST routes    | [Code and API reference](docs/reference.md)         |
 
-Application code, configuration, scripts and tests are TypeScript. D1 schema types live in `@workspace/data`; validated public API types and the client live in `@workspace/contracts`. Both apps share the UI and observability packages. GitHub's required **Verify** check gates dependency auto-merges.
+Start with the [one-page structure guide](docs/architecture.md). The [detailed API walkthrough](docs/api-architecture.md) explains the OpenAPI → Orval → Hono + Effect flow, demonstrated by todos. Add or edit feature contracts, run `pnpm api:generate`, and implement the typed entry points; routes, clients, hooks, and mocks are generated automatically.
+
+Application code, scripts and tests are TypeScript; OpenAPI and Wrangler configuration use JSON. D1 schema types live in `@workspace/data`; validated public API types and the client live in `@workspace/contracts`. Both apps share the UI and observability packages. GitHub's required **Verify** check gates dependency auto-merges.
+
+Storage starts with three D1 databases: identity, billing and product. Each has its own schema, typed client and migration history. See [database setup and boundaries](docs/databases.md).

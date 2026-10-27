@@ -1,7 +1,8 @@
+import { AppShell, Button, Stack, Alert, appTitle, Typography } from '@workspace/shared'
 import { client } from '../lib/api'
 import { useEffect, useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { AppShell, Button, Card, Stack, Alert, appTitle } from '@workspace/shared'
+
 import { observedFetch } from '@workspace/observability/browser'
 import { getSession } from '../lib/session'
 import { loginSearch, loginReturnPath, signInPath } from '../lib/login'
@@ -63,17 +64,21 @@ function LoginPage() {
 	}
 	return (
 		<AppShell title="Sign in">
-			<Card className="max-w-md">
+			<div className="max-w-sm">
 				<Stack gap={4}>
 					<Button className="w-full" disabled={!ready || !googleEnabled || busy} onClick={signIn}>
 						{busy ? 'Redirecting…' : 'Continue with Google'}
 					</Button>
-					{ready && !googleEnabled && <p>Google sign-in is unavailable.</p>}
+					{ready && !googleEnabled && (
+						<Typography as="p" variant="body-200">
+							Google sign-in is unavailable.
+						</Typography>
+					)}
 					{(error || (!busy && callbackError)) && (
 						<Alert type="negative">{error || callbackError}</Alert>
 					)}
 				</Stack>
-			</Card>
+			</div>
 		</AppShell>
 	)
 }

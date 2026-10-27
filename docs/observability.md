@@ -6,24 +6,7 @@ For a first setup, start with [Getting started](getting-started.md). For proof o
 
 ## Connect a project
 
-Use a dedicated project for each application. An agent with the connected PostHog app can create the project and configure replay. Alternatively, the CLI can provision a project and reporting dashboard using an existing personal API key:
-
-```sh
-export POSTHOG_MANAGEMENT_HOST=https://eu.posthog.com
-export POSTHOG_ORGANIZATION_ID=YOUR_ORGANIZATION_UUID
-# Supply POSTHOG_PERSONAL_API_KEY through your secret manager/environment.
-# Scopes: project:read/write, dashboard:read/write, insight:read/write.
-export POSTHOG_PROJECT_NAME='Cloudflare Starter'
-pnpm posthog:setup
-pnpm setup:local
-pnpm cloud:up my-demo
-```
-
-Set `POSTHOG_PROJECT_ID` to configure an existing project explicitly. `posthog:setup` enables replay and IP anonymization and disables replay console capture in that project. It creates three tagged insights (engagement, API health and errors) and reuses them on subsequent runs. It preserves later manual changes to those insights. Project names are unique within an organization; the CLI resolves the project before writing. Use a distinct `APP_ENV` for each deployment. Reports default to `production`, while local capture defaults to `development`.
-
-Setup writes only the public collection token, ingestion host and project ID into the ignored `apps/api/.dev.vars` (or `STARTER_ENV_FILE`). The personal API key stays in your environment; it is never deployed. The Cloudflare deployment keeps the analytics project: `cloud:down` removes Cloudflare resources, not your analytics history. No account or personal API key is fabricated by setup; an authenticated connection is required once.
-
-To configure an already prepared project without management access, set:
+Use a dedicated PostHog project, created through its dashboard or an authenticated connector. Enable session replay and IP anonymization; disable replay console capture in the project settings. Copy the public collection token and regional ingestion host into `apps/api/.dev.vars`:
 
 ```dotenv
 POSTHOG_KEY=phc_YOUR_PUBLIC_PROJECT_TOKEN
@@ -31,9 +14,11 @@ POSTHOG_HOST=https://eu.i.posthog.com
 APP_ENV=development
 ```
 
-Use `https://us.i.posthog.com` for US projects. Ingestion and management hosts differ. The CLI targets PostHog Cloud; extend its explicit host validation for self-hosting. Enable session replay in the target project if configuring manually.
+Use `https://us.i.posthog.com` for US projects. `pnpm setup:local` copies these public settings into both ignored frontend `.env.local` files, preserving unrelated values. Use a distinct `APP_ENV` per deployment.
 
-`pnpm setup:local` copies public settings into both ignored frontend `.env.local` files, preserving unrelated values. `pnpm cloud:up NAME` supplies them to both builds and the Worker. For manual deployment, set `VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST` and `VITE_APP_ENV` on the frontend build, and `POSTHOG_KEY`, `POSTHOG_HOST` and `APP_ENV` on the API. Never put a `phx_` personal key in any `VITE_` variable.
+For deployment, set `VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST` and `VITE_APP_ENV` on frontend builds, and `POSTHOG_KEY`, `POSTHOG_HOST` and `APP_ENV` on the API Worker. Never put a personal API key in a `VITE_` variable. The template needs no PostHog management credential or custom provisioning script.
+
+Create dashboards or query events in PostHog directly. Useful views are engagement, per-route requests/5xx/429/p95 duration and errors, filtered to the deployment environment.
 
 ## Events and diagnosis
 
@@ -52,16 +37,11 @@ Unexpected errors retain their type and stack locations; messages, causes and so
 
 Cloudflare Workers observability is enabled, with structured request logs using the same request ID. PostHog receives operational events, not a copy of arbitrary console output. SDK clients are scoped to each Worker invocation and flushed in `ctx.waitUntil`; a three-second request timeout and no retries bound telemetry failures. They do not delay the HTTP response. Provider failure bodies and network error causes are removed before SDK diagnostic logging. Adjust sampling/retention for your traffic volume.
 
-```sh
-pnpm setup:doctor
-pnpm posthog:report  # last seven days, using your management credentials; query:read scope
-```
-
-The report returns engagement counts, per-route requests/5xx/429/p95 duration and error counts. Setup prints direct links to the dashboard, Error Tracking and Session Replay. Empty reports are not evidence of working ingestion. After deployment, allow analytics, visit a few pages and submit the waitlist; then verify those events in the chosen project. Use Error Tracking to open a crash's linked recording. Test failures locally rather than adding a public crash endpoint.
+After deployment, allow analytics, visit pages and submit the waitlist; verify events in the chosen project's Activity view. Use Error Tracking to open a crash's linked recording. Empty reports are not proof of working ingestion. Test failures locally rather than adding a public crash endpoint.
 
 ## Privacy and reuse
 
-Browser analytics and replay start only after explicit consent. Users can reopen **Analytics preferences** and withdraw it. Each frontend origin stores its own preference; this avoids sharing identifiers with unrelated Leitware projects. Signed-in dashboard sessions use the opaque account ID without name/email properties; logout resets identity. Anonymous marketing sessions are not joined across origins automatically.
+Browser analytics and replay have independent opt-in choices. Users can reopen **Privacy preferences** and withdraw either purpose. Global Privacy Control disables both in this template. See [privacy and consent](privacy-consent.md) for the behaviour, regulatory context and launch requirements. Each frontend origin stores its own preference; this avoids sharing identifiers with unrelated Leitware projects. Signed-in dashboard sessions use the opaque account ID without name/email properties; logout resets identity. Anonymous marketing sessions are not joined across origins automatically.
 
 Replay masks all text, input values and element attributes, blocks media and iframes, and excludes console/network bodies and headers. URL queries, hashes and unknown route segments are removed. Autocapture, heatmaps, remote SDK scripts and automatic exception capture are disabled; explicit typed events and sanitized exception handlers are used instead. Add `.ph-no-capture` to any new sensitive subtree. Revisit these choices and the privacy notice when adapting the template.
 
@@ -70,11 +50,10 @@ To add an event, extend `Events` in `packages/observability/src/browser.ts`, the
 ## Validation
 
 ```sh
-pnpm test:setup
-pnpm test:browser tests/observability.spec.ts
-pnpm test:dev tests/observability.spec.ts
+pnpm test:unit
+pnpm test
 ```
 
-Tests exercise the real SDK against intercepted/local transports, including consent, replay masking, URL/message redaction, request correlation, identity reset, SDK flushing, provider outages, and repeatable scoped management setup. Tests never send fixture events to your live project. The management API fixture verifies request shapes and reruns; live API permissions, query execution, ingestion and replay must still be checked against the connected account.
+Local tests cover consent-record validation, URL/message redaction, API request correlation, server SDK flushing and provider outages against local transports. Tests never send fixture events to your live project. Check browser consent gates, replay masking, identity reset, withdrawal, live ingestion and playable replay manually using the [verification guide](verification.md). CI runs unit tests; API integration checks run locally.
 
 References: [Workers integration](https://posthog.com/docs/libraries/cloudflare-workers), [JavaScript configuration](https://posthog.com/docs/libraries/js/config), [replay privacy](https://posthog.com/docs/session-replay/privacy), [API authentication](https://posthog.com/docs/api).

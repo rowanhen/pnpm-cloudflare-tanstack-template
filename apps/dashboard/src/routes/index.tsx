@@ -1,21 +1,29 @@
-import { useAnalyticsIdentity } from '@workspace/shared/components/analytics'
-import { Email } from '../components/email'
-import { useState } from 'react'
-import { createFileRoute, redirect } from '@tanstack/react-router'
 import {
 	AppShell,
 	Button,
-	Card,
+	PageSection,
 	Stack,
 	Input,
+	DropZone,
+	DropZoneArea,
+	DropZoneInput,
+	DropZoneContent,
+	DropZoneFile,
+	getRejectionMessage,
 	Label,
 	Checkbox,
 	Alert,
 	Skeleton,
 	useHydrated,
+	Typography,
 } from '@workspace/shared'
+import { useAnalyticsIdentity } from '@workspace/shared/components/analytics'
+import { Email } from '../components/email'
+import { useState } from 'react'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+
 import { getSession } from '../lib/session'
-import { api, client } from '../lib/api'
+import { api } from '../lib/api'
 import { ApiKeys } from '../lib/api-keys'
 import { Billing } from '../components/billing'
 import { useSignOut, useWorkspace } from '../hooks/use-workspace'
@@ -33,12 +41,15 @@ function DashboardHomePage() {
 	useAnalyticsIdentity(user.id)
 	const [title, setTitle] = useState('')
 	const [file, setFile] = useState<File | null>(null)
-	const { todos, files, mutation, busy, error } = useWorkspace(user.id)
+	const [fileError, setFileError] = useState('')
+	const { todos, files, mutation, todoMutations, busy, error } = useWorkspace(user.id)
+	const replacingFile = !!file && !!files.data?.files.some((item) => item.key === file.name)
 	const hydrated = useHydrated()
 	const signOut = useSignOut()
 	return (
 		<AppShell
 			title="Your workspace"
+			description={user.email}
 			actions={
 				<Button
 					disabled={!hydrated || signOut.isPending}
@@ -50,24 +61,20 @@ function DashboardHomePage() {
 				</Button>
 			}
 		>
-			<p className="text-sm text-content-secondary">{user.email}</p>
 			{(error || signOut.error) && (
 				<Alert type="negative">{(error ?? signOut.error)?.message}</Alert>
 			)}
-			<div className="grid items-start gap-6 lg:grid-cols-2">
-				<Card title={<h2>Todos</h2>}>
+			<Stack gap={10}>
+				<PageSection title="Todos">
 					<Stack gap={6}>
 						<form
 							className="flex items-end gap-3"
 							onSubmit={(event) => {
 								event.preventDefault()
-								mutation.mutate(async () => {
-									await client.mutate('createTodo', { title })
-									setTitle('')
-								})
+								todoMutations.create.mutate({ data: { title } }, { onSuccess: () => setTitle('') })
 							}}
 						>
-							<div className="flex-1 space-y-2">
+							<Stack gap={2} className="min-w-0 flex-1">
 								<Label htmlFor="todo-title" className="sr-only">
 									Todo title
 								</Label>
@@ -80,7 +87,7 @@ function DashboardHomePage() {
 									maxLength={200}
 									placeholder="New todo"
 								/>
-							</div>
+							</Stack>
 							<Button disabled={busy} type="submit">
 								Add todo
 							</Button>
@@ -89,29 +96,30 @@ function DashboardHomePage() {
 						<ul className="divide-y">
 							{todos.data?.todos.map((item) => (
 								<li key={item.id} className="flex items-center justify-between gap-3 py-3">
-									<div className="flex min-w-0 items-center gap-3">
+									<Stack gap={3} direction="horizontal" align="center" className="min-w-0">
 										<Checkbox
 											id={`todo-${item.id}`}
 											checked={item.completed}
 											disabled={busy}
 											onCheckedChange={() =>
-												mutation.mutate(() =>
-													client.updateTodo(item.id, { completed: !item.completed }),
-												)
+												todoMutations.update.mutate({
+													id: item.id,
+													data: { completed: !item.completed },
+												})
 											}
 										/>
 										<Label
 											htmlFor={`todo-${item.id}`}
-											className={`break-all leading-5 ${item.completed ? 'text-content-secondary line-through' : ''}`}
+											className={`break-all ${item.completed ? 'text-content-secondary line-through' : ''}`}
 										>
 											{item.title}
 										</Label>
-									</div>
+									</Stack>
 									<Button
-										variant="ghost"
+										variant="destructive"
 										size="sm"
 										disabled={busy}
-										onClick={() => mutation.mutate(() => client.deleteTodo(item.id))}
+										onClick={() => todoMutations.delete.mutate({ id: item.id })}
 										aria-label={`Delete todo ${item.title}`}
 									>
 										Delete
@@ -120,43 +128,79 @@ function DashboardHomePage() {
 							))}
 						</ul>
 						{todos.data?.todos.length === 0 && (
-							<p className="rounded-lg border border-dashed p-6 text-center text-sm text-content-secondary">
+							<Typography as="p" variant="body-100" className="text-content-secondary">
 								No todos yet.
-							</p>
+							</Typography>
 						)}
 					</Stack>
-				</Card>
-				<Card title={<h2>Files</h2>} description="Up to 5 MiB per file.">
+				</PageSection>
+				<PageSection title="Files" description="Up to 5 MiB per file.">
 					<Stack gap={6}>
 						<form
 							className="space-y-3"
 							onSubmit={(event) => {
 								event.preventDefault()
 								if (file)
-									mutation.mutate(() =>
-										api(`/api/files/${encodeURIComponent(file.name)}`, {
-											method: 'PUT',
-											headers: { 'Content-Type': file.type || 'application/octet-stream' },
-											body: file,
-										}),
+									mutation.mutate(
+										() =>
+											api(`/api/files/${encodeURIComponent(file.name)}`, {
+												method: 'PUT',
+												headers: { 'Content-Type': file.type || 'application/octet-stream' },
+												body: file,
+											}),
+										{ onSuccess: () => setFile(null) },
 									)
 							}}
 						>
-							<div className="space-y-2">
-								<Label htmlFor="file">File</Label>
-								<Input
-									id="file"
-									type="file"
-									required
+							<Stack gap={2}>
+								<DropZone
+									accept={{}}
+									multiple={false}
+									maxSizeBytes={5 * 1024 * 1024}
 									disabled={busy}
-									onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-								/>
-								<p className="text-xs text-content-secondary">
+									hasFiles={!!file}
+									hasError={!!fileError}
+									validator={(candidate) =>
+										/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$/.test(candidate.name)
+											? null
+											: {
+													code: 'invalid-name',
+													message:
+														'Use a 1–200 character filename with letters, numbers, dots, underscores or hyphens.',
+												}
+									}
+									onDrop={(accepted, rejected) => {
+										setFile(accepted[0] ?? null)
+										const rejection = rejected[0]?.errors[0]
+										setFileError(
+											rejection
+												? rejection.code === 'invalid-name'
+													? rejection.message
+													: getRejectionMessage(rejection.code, 5 * 1024 * 1024, {}, 1)
+												: '',
+										)
+									}}
+								>
+									<DropZoneArea>
+										<DropZoneInput />
+										{file ? (
+											<DropZoneFile file={file} disabled={busy} onRemove={() => setFile(null)} />
+										) : (
+											<DropZoneContent title="Upload a file" description="Up to 5 MiB." />
+										)}
+									</DropZoneArea>
+								</DropZone>
+								{fileError && <Alert type="negative">{fileError}</Alert>}
+								<Typography as="p" variant="caption-100" className="text-content-secondary">
 									Filenames: letters, numbers, . _ - only. Matching names replace existing files.
-								</p>
-							</div>
-							<Button disabled={busy || !file} type="submit" variant="secondary">
-								Upload file
+								</Typography>
+							</Stack>
+							<Button
+								disabled={busy || !file}
+								type="submit"
+								variant={replacingFile ? 'destructive' : 'secondary'}
+							>
+								{replacingFile ? 'Replace file' : 'Upload file'}
 							</Button>
 						</form>
 						{files.isPending && <Skeleton className="h-14 w-full" aria-label="Loading files" />}
@@ -167,10 +211,14 @@ function DashboardHomePage() {
 									className="flex flex-wrap items-center justify-between gap-2 py-3"
 								>
 									<div className="min-w-0">
-										<p className="break-all text-sm font-medium">{item.key}</p>
-										<p className="text-xs text-content-secondary">{item.size} bytes</p>
+										<Typography as="p" variant="body-100" className="break-all">
+											{item.key}
+										</Typography>
+										<Typography as="p" variant="caption-100" className="text-content-secondary">
+											{item.size} bytes
+										</Typography>
 									</div>
-									<div className="flex gap-1">
+									<Stack gap={1} direction="horizontal">
 										<Button
 											variant="ghost"
 											size="sm"
@@ -191,7 +239,7 @@ function DashboardHomePage() {
 											Download
 										</Button>
 										<Button
-											variant="ghost"
+											variant="destructive"
 											size="sm"
 											disabled={busy}
 											onClick={() =>
@@ -203,21 +251,23 @@ function DashboardHomePage() {
 										>
 											Delete
 										</Button>
-									</div>
+									</Stack>
 								</li>
 							))}
 						</ul>
 						{files.data?.files.length === 0 && (
-							<p className="rounded-lg border border-dashed p-6 text-center text-sm text-content-secondary">
+							<Typography as="p" variant="body-100" className="text-content-secondary">
 								No files yet.
-							</p>
+							</Typography>
 						)}
 						{files.data?.cursor && (
-							<p className="text-sm text-content-secondary">Showing the first 100 files.</p>
+							<Typography as="p" variant="body-100" className="text-content-secondary">
+								Showing the first 100 files.
+							</Typography>
 						)}
 					</Stack>
-				</Card>
-			</div>
+				</PageSection>
+			</Stack>
 			<Billing />
 			<ApiKeys />
 			<Email />

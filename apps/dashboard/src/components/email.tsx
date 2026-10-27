@@ -1,10 +1,11 @@
-import { Alert, Button, Card, Stack } from '@workspace/shared'
+import { Alert, Button, PageSection, Stack, Typography } from '@workspace/shared'
+
 import { useEmail } from '../hooks/use-email'
 
 export function Email() {
 	const { status, send, disabled } = useEmail()
 	return (
-		<Card title={<h2>Email</h2>}>
+		<PageSection title="Email">
 			<Stack gap={3}>
 				<div>
 					<Button disabled={disabled} onClick={() => send.mutate()}>
@@ -12,25 +13,37 @@ export function Email() {
 					</Button>
 				</div>
 				{status.data && !status.data.enabled && (
-					<p className="text-sm text-content-secondary">Email is not connected.</p>
+					<Typography as="p" variant="body-100" className="text-content-secondary">
+						Email is not connected.
+					</Typography>
 				)}
-				{send.isSuccess && <output>Email accepted for delivery.</output>}
+				{send.isSuccess && (
+					<output>
+						<Typography as="span" variant="body-100">
+							Email accepted for delivery.
+						</Typography>
+					</output>
+				)}
 				{(send.error || status.error) && (
 					<Alert type="negative">{(send.error ?? status.error)?.message}</Alert>
 				)}
 				{status.data?.emails.length ? (
-					<ul className="text-sm">
+					<ul>
 						{status.data.emails.map((email) => (
 							<li key={email.id} className="flex justify-between border-t py-2">
 								<time dateTime={email.created_at}>
-									{new Date(email.created_at).toLocaleString()}
+									<Typography as="span" variant="caption-100">
+										{new Date(email.created_at).toLocaleString()}
+									</Typography>
 								</time>
-								<span>{email.status}</span>
+								<Typography as="span" variant="body-200">
+									{email.status}
+								</Typography>
 							</li>
 						))}
 					</ul>
 				) : null}
 			</Stack>
-		</Card>
+		</PageSection>
 	)
 }

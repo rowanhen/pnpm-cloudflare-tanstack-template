@@ -1,8 +1,15 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute, redirect } from '@tanstack/react-router'
+
 import { Button, PageState, appTitle } from '@workspace/shared'
-import { checkoutSessionId } from '../lib/login'
+
+import { checkoutSessionId, signInPath } from '../lib/login'
+import { getSession } from '../lib/session'
 import { money, useOrderStatus } from '../hooks/use-checkout'
 export const Route = createFileRoute('/checkout/success')({
+	beforeLoad: async ({ location }) => {
+		if (!(await getSession()))
+			throw redirect({ href: signInPath(location.pathname, location.search) })
+	},
 	validateSearch: (search: Record<string, unknown>) => ({
 		session_id: checkoutSessionId(search.session_id),
 	}),
@@ -16,8 +23,12 @@ function CheckoutSuccess() {
 		return (
 			<PageState kind="error" title="We couldn't find that order.">
 				{session_id && <Button onClick={() => void status.refetch()}>Check again</Button>}
-				<Button variant="outline" asChild>
-					<a href="/checkout">Back to checkout</a>
+				<Button
+					variant="outline"
+					{...{ nativeButton: false }}
+					render={<Link aria-label="Back to checkout" role="link" to="/credits" />}
+				>
+					Back to checkout
 				</Button>
 			</PageState>
 		)
@@ -28,13 +39,13 @@ function CheckoutSuccess() {
 			<PageState
 				kind="success"
 				title="Payment successful."
-				description={`${order.credits.toLocaleString('en-GB')} credits added · ${money(order.amount, order.currency)} test payment.`}
+				description={`${order.credits.toLocaleString('en-GB')} credits added · ${money(order.amount, order.currency)}.`}
 			>
-				<p className="w-full break-all font-mono text-xs text-content-secondary">
-					Order {order.id}
-				</p>
-				<Button asChild>
-					<a href="/">Back to workspace</a>
+				<Button
+					{...{ nativeButton: false }}
+					render={<Link aria-label="Back to workspace" role="link" to="/" />}
+				>
+					Back to workspace
 				</Button>
 			</PageState>
 		)
@@ -45,8 +56,11 @@ function CheckoutSuccess() {
 				title="This checkout has expired."
 				description="No payment was confirmed."
 			>
-				<Button asChild>
-					<a href="/checkout">Start a new checkout</a>
+				<Button
+					{...{ nativeButton: false }}
+					render={<Link aria-label="Start a new checkout" role="link" to="/credits" />}
+				>
+					Start a new checkout
 				</Button>
 			</PageState>
 		)
@@ -62,8 +76,12 @@ function CheckoutSuccess() {
 			<Button onClick={() => void status.refetch()} disabled={status.isFetching}>
 				Check payment status
 			</Button>
-			<Button variant="outline" asChild>
-				<a href="/checkout">Back to checkout</a>
+			<Button
+				variant="outline"
+				{...{ nativeButton: false }}
+				render={<Link aria-label="Back to checkout" role="link" to="/credits" />}
+			>
+				Back to checkout
 			</Button>
 		</PageState>
 	)

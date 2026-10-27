@@ -13,6 +13,7 @@ node_modules
 dist
 dist-ssr
 *.local
+!/.env.local
 
 
 # Nitro / TanStack output
@@ -32,7 +33,6 @@ dist-ssr
 .env.prod
 .dev.vars*
 !.dev.vars.example
-playwright-report/
-test-results/
 
-.githooks/
+# Runtime CI configuration comes from GitHub Actions variables.
+apps/api/wrangler.ci.json

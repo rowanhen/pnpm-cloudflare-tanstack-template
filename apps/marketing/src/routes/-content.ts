@@ -115,7 +115,7 @@ export default {
 			blocks: [
 				{
 					kind: 'paragraph',
-					text: 'pnpm validate runs the API and browser tests. Add --cloud to test disposable cloud resources.',
+					text: 'pnpm validate runs formatting, schema, unit and API tests, type checks and builds.',
 				},
 				{
 					kind: 'links',
