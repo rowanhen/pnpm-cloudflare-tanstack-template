@@ -19,7 +19,9 @@ test('starter landing offers copyable setup and links to the examples', async ({
 	await page.getByRole('link', { name: 'Explore the examples' }).click()
 	await expect(page).toHaveURL(/#examples$/)
 	await expect(
-		page.getByRole('navigation', { name: 'Examples' }).getByRole('link', { name: /Dashboard/ }),
+		page
+			.getByRole('navigation', { name: 'Examples' })
+			.getByRole('link', { name: 'Dashboard', exact: true }),
 	).toHaveAttribute('href', process.env.E2E_DASHBOARD_URL ?? 'http://localhost:3001')
 	await page.screenshot({
 		path: 'test-results/marketing-desktop.png',
@@ -69,4 +71,29 @@ test('route content publishes HTML, Markdown and discovery documents', async ({
 	for (const path of ['/missing', '/missing.md', '/api/waitlist.md']) {
 		expect((await request.get(`${marketing}${path}`)).status()).toBe(404)
 	}
+})
+
+test('privacy stays available through client navigation and direct requests', async ({
+	page,
+	request,
+}) => {
+	await page.goto(marketing)
+	await expect(page.getByRole('button', { name: 'Copy run command', exact: true })).toBeEnabled()
+	const documentRequests: string[] = []
+	page.on('request', (navigation) => {
+		if (navigation.isNavigationRequest() && navigation.frame() === page.mainFrame())
+			documentRequests.push(navigation.url())
+	})
+	await page
+		.getByRole('navigation', { name: 'Footer navigation' })
+		.getByRole('link', { name: 'Privacy', exact: true })
+		.click()
+	await expect(page).toHaveURL(`${marketing}/privacy`)
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText('Privacy in this demo')
+	await expect(page.getByText(/The waitlist stores the email address/)).toBeVisible()
+	expect(documentRequests).toEqual([])
+	expect((await request.get(`${marketing}/privacy`)).status()).toBe(200)
+	expect(await (await request.get(`${marketing}/privacy.md`)).text()).toContain(
+		'Privacy in this demo',
+	)
 })

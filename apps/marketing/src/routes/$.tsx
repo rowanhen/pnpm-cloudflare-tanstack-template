@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from '@tanstack/react-router'
-import { getPage } from '../publishing/functions'
+import { getPage } from '../publishing/catalog'
 import { ContentPage, pageHead } from '../publishing/page'
 import { findPage } from '../publishing/catalog.server'
 import { renderMarkdown } from '../publishing/markdown'

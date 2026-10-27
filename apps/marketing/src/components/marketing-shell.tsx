@@ -1,47 +1,80 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- Composables renders anchors below; override Base UI's default button role. */
 import type { ReactNode } from 'react'
-import { Button, Separator } from '@workspace/shared'
+import { Link } from '@tanstack/react-router'
+import { Button, Separator, Typography } from '@leitware/composables'
 import { repository, site } from '../lib/seo'
 
 export function MarketingShell({ children }: { children: ReactNode }) {
 	return (
 		<div className="min-h-svh">
 			<header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-6 sm:px-8">
-				<a href="/" className="text-lg font-semibold tracking-tight">
-					{site.name}
-					<span className="text-brand">.</span>
-				</a>
+				<Link to="/">
+					<Typography as="span" variant="brand-heading-300">
+						{site.name}
+						<Typography as="span" variant="brand-heading-300" className="text-brand">
+							.
+						</Typography>
+					</Typography>
+				</Link>
 				<nav aria-label="Main navigation" className="flex items-center gap-4">
-					<a
-						href="/#setup"
-						className="hidden text-sm text-content-secondary hover:text-default sm:block"
+					<Button
+						role="link"
+						{...{ nativeButton: false }}
+						variant="link"
+						className="hidden sm:inline-flex"
+						render={<Link to="/" hash="setup" />}
 					>
 						Setup
-					</a>
-					<a
-						href={repository}
-						className="hidden text-sm text-content-secondary hover:text-default sm:block"
+					</Button>
+					<Button
+						role="link"
+						{...{ nativeButton: false }}
+						variant="link"
+						className="hidden sm:inline-flex"
+						render={<a href={repository} aria-label="GitHub" />}
 					>
 						GitHub ↗
-					</a>
-					<Button asChild variant="outline" size="sm">
-						<a href={site.dashboard}>Sign in ↗</a>
+					</Button>
+					<Button
+						role="link"
+						{...{ nativeButton: false }}
+						variant="outline"
+						size="sm"
+						render={<a href={site.dashboard} aria-label="Sign in" />}
+					>
+						Sign in ↗
 					</Button>
 				</nav>
 			</header>
 			<main className="mx-auto max-w-6xl px-5 sm:px-8">{children}</main>
 			<footer className="mx-auto max-w-6xl space-y-6 px-5 pb-8 pt-16 sm:px-8">
 				<Separator />
-				<div className="flex flex-wrap justify-between gap-4 text-sm text-content-secondary">
-					<a href="https://leitware.com" className="hover:text-default">
+				<div className="flex flex-wrap justify-between gap-4">
+					<Button
+						role="link"
+						{...{ nativeButton: false }}
+						variant="link"
+						render={<a href="https://leitware.com" aria-label="Built by Leitware" />}
+					>
 						Built by Leitware ↗
-					</a>
+					</Button>
 					<nav aria-label="Footer navigation" className="flex gap-5">
-						<a className="hover:text-default" href="/privacy">
+						<Button
+							role="link"
+							{...{ nativeButton: false }}
+							variant="link"
+							render={<Link to="/privacy" />}
+						>
 							Privacy
-						</a>
-						<a className="hover:text-default" href={site.dashboard}>
+						</Button>
+						<Button
+							role="link"
+							{...{ nativeButton: false }}
+							variant="link"
+							render={<a href={site.dashboard} aria-label="Sign in" />}
+						>
 							Sign in
-						</a>
+						</Button>
 					</nav>
 				</div>
 			</footer>

@@ -1,4 +1,7 @@
-import { Badge, Button, ClipboardText, LayerCard, Typography, useHydrated } from '@workspace/shared'
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- Composables renders anchors below; override Base UI's default button role. */
+import { Badge, Button, ClipboardText, LayerCard, Typography } from '@leitware/composables'
+import { useHydrated } from '@workspace/shared'
+import { Link } from '@tanstack/react-router'
 import { track } from '@workspace/observability/browser'
 import { MarketingShell } from '../components/marketing-shell'
 import { WaitlistForm } from '../components/waitlist-form'
@@ -26,24 +29,40 @@ function Block({ block }: { block: ContentBlock }) {
 	const hydrated = useHydrated()
 	switch (block.kind) {
 		case 'paragraph':
-			return <p className="text-content-secondary leading-7">{block.text}</p>
+			return (
+				<Typography as="p" variant="body-200" className="text-content-secondary leading-7">
+					{block.text}
+				</Typography>
+			)
 		case 'list': {
 			const Tag = block.ordered ? 'ol' : 'ul'
 			return (
 				<Tag className={`space-y-3 pl-6 ${block.ordered ? 'list-decimal' : 'list-disc'}`}>
 					{block.items.map((item, i) => (
-						<li key={i}>{item}</li>
+						<li key={i}>
+							<Typography as="p" variant="body-200">
+								{item}
+							</Typography>
+						</li>
 					))}
 				</Tag>
 			)
 		}
 		case 'commands':
 			return (
-				<LayerCard footer={block.note}>
+				<LayerCard
+					footer={
+						<Typography as="p" variant="caption-100">
+							{block.note}
+						</Typography>
+					}
+				>
 					<ol className="space-y-6">
 						{block.items.map((item) => (
 							<li key={item.label} className="space-y-2">
-								<p>{item.label}</p>
+								<Typography as="p" variant="body-100">
+									{item.label}
+								</Typography>
 								<ClipboardText
 									disabled={!hydrated}
 									text={item.value}
@@ -59,12 +78,27 @@ function Block({ block }: { block: ContentBlock }) {
 			return (
 				<nav aria-label={block.label} className="grid gap-4">
 					{block.items.map((item) => (
-						<a key={item.href} href={item.href} className="text-link hover:underline">
-							{item.label}
+						<div key={item.href} className="space-y-1">
+							<Button
+								role="link"
+								{...{ nativeButton: false }}
+								variant="link"
+								render={
+									item.href.startsWith('/') && !item.href.startsWith('//') ? (
+										<Link to={item.href} />
+									) : (
+										<a href={item.href} aria-label={item.label} />
+									)
+								}
+							>
+								{item.label}
+							</Button>
 							{item.detail && (
-								<span className="ml-2 text-sm text-content-secondary">{item.detail}</span>
+								<Typography as="p" variant="body-100" className="text-content-secondary">
+									{item.detail}
+								</Typography>
 							)}
-						</a>
+						</div>
 					))}
 				</nav>
 			)
@@ -74,8 +108,12 @@ function Block({ block }: { block: ContentBlock }) {
 					{block.items.map((item) => (
 						<article key={item.title} className="space-y-3">
 							<Badge variant="outline">{item.tag}</Badge>
-							<h3 className="font-semibold">{item.title}</h3>
-							<p className="text-content-secondary">{item.description}</p>
+							<Typography as="h3" variant="heading-200">
+								{item.title}
+							</Typography>
+							<Typography as="p" variant="body-200" className="text-content-secondary">
+								{item.description}
+							</Typography>
 						</article>
 					))}
 				</div>
@@ -109,24 +147,43 @@ export function ContentPage({ page }: { page: PublishedPage }) {
 						{page.accent && (
 							<>
 								<br />
-								<span className="text-brand">{page.accent}</span>
+								<Typography as="span" variant="hero-300" className="text-brand">
+									{page.accent}
+								</Typography>
 							</>
 						)}
 					</Typography>
 					{page.intro && (
-						<p className="max-w-xl text-lg leading-7 text-content-secondary">{page.intro}</p>
+						<Typography
+							as="p"
+							variant="body-300"
+							className="max-w-xl leading-7 text-content-secondary"
+						>
+							{page.intro}
+						</Typography>
 					)}
 					<div className="flex flex-wrap gap-3">
 						{page.actions?.map((action, i) => (
-							<Button key={action.href} asChild size="lg" variant={i === 0 ? 'default' : 'outline'}>
-								<a
-									href={action.href}
-									onClick={() => {
-										if (action.event) track(action.event, {})
-									}}
-								>
-									{action.label}
-								</a>
+							<Button
+								role="link"
+								{...{ nativeButton: false }}
+								key={action.href}
+								size="lg"
+								variant={i === 0 ? 'default' : 'outline'}
+								render={
+									action.href.startsWith('#') ? (
+										<Link to="." hash={action.href.slice(1)} />
+									) : action.href.startsWith('/') && !action.href.startsWith('//') ? (
+										<Link to={action.href} />
+									) : (
+										<a href={action.href} aria-label={action.label} />
+									)
+								}
+								onClick={() => {
+									if (action.event) track(action.event, {})
+								}}
+							>
+								{action.label}
 							</Button>
 						))}
 					</div>
@@ -138,9 +195,9 @@ export function ContentPage({ page }: { page: PublishedPage }) {
 						aria-labelledby={`${section.id}-title`}
 						className="space-y-7 border-t py-12"
 					>
-						<h2 id={`${section.id}-title`} className="text-2xl font-semibold tracking-tight">
+						<Typography as="h2" variant="heading-400" id={`${section.id}-title`}>
 							{section.title}
-						</h2>
+						</Typography>
 						{section.blocks.map((block, i) => (
 							<Block key={i} block={block} />
 						))}

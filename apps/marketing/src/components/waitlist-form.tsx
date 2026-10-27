@@ -1,4 +1,14 @@
-import { Button, Card, Input, Label, Checkbox, Alert, Stack, Typography } from '@workspace/shared'
+import { Link } from '@tanstack/react-router'
+import {
+	Button,
+	Card,
+	Input,
+	Label,
+	Checkbox,
+	Alert,
+	Stack,
+	Typography,
+} from '@leitware/composables'
 import { useWaitlist } from '../hooks/use-waitlist'
 
 export function WaitlistForm({ title }: { title: string }) {
@@ -49,9 +59,11 @@ export function WaitlistForm({ title }: { title: string }) {
 						className="block text-xs font-normal leading-5 text-content-secondary"
 					>
 						Save my email in this demo.{' '}
-						<a className="underline underline-offset-4" href="/privacy">
-							Privacy details
-						</a>
+						<Link to="/privacy">
+							<Typography as="span" variant="link-100">
+								Privacy details
+							</Typography>
+						</Link>
 					</Label>
 				</Stack>
 				<Button type="submit" disabled={disabled} className="w-full" size="lg">

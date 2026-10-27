@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { createCatalog } from '../apps/marketing/src/publishing/catalog'
+import { createCatalog } from '../apps/marketing/src/publishing/model'
 import {
 	renderMarkdown,
 	renderLlms,

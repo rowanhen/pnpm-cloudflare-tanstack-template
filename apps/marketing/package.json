@@ -11,6 +11,7 @@
 		"lint": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@leitware/composables": "2.0.0",
 		"@tanstack/react-query": "^5.104.1",
 		"@tanstack/react-router": "^1.170.41",
 		"@tanstack/react-start": "^1.168.60",

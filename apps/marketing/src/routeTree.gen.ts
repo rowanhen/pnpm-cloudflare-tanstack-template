@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ApiWaitlistRouteImport } from './routes/api.waitlist'
@@ -36,6 +37,11 @@ const ErrorRoute = ErrorRouteImport.update({
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
   id: '/llms.txt',
   path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
   '/error': typeof ErrorRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/waitlist': typeof ApiWaitlistRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/error': typeof ErrorRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/waitlist': typeof ApiWaitlistRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/$': typeof SplatRoute
   '/error': typeof ErrorRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/waitlist': typeof ApiWaitlistRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/error'
     | '/llms.txt'
+    | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/api/waitlist'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/error'
     | '/llms.txt'
+    | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/api/waitlist'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/error'
     | '/llms.txt'
+    | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/api/waitlist'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   SplatRoute: typeof SplatRoute
   ErrorRoute: typeof ErrorRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
+  PrivacyRoute: typeof PrivacyRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiWaitlistRoute: typeof ApiWaitlistRoute
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/llms.txt'
       fullPath: '/llms.txt'
       preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/robots.txt': {
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplatRoute: SplatRoute,
   ErrorRoute: ErrorRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
+  PrivacyRoute: PrivacyRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiWaitlistRoute: ApiWaitlistRoute,
