@@ -44,8 +44,100 @@ test('doctor reports missing provider credentials without claiming live validati
 		} = JSON.parse(result.output)
 		assert.equal(output.providerSignInVerified, false)
 		assert.equal(output.cardPaymentVerified, false)
-		assert.equal(output.checks.filter((entry) => entry.status === 'missing').length, 5)
+		for (const name of [
+			'cloudflare',
+			'auth-secret',
+			'google',
+			'stripe',
+			'stripe-price',
+			'stripe-webhook',
+			'email',
+			'posthog',
+		])
+			assert.equal(output.checks.find((entry) => entry.name === name)?.status, 'missing', name)
 	} finally {
+		await rm(directory, { recursive: true, force: true })
+	}
+})
+
+test('doctor rejects live payment keys and distinguishes keys from checkout prerequisites', async () => {
+	const directory = await mkdtemp(join(tmpdir(), 'starter-doctor-'))
+	try {
+		const envFile = join(directory, 'secrets.env')
+		const env = { PATH: process.env.PATH, STARTER_ENV_FILE: envFile }
+		await writeFile(
+			envFile,
+			'STRIPE_SECRET_KEY=sk_live_private\nSTRIPE_PUBLISHABLE_KEY=pk_live_public\n',
+		)
+		const invalid = await child(['scripts/doctor.ts', '--json'], env)
+		const invalidChecks: Check[] = JSON.parse(invalid.output).checks
+		assert.equal(invalidChecks.find((entry) => entry.name === 'stripe')?.status, 'blocked')
+		assert.ok(!invalid.output.includes('sk_live_private'))
+		await writeFile(
+			envFile,
+			'STRIPE_SECRET_KEY=sk_test_private\nSTRIPE_PUBLISHABLE_KEY=pk_test_public\n',
+		)
+		const partial = await child(['scripts/doctor.ts', '--json'], env)
+		const partialChecks: Check[] = JSON.parse(partial.output).checks
+		assert.equal(partialChecks.find((entry) => entry.name === 'stripe')?.status, 'configured')
+		assert.equal(partialChecks.find((entry) => entry.name === 'stripe-price')?.status, 'missing')
+		assert.equal(partialChecks.find((entry) => entry.name === 'stripe-webhook')?.status, 'missing')
+		assert.ok(!partial.output.includes('sk_test_private'))
+	} finally {
+		await rm(directory, { recursive: true, force: true })
+	}
+})
+
+test('online doctor detects an unusable Stripe price without leaking provider responses', async () => {
+	const directory = await mkdtemp(join(tmpdir(), 'starter-doctor-price-'))
+	let active = true
+	const server = createServer((request, response) => {
+		assert.equal(request.headers.authorization, 'Bearer sk_test_private')
+		response.setHeader('Content-Type', 'application/json')
+		response.end(
+			JSON.stringify(
+				request.url === '/v1/prices/price_fixture'
+					? {
+							active,
+							livemode: false,
+							type: 'one_time',
+							unit_amount: 1200,
+							private: 'not-for-logs',
+						}
+					: { data: [] },
+			),
+		)
+	})
+	await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
+	try {
+		const envFile = join(directory, 'secrets.env')
+		await writeFile(
+			envFile,
+			'STRIPE_SECRET_KEY=sk_test_private\nSTRIPE_PUBLISHABLE_KEY=pk_test_public\nSTRIPE_PRICE_ID=price_fixture\n',
+		)
+		const args = [
+			'--import',
+			join(root, 'scripts/fixtures/stripe-transport.ts'),
+			'scripts/doctor.ts',
+			'--json',
+			'--online',
+		]
+		const env = {
+			PATH: process.env.PATH,
+			STARTER_ENV_FILE: envFile,
+			TEST_STRIPE_ORIGIN: `http://127.0.0.1:${serverPort(server)}`,
+		}
+		for (const expected of ['ready', 'blocked']) {
+			const result = await child(args, env)
+			assert.equal(result.code, 0, result.output)
+			const checks: Check[] = JSON.parse(result.output).checks
+			assert.equal(checks.find((entry) => entry.name === 'stripe-price-api')?.status, expected)
+			assert.ok(!result.output.includes('sk_test_private'))
+			assert.ok(!result.output.includes('not-for-logs'))
+			active = false
+		}
+	} finally {
+		await new Promise<void>((done) => server.close(() => done()))
 		await rm(directory, { recursive: true, force: true })
 	}
 })

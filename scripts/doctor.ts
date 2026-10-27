@@ -26,17 +26,46 @@ add(
 	'Account ID and API token with Workers, D1, R2 and Pages edit access',
 )
 add(
+	'auth-secret',
+	(env.BETTER_AUTH_SECRET?.length ?? 0) >= 32 ? 'configured' : 'missing',
+	'At least 32 characters; pnpm setup:local generates a local secret',
+)
+add(
 	'google',
-	env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? 'configured' : 'missing',
-	'Standard web OAuth client; callback allowlist and real sign-in are not verified by credential presence',
+	env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+		? env.GOOGLE_CLIENT_ID.endsWith('.apps.googleusercontent.com')
+			? 'configured'
+			: 'blocked'
+		: 'missing',
+	'Google web OAuth client; local callback: http://localhost:3001/api/auth/callback/google. Allowlist and real sign-in require a browser check',
 )
 add(
 	'stripe',
 	/^(sk|rk)_test_/.test(env.STRIPE_SECRET_KEY ?? '') &&
 		env.STRIPE_PUBLISHABLE_KEY?.startsWith('pk_test_')
 		? 'configured'
-		: 'missing',
+		: env.STRIPE_SECRET_KEY || env.STRIPE_PUBLISHABLE_KEY
+			? 'blocked'
+			: 'missing',
 	'Stripe test secret + publishable key; cloud:up can create the product, price and webhook',
+)
+add(
+	'stripe-price',
+	env.STRIPE_PRICE_ID
+		? /^price_[A-Za-z0-9]+$/.test(env.STRIPE_PRICE_ID)
+			? 'configured'
+			: 'blocked'
+		: 'missing',
+	'Local checkout needs an active one-time test price; run pnpm stripe:setup after adding test keys',
+)
+add(
+	'stripe-webhook',
+	env.STRIPE_WEBHOOK_SECRET
+		? env.STRIPE_WEBHOOK_SECRET.startsWith('whsec_')
+			? 'configured'
+			: 'blocked'
+		: 'missing',
+	'Local listener signing secret: stripe listen --forward-to localhost:8787/api/stripe/webhook. Cloud setup creates its own endpoint secret',
 )
 add(
 	'email',
@@ -87,6 +116,29 @@ if (process.argv.includes('--online')) {
 		} catch {
 			add('stripe-api', 'blocked', 'Stripe API could not be reached')
 		}
+		if (/^price_[A-Za-z0-9]+$/.test(env.STRIPE_PRICE_ID ?? '')) {
+			try {
+				const response = await fetch(`https://api.stripe.com/v1/prices/${env.STRIPE_PRICE_ID}`, {
+					headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` },
+					signal: AbortSignal.timeout(15000),
+				})
+				const price = response.ok ? await response.json() : undefined
+				add(
+					'stripe-price-api',
+					response.ok &&
+						price.active === true &&
+						price.livemode === false &&
+						price.type === 'one_time' &&
+						Number.isInteger(price.unit_amount) &&
+						price.unit_amount > 0
+						? 'ready'
+						: 'blocked',
+					`Price API HTTP ${response.status}; requires an active, nonzero, one-time test price accessible with this secret key`,
+				)
+			} catch {
+				add('stripe-price-api', 'blocked', 'Stripe price could not be checked')
+			}
+		}
 	}
 }
 if (process.argv.includes('--json'))
@@ -108,7 +160,7 @@ else {
 	for (const check of checks)
 		console.log(`${check.status.toUpperCase().padEnd(10)} ${check.name}: ${check.detail}`)
 	console.log(
-		'\nValidate without provider credentials: pnpm validate\nValidate disposable cloud resources: pnpm test:remote\nCreate an online sandbox: pnpm cloud:up my-demo',
+		'\nAccount setup and reuse: docs/provider-setup.md\nValidate without provider credentials: pnpm validate\nValidate disposable cloud resources: pnpm test:remote\nCreate an online sandbox: pnpm cloud:up my-demo',
 	)
 }
 if (

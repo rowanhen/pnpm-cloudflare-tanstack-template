@@ -29,7 +29,23 @@ A Google **origin** is the base address of the dashboard. The **redirect URI** i
 
 The public marketing domain `devtemplate.leitware.com` does not handle login. `cloud:domain` changes the marketing address only. Google redirects through the dashboard's `/api` proxy to Better Auth in the Worker. `AUTH_URL` and the registered callback must describe that dashboard, even though the API has a separate address.
 
-For a fresh project, use your own OAuth client. Separate development and production clients make their allowed users and callbacks easier to manage. A provider may require the account owner to sign in, pass MFA, or approve consent. Credentials alone do not prove that a callback is registered.
+For a fresh project, configure an OAuth client you control. Leitware products can reuse the same web client in `leitware-auth` by adding each exact callback. A provider may require the account owner to sign in, pass MFA, or approve consent. Credentials alone do not prove that a callback is registered.
+
+## Reuse the Leitware Google client across products
+
+The chosen Google Cloud project is `leitware-auth`. The agreed setup is to reuse one **Web application** OAuth client's ID and secret across Leitware products. No central authentication service is required for this configuration reuse.
+
+For each new project:
+
+1. Supply the same `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` through that project's ignored environment file or secret manager.
+2. Keep a fresh, project-specific `BETTER_AUTH_SECRET`. `setup:local` generates one locally and `cloud:up` generates a separate one for each deployment.
+3. Add the exact dashboard URL plus `/api/auth/callback/google` to the shared client's authorized redirect URIs. Add its JavaScript origin where required and configure production consent-screen authorized domains for your own domains. A domain entry alone does not register a callback.
+4. Set the app's `AUTH_URL` to its dashboard origin and include the app origins in `ALLOWED_ORIGINS`. The existing cloud setup does this automatically.
+5. Check the client's audience/test-user settings, then complete a real sign-in on that dashboard.
+
+The local callback stays `http://localhost:3001/api/auth/callback/google` when new projects use the same development port. Each deployed dashboard needs its own exact registered callback. Configure the shared client once, then extend its allowlist as products are deployed; do not rotate its secret merely to add a product.
+
+Each product retains its own D1 users, sessions, permissions, data and billing. Users sign in with the same Google account, but logging into one product does not create a session in another. Shared Leitware sessions would be a separate single-sign-on feature; it is not needed for the agreed setup.
 
 ## Verify it in a browser
 

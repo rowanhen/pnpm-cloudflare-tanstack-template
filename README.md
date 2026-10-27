@@ -36,6 +36,8 @@ Local D1 and R2 need no Cloudflare account. `pnpm dev` creates local secrets and
 
 Start with the [step-by-step guide](docs/getting-started.md). The [verification guide](docs/verification.md) separates tested application behavior from live provider checks and records the maintained demo's remaining setup.
 
+For account credentials, local payments, Google callbacks and a repeatable new-project workflow, follow [Connect the providers](docs/provider-setup.md).
+
 ## Test and deploy
 
 ```bash
