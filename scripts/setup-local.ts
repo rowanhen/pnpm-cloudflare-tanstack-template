@@ -7,10 +7,14 @@ import { randomBytes } from 'node:crypto'
 import { parseEnv } from 'node:util'
 
 const path = new URL('../apps/api/.dev.vars', import.meta.url)
+const example = await readFile(new URL('../apps/api/.dev.vars.example', import.meta.url), 'utf8')
 try {
 	await writeFile(
 		path,
-		`BETTER_AUTH_SECRET=${randomBytes(32).toString('hex')}\n# GOOGLE_CLIENT_ID=\n# GOOGLE_CLIENT_SECRET=\n# STRIPE_SECRET_KEY=\n# STRIPE_PUBLISHABLE_KEY=\n# STRIPE_PRICE_ID=\n# STRIPE_WEBHOOK_SECRET=\n`,
+		example.replace(
+			/^BETTER_AUTH_SECRET=.*$/m,
+			`BETTER_AUTH_SECRET=${randomBytes(32).toString('hex')}`,
+		),
 		{ flag: 'wx', mode: 0o600 },
 	)
 	console.log(

@@ -2,6 +2,8 @@
 
 [Start here](getting-started.md) · [Wrangler deployment](manual-deployment.md)
 
+See [Marketing content](marketing-content.md) for route-local copy, SEO and generated Markdown.
+
 ## Shared UI
 
 Both apps consume `@leitware/composables` 2.0.0 with the Kumo preset. Import its public components through `@workspace/shared`; these are direct re-exports, including `Button`, `Typography`, `Container`, `Section`, `Stack`, `Grid`, form controls, status components and `CodeBlock`.
