@@ -1,8 +1,9 @@
 import { Effect } from 'effect'
 import type { CheckStorefrontCheckoutHandler } from '@workspace/contracts/operations'
 import { PublicApiRequest } from '../../contract/context'
-import { HttpError, sha256 } from '../../http'
-import { attempt, provider, limit } from './service'
+import { HttpError } from '../../http'
+import { sha256 } from '../../identity-hash'
+import { attempt, provider, limit } from './stripe'
 export const checkStorefrontCheckout: CheckStorefrontCheckoutHandler<PublicApiRequest> = ({
 	body,
 }) =>

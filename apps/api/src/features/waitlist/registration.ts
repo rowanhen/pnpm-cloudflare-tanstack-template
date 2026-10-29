@@ -1,10 +1,10 @@
-import { sendEmail, emailEnabled } from './email'
+import { sendEmail, emailEnabled } from '../emails/delivery'
 import { productDatabase } from '@workspace/data/client'
 import { waitlist } from '@workspace/data/product'
 import type { JoinWaitlistInput } from '@workspace/contracts/operations'
-import { sha256 } from './http'
-import { rateLimit } from './rate-limit'
-import type { Env } from './env'
+import { sha256 } from '../../identity-hash'
+import { rateLimit } from '../../rate-limit'
+import type { Env } from '../../env'
 
 export async function joinWaitlist(request: Request, env: Env, body: JoinWaitlistInput['body']) {
 	const response = () => ({ message: "You're on the list. Thanks for your interest!" })

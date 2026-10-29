@@ -2,7 +2,8 @@ import { Effect } from 'effect'
 import { Stripe } from 'stripe'
 import type { GetStorefrontFailure } from '@workspace/contracts/operations'
 import type { Env } from '../../env'
-import { HttpError, sha256 } from '../../http'
+import { HttpError } from '../../http'
+import { sha256 } from '../../identity-hash'
 import { rateLimit } from '../../rate-limit'
 
 export function storefrontEnabled(env: Env) {

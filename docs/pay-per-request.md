@@ -64,10 +64,10 @@ Scope, header/body validation and response types come from `openapi/features/met
 
 | File                                                                 | Responsibility                                                                                 |
 | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [`summary.ts`](../apps/api/src/summary.ts)                           | Server-selected price, private business query and contract-validated replay                    |
-| [`billing.ts`](../apps/api/src/billing.ts)                           | Credit pack size, per-operation price, atomic charge and replay, account history               |
-| [`checkout.ts`](../apps/api/src/checkout.ts)                         | Server-selected Stripe price, order snapshot, payment verification, one credit grant per order |
-| [`keys.ts`](../apps/api/src/keys.ts)                                 | Hashed keys, explicit single-endpoint scopes, revocation, rate limiting                        |
+| [`summary.ts`](../apps/api/src/features/metered/summary.ts)          | Server-selected price, private business query and contract-validated replay                    |
+| [`ledger.ts`](../apps/api/src/features/billing/ledger.ts)            | Credit pack size, per-operation price, atomic charge and replay, account history               |
+| [`stripe.ts`](../apps/api/src/features/checkout/stripe.ts)           | Server-selected Stripe price, order snapshot, payment verification, one credit grant per order |
+| [`credentials.ts`](../apps/api/src/features/keys/credentials.ts)     | Hashed keys, explicit single-endpoint scopes, revocation, rate limiting                        |
 | [`0005_credits.sql`](../apps/api/legacy-migrations/0005_credits.sql) | Account balances, immutable grants/receipts, uniqueness and non-negative-balance constraints   |
 
 `GET /api/billing` requires the user's session and returns `balance`, `summaryCost`, `packCredits`, and the latest ten grants/debits. API keys cannot read it or manage billing. New accounts start at zero. There is no public endpoint for minting credits. The isolated automated-test fixture seeds three credits per user directly into its temporary database.

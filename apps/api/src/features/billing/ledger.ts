@@ -2,7 +2,7 @@ import { now } from '@workspace/data/columns'
 import { billingDatabase } from '@workspace/data/client'
 import { creditAccounts, creditGrants, paidRequests } from '@workspace/data/billing'
 import { and, desc, eq, sql } from 'drizzle-orm'
-import { HttpError } from './http'
+import { HttpError } from '../../http'
 
 export const CREDIT_PACK = 1_000
 export const SUMMARY_COST = 1

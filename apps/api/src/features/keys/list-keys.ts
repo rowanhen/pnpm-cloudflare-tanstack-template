@@ -2,7 +2,7 @@ import { Effect } from 'effect'
 import { listKeys as operation, type ListKeysHandler } from '@workspace/contracts/operations'
 import { ApiRequest } from '../../contract/context'
 import { attempt } from '../../contract/service'
-import { listKeys as service } from '../../keys'
+import { listKeys as service } from './credentials'
 export const listKeys: ListKeysHandler<ApiRequest> = () =>
 	Effect.gen(function* () {
 		const context = yield* ApiRequest

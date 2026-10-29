@@ -5,7 +5,7 @@ import {
 } from '@workspace/contracts/operations'
 import { ApiRequest } from '../../contract/context'
 import { attempt } from '../../contract/service'
-import { emailStatus } from '../../email'
+import { emailStatus } from './delivery'
 export const getEmailStatus: GetEmailStatusHandler<ApiRequest> = () =>
 	Effect.gen(function* () {
 		const context = yield* ApiRequest

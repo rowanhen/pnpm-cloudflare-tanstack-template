@@ -5,7 +5,7 @@ import {
 } from '@workspace/contracts/operations'
 import { ApiKeyRequest } from '../../contract/context'
 import { attempt } from '../../contract/service'
-import { summary } from '../../summary'
+import { summary } from './summary'
 export const createSummary: CreateSummaryHandler<ApiKeyRequest> = (input) =>
 	Effect.gen(function* () {
 		const context = yield* ApiKeyRequest

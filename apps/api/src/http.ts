@@ -58,7 +58,3 @@ export async function readJson(
 		throw new HttpError(400, 'Expected a JSON object')
 	return value as Record<string, unknown>
 }
-export async function sha256(value: string) {
-	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
-	return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
-}

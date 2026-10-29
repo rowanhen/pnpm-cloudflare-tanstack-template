@@ -5,7 +5,7 @@ import {
 } from '@workspace/contracts/operations'
 import { PublicApiRequest } from '../../contract/context'
 import { attempt } from '../../contract/service'
-import { joinWaitlist as service } from '../../waitlist'
+import { joinWaitlist as service } from './registration'
 export const joinWaitlist: JoinWaitlistHandler<PublicApiRequest> = (input) =>
 	Effect.gen(function* () {
 		const context = yield* PublicApiRequest

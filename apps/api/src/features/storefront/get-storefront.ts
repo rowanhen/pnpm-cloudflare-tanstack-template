@@ -1,7 +1,7 @@
 import { Effect } from 'effect'
 import type { GetStorefrontHandler } from '@workspace/contracts/operations'
 import { PublicApiRequest } from '../../contract/context'
-import { attempt, product, storefrontEnabled, limit } from './service'
+import { attempt, product, storefrontEnabled, limit } from './stripe'
 export const getStorefront: GetStorefrontHandler<PublicApiRequest> = () =>
 	Effect.gen(function* () {
 		const { env, request } = yield* PublicApiRequest

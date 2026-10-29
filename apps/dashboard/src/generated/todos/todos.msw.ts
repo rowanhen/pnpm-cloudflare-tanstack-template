@@ -18,7 +18,7 @@ export const getListTodosResponseMock = (
 	todos: Array.from({ length: faker.number.int({ min: 1, max: 100 }) }, (_, i) => i + 1).map(
 		() => ({
 			id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-			title: faker.string.alpha({ length: { min: 1, max: 200 } }),
+			title: faker.helpers.fromRegExp('\\S'),
 			completed: faker.datatype.boolean(),
 			created_at: faker.string.alpha({ length: { min: 10, max: 20 } }),
 		}),
@@ -31,7 +31,7 @@ export const getCreateTodoResponseMock = (
 ): TodoResponse => ({
 	todo: {
 		id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-		title: faker.string.alpha({ length: { min: 1, max: 200 } }),
+		title: faker.helpers.fromRegExp('\\S'),
 		completed: faker.datatype.boolean(),
 		created_at: faker.string.alpha({ length: { min: 10, max: 20 } }),
 	},
@@ -43,7 +43,7 @@ export const getGetTodoResponseMock = (
 ): TodoResponse => ({
 	todo: {
 		id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-		title: faker.string.alpha({ length: { min: 1, max: 200 } }),
+		title: faker.helpers.fromRegExp('\\S'),
 		completed: faker.datatype.boolean(),
 		created_at: faker.string.alpha({ length: { min: 10, max: 20 } }),
 	},
@@ -55,7 +55,7 @@ export const getUpdateTodoResponseMock = (
 ): TodoResponse => ({
 	todo: {
 		id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-		title: faker.string.alpha({ length: { min: 1, max: 200 } }),
+		title: faker.helpers.fromRegExp('\\S'),
 		completed: faker.datatype.boolean(),
 		created_at: faker.string.alpha({ length: { min: 10, max: 20 } }),
 	},

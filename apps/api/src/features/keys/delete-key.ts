@@ -2,7 +2,7 @@ import { Effect } from 'effect'
 import { deleteKey as operation, type DeleteKeyHandler } from '@workspace/contracts/operations'
 import { ApiRequest } from '../../contract/context'
 import { attempt } from '../../contract/service'
-import { deleteKey as service } from '../../keys'
+import { deleteKey as service } from './credentials'
 export const deleteKey: DeleteKeyHandler<ApiRequest> = (input) =>
 	Effect.gen(function* () {
 		const context = yield* ApiRequest

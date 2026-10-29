@@ -1,8 +1,8 @@
 import { Effect } from 'effect'
 import { type GetConfigHandler } from '@workspace/contracts/operations'
 import { PublicApiRequest } from '../../contract/context'
-import { emailEnabled } from '../../email'
-import { checkoutEnabled } from '../../checkout'
+import { emailEnabled } from '../emails/delivery'
+import { checkoutEnabled } from '../checkout/stripe'
 export const getConfig: GetConfigHandler<PublicApiRequest> = () =>
 	Effect.gen(function* () {
 		const context = yield* PublicApiRequest

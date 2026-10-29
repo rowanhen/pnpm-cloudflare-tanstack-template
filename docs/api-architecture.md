@@ -84,7 +84,7 @@ The central `apps/api/src/generated/routes.ts`, `packages/contracts/src/generate
 
 Removing an operation removes its generated wiring and preserves the old implementation for review; remove obsolete implementation files when their generated types are no longer available.
 
-One operation gets one implementation file. Put shared queries and services beside those files when useful. Todos currently share database projection/query helpers in `apps/api/src/features/todos/repository.ts`.
+One operation gets one implementation file. Put shared queries and services beside those files when useful. Todos share an application service and an owned repository; see the application service recipe below.
 
 ## Start with these files
 
@@ -107,7 +107,7 @@ One operation gets one implementation file. Put shared queries and services besi
 
 `GetTodoHandler<ApiRequest>` is generated as an operation returning `Effect<GetTodoSuccess, GetTodoFailure, ApiRequest>`. The failure union pairs each declared HTTP status with its corresponding body. A 404 carries the `todo_not_found` body; a forbidden body cannot accidentally be used for that status.
 
-There are no handwritten response interfaces, error classes, or status mappings per operation. Business logic still decides when an error applies. Drizzle owns storage and migrations; queries explicitly select public fields and must satisfy the generated API types.
+Response interfaces and status/body unions are generated. Application services use tagged domain errors; HTTP handlers translate them into the declared failure union. Business logic decides when an error applies. Drizzle owns storage and migrations; queries explicitly select public fields and must satisfy the generated API types.
 
 Expected failures become their declared HTTP response. Infrastructure failures and unexpected defects reach the existing reporting boundary and become a sanitized, contract-validated 500. The frontend validates the same schemas; generated query and mutation errors distinguish typed `ApiError<OperationResponseError>`, `TransportError`, and `ContractViolation`. `ApiError.response` retains the discriminated status/data pair.
 
@@ -130,10 +130,33 @@ All application routes are defined in OpenAPI: todos, storefront, account/config
 - `security: [{ "apiKey": [] }]` with `x-api-key-scope` selects the API-key adapter. It verifies the bearer key and scope, applies rate limiting and preserves quota headers. These requests do not require a browser Origin.
 - Stripe security selects the signed-webhook protocol. `x-raw-body: true` preserves the raw text for signature verification before event parsing; `x-max-body-bytes: 262144` bounds the read. The handler uses Stripe's signature verifier and the existing atomic reconciliation logic. It does not accept a browser session in place of a signature.
 
-Path parameters, scalar query parameters and declared headers are validated with generated Effect schemas. Numeric/boolean query values are converted before validation; repeated or unknown query keys are rejected on query-bearing operations. Optional bodies, cookie parameters, non-scalar query parameters and unsupported media types fail generation. Every operation declares boundary errors; domain errors such as 402, 409, 429 and 502 are declared where used. Service `HttpError`s enter the generated failure channel only after schema validation; unexpected defects reach sanitized reporting.
+Path parameters, scalar query parameters and declared headers are validated with generated Effect schemas. Numeric/boolean query values are converted before validation; repeated or unknown query keys are rejected on query-bearing operations. Optional bodies, cookie parameters, non-scalar query parameters and unsupported media types fail generation. Every operation declares boundary errors; domain errors such as 402, 409, 429 and 502 are declared where used. Legacy provider-adapter `HttpError`s enter the generated failure channel only after schema validation; application service errors are mapped in their HTTP entry handlers. Unexpected defects reach sanitized reporting.
 
 JSON bodies default to 16 KiB. File uploads use `application/octet-stream`, a bounded 5 MiB read and a generated File input schema; the supplied content type is preserved as object metadata. Downloads stream the R2 body without buffering it on the Worker. Generated browser calls return a Blob. Response headers preserve ETag, length and disposition. HEAD returns only metadata, including bodyless errors. The extension adapts Orval's HEAD registration to Hono's `.on` API and routes Hono's implicit GET dispatch to the generated HEAD handler. Bodyless 204 responses are validated too.
 
 Better Auth is the sole provider-owned HTTP mount at `/api/auth/*`. It retains its native OAuth callbacks, redirects, cookie handling, session response and sign-in/out protocol. Inventing an application JSON contract for those responses would discard provider semantics. Account data at `/api/me` is a generated application operation. The outer Worker retains proxy verification, CORS, maintenance checks and telemetry.
 
 Orval's native Effect output does not generate application handler signatures, preserve `minProperties`, or provide the required binary/HEAD boundary. The extension supplies those pieces through its custom client and `extraFiles` hooks. Business logic and D1 migrations remain handwritten. Zod is used only in local tooling/fixtures, not application API contracts.
+
+## Application services and boundaries
+
+Todos demonstrate the backend dependency direction without requiring a Worker in unit tests:
+
+- `features/todos/domain.ts` owns validated title construction and a nonempty change union. The generated OpenAPI value schemas are exposed through `@workspace/contracts/todos`; neither application policy nor persistence repeats title limits. Internal calls are validated too.
+- `features/todos/service.ts` declares TodoService, the user-scoped TodoRepository dependency and the missing-record error. Repository input types only permit validated titles and nonempty changes. There is no HTTP status or database client in either interface.
+- `features/todos/live.ts` supplies policy: normalisation, invalid-change rejection and missing-record handling. It depends on the repository contract, not Drizzle. The layer is the same in production and tests.
+- `features/todos/repository.ts` implements that contract with Drizzle. Every operation is scoped to the trusted owner, selects explicit public columns and decodes results. D1 failures and invalid stored data become StorageError; they cannot become a successful empty list or a missing-record error.
+- `runtime/user-layers.ts` composes the live layer with the concrete, request-scoped repository. Session and API-key entry handlers both use it, so ordering, limits and ownership have one implementation. No global runtime retains a previous request's user or bindings.
+- Operation handlers own generated response types and HTTP error translation. Shared error mappings stay in `http-errors.ts`. Storage failures reach the sanitized reporting boundary; mixed failure/defect/interruption causes cannot be recovered as ordinary responses.
+
+Use Effect.gen for workflows, Effect.tryPromise for external promise adapters and Effect.runPromise only where the host executes an Effect. Use Effect Clock for workflow instants and forward interruption to cancellable providers. D1 statements cannot be aborted: `storageEffect` waits for their settlement before interruption cleanup. Do not claim a request cancellation rolled back a write.
+
+A new feature does not need every file. A direct status query can stay in its handler; introduce a service when there is shared policy or an implementation boundary. A service with five forwarding methods and no such role is not an architectural improvement. Keep related code together until its responsibilities justify a split.
+
+### Enforcement and current limits
+
+Oxlint protects the `service.ts`, `live.ts`, `domain.ts` and `domain/` application roles against HTTP contexts, concrete databases/providers, runtime composition imports, ambient fetch/process/Date and nested Effect execution/promise adaptation. All backend files reject explicit any, non-null assertions and direct prepare/exec. Architecture tests run these rules on invalid examples and valid adapters, so changing lint configuration cannot silently remove the tested guardrails. These are import/API guardrails, not a proof of transitive dependency purity; review new exports and don't disguise a workflow as an adapter.
+
+`tests/unit/todos.test.ts` supplies a fake repository to TodoLive and checks validation, valid partial updates, missing records, storage errors and fatal-cause preservation. Worker integration tests retain real D1 ownership, session/API-key, CSRF, rate-limit and response checks. Run `pnpm check` before committing. CI runs lint, unit/generation checks, types and builds; the Worker integration suite remains local.
+
+Existing checkout, storefront, billing ledger, email delivery, credentials, summary and waitlist integrations now live under their owning feature. They retain their tested Promise/HttpError adapter workflows, including atomic billing batches, canonical Stripe reconciliation, saved idempotent responses and email deduplication. They are not examples of pure application services: some still combine orchestration with provider/persistence work. Extend them by extracting policy into a service when it changes; do not copy their concrete dependencies into new service/live/domain modules. Better Auth, generated Hono plumbing and SDK promise APIs remain integration boundaries. There is no claim that lint can eliminate semantic duplication or identify every god file.

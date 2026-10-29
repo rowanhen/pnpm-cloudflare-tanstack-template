@@ -39,5 +39,134 @@
 				"Link": "a"
 			}
 		}
-	}
+	},
+	"overrides": [
+		{
+			"files": ["apps/api/src/**/*.ts"],
+			"rules": {
+				"no-restricted-properties": [
+					"error",
+					{
+						"property": "prepare",
+						"message": "Use the matching Drizzle client for application persistence."
+					},
+					{
+						"property": "exec",
+						"message": "Raw SQL execution belongs in migration tooling, not application code."
+					}
+				],
+				"typescript/no-explicit-any": "error",
+				"typescript/no-non-null-assertion": "error"
+			}
+		},
+		{
+			"files": [
+				"apps/api/src/features/**/service.ts",
+				"apps/api/src/features/**/live.ts",
+				"apps/api/src/features/**/domain.ts",
+				"apps/api/src/features/**/domain/**/*.ts"
+			],
+			"rules": {
+				"no-restricted-imports": [
+					"error",
+					{
+						"patterns": [
+							{
+								"group": [
+									"hono",
+									"hono/*",
+									"stripe",
+									"drizzle-orm",
+									"drizzle-orm/*",
+									"@cloudflare/*",
+									"@workspace/data",
+									"@workspace/data/*",
+									"@workspace/contracts/http",
+									"@workspace/contracts/client",
+									"@workspace/contracts/operations",
+									"**/contract/**",
+									"**/runtime/**",
+									"**/generated/**",
+									"**/http",
+									"**/http-errors",
+									"**/env",
+									"**/repository",
+									"**/stripe",
+									"**/delivery",
+									"**/credentials",
+									"**/registration",
+									"**/ledger"
+								],
+								"message": "Application/domain code depends on service contracts and value schemas. Compose concrete adapters in runtime/ and translate HTTP at entry handlers."
+							}
+						]
+					}
+				],
+				"no-restricted-globals": [
+					"error",
+					{
+						"name": "fetch",
+						"message": "Declare a provider service; perform network I/O in its adapter."
+					},
+					{
+						"name": "process",
+						"message": "Pass configuration from the entry point through a Layer."
+					},
+					{
+						"name": "Date",
+						"message": "Use Effect Clock for workflow instants; isolate calendar conversion at a boundary."
+					}
+				],
+				"no-restricted-properties": [
+					"error",
+					{
+						"property": "prepare",
+						"message": "Use the matching Drizzle client for application persistence."
+					},
+					{
+						"property": "exec",
+						"message": "Raw SQL execution belongs in migration tooling, not application code."
+					},
+					{
+						"property": "runPromise",
+						"message": "Run Effects only at host boundaries and adapt promises only at infrastructure boundaries."
+					},
+					{
+						"property": "runPromiseExit",
+						"message": "Run Effects only at host boundaries and adapt promises only at infrastructure boundaries."
+					},
+					{
+						"property": "runSync",
+						"message": "Run Effects only at host boundaries and adapt promises only at infrastructure boundaries."
+					},
+					{
+						"property": "runSyncExit",
+						"message": "Run Effects only at host boundaries and adapt promises only at infrastructure boundaries."
+					},
+					{
+						"property": "runFork",
+						"message": "Run Effects only at host boundaries and adapt promises only at infrastructure boundaries."
+					},
+					{
+						"property": "tryPromise",
+						"message": "Run Effects only at host boundaries and adapt promises only at infrastructure boundaries."
+					},
+					{
+						"property": "promise",
+						"message": "Run Effects only at host boundaries and adapt promises only at infrastructure boundaries."
+					},
+					{
+						"object": "globalThis",
+						"property": "fetch",
+						"message": "Declare a provider service."
+					},
+					{
+						"object": "crypto",
+						"property": "randomUUID",
+						"message": "Inject identifier generation or perform it in the persistence adapter."
+					}
+				]
+			}
+		}
+	]
 }

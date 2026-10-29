@@ -2,7 +2,7 @@ import { Effect } from 'effect'
 import { getOrder as operation, type GetOrderHandler } from '@workspace/contracts/operations'
 import { ApiRequest } from '../../contract/context'
 import { attempt } from '../../contract/service'
-import { getOrder as service } from '../../checkout'
+import { getOrder as service } from './stripe'
 export const getOrder: GetOrderHandler<ApiRequest> = (input) =>
 	Effect.gen(function* () {
 		const context = yield* ApiRequest

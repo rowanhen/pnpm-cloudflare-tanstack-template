@@ -4,9 +4,10 @@ import { apiKeys } from '@workspace/data/identity'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import type { KeyScope } from '@workspace/contracts'
 import type { CreateKeyInput } from '@workspace/contracts/operations'
-import type { Env } from './env'
-import { HttpError, sha256 } from './http'
-import { rateLimit } from './rate-limit'
+import type { Env } from '../../env'
+import { HttpError } from '../../http'
+import { sha256 } from '../../identity-hash'
+import { rateLimit } from '../../rate-limit'
 
 export async function listKeys(env: Env, userId: string) {
 	const db = identityDatabase(env.IDENTITY_DB)

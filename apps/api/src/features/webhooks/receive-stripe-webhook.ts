@@ -5,7 +5,7 @@ import {
 } from '@workspace/contracts/operations'
 import { PublicApiRequest } from '../../contract/context'
 import { attempt } from '../../contract/service'
-import { stripeWebhook } from '../../checkout'
+import { stripeWebhook } from '../checkout/stripe'
 export const receiveStripeWebhook: ReceiveStripeWebhookHandler<PublicApiRequest> = (input) =>
 	Effect.gen(function* () {
 		const context = yield* PublicApiRequest

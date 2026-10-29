@@ -12,11 +12,17 @@ export const listTodos200ResponseTodosMax = 100
 
 export const listTodos200ResponseTodosItemTitleMax = 200
 
+export const listTodos200ResponseTodosItemTitleRegExp = new RegExp('\\S')
+
 export const ListTodos200Response = S.Struct({
 	todos: S.Array(
 		S.Struct({
 			id: S.String,
-			title: S.String.check(S.isMinLength(1), S.isMaxLength(listTodos200ResponseTodosItemTitleMax)),
+			title: S.String.check(
+				S.isMinLength(1),
+				S.isMaxLength(listTodos200ResponseTodosItemTitleMax),
+				S.isPattern(listTodos200ResponseTodosItemTitleRegExp),
+			),
 			completed: S.Boolean,
 			created_at: S.String,
 		}),
@@ -97,10 +103,16 @@ export const CreateTodoBody = S.Struct({
 
 export const createTodo201ResponseTodoTitleMax = 200
 
+export const createTodo201ResponseTodoTitleRegExp = new RegExp('\\S')
+
 export const CreateTodo201Response = S.Struct({
 	todo: S.Struct({
 		id: S.String,
-		title: S.String.check(S.isMinLength(1), S.isMaxLength(createTodo201ResponseTodoTitleMax)),
+		title: S.String.check(
+			S.isMinLength(1),
+			S.isMaxLength(createTodo201ResponseTodoTitleMax),
+			S.isPattern(createTodo201ResponseTodoTitleRegExp),
+		),
 		completed: S.Boolean,
 		created_at: S.String,
 	}),
@@ -188,10 +200,16 @@ export const GetTodoParams = S.Struct({
 
 export const getTodo200ResponseTodoTitleMax = 200
 
+export const getTodo200ResponseTodoTitleRegExp = new RegExp('\\S')
+
 export const GetTodo200Response = S.Struct({
 	todo: S.Struct({
 		id: S.String,
-		title: S.String.check(S.isMinLength(1), S.isMaxLength(getTodo200ResponseTodoTitleMax)),
+		title: S.String.check(
+			S.isMinLength(1),
+			S.isMaxLength(getTodo200ResponseTodoTitleMax),
+			S.isPattern(getTodo200ResponseTodoTitleRegExp),
+		),
 		completed: S.Boolean,
 		created_at: S.String,
 	}),
@@ -287,10 +305,16 @@ export const UpdateTodoBody = S.Struct({
 
 export const updateTodo200ResponseTodoTitleMax = 200
 
+export const updateTodo200ResponseTodoTitleRegExp = new RegExp('\\S')
+
 export const UpdateTodo200Response = S.Struct({
 	todo: S.Struct({
 		id: S.String,
-		title: S.String.check(S.isMinLength(1), S.isMaxLength(updateTodo200ResponseTodoTitleMax)),
+		title: S.String.check(
+			S.isMinLength(1),
+			S.isMaxLength(updateTodo200ResponseTodoTitleMax),
+			S.isPattern(updateTodo200ResponseTodoTitleRegExp),
+		),
 		completed: S.Boolean,
 		created_at: S.String,
 	}),

@@ -1,4 +1,5 @@
 import { Context, Effect, Exit, Schema } from 'effect'
+import { preserveFatal } from '../effect-errors'
 import type { Handler, Operation } from '@workspace/contracts/operation'
 import { contractError, contractResponse } from '@workspace/contracts/http'
 import { productDatabase } from '@workspace/data/client'
@@ -8,7 +9,7 @@ import type { Env } from '../env'
 import { HttpError, readJson, readBody } from '../http'
 import { ApiRequest, PublicApiRequest, ApiKeyRequest } from './context'
 
-import { apiKeyUser } from '../keys'
+import { apiKeyUser } from '../features/keys/credentials'
 
 type ApiContext = HonoContext<{ Bindings: Env }>
 
@@ -126,6 +127,7 @@ function boundary<O extends Operation, R>(
 			if (Exit.isFailure(parsed)) throw new HttpError(400, 'Invalid request')
 			const program = handler(parsed.value).pipe(
 				Effect.provide(services),
+				preserveFatal,
 				Effect.match({ onFailure: (failure) => failure, onSuccess: (success) => success }),
 			)
 			const response = await Effect.runPromise(program, { signal: c.req.raw.signal })
