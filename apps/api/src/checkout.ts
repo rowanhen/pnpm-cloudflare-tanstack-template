@@ -2,9 +2,9 @@ import { now } from '@workspace/data/columns'
 import { billingDatabase } from '@workspace/data/client'
 import { orders, creditAccounts, creditGrants, stripeEvents } from '@workspace/data/billing'
 import { and, eq, sql } from 'drizzle-orm'
-import Stripe from 'stripe'
+import { Stripe } from 'stripe'
 import type { Env } from './env'
-import { HttpError, json, reply, input, methodNotAllowed, readBody } from './http'
+import { HttpError } from './http'
 import { rateLimit } from './rate-limit'
 import { CREDIT_PACK } from './billing'
 
@@ -129,12 +129,9 @@ async function reconcile(env: Env, session: Stripe.Checkout.Session, eventId?: s
 	else await db.batch([update, account, grant, balance])
 }
 
-export async function stripeWebhook(request: Request, env: Env) {
-	if (request.method !== 'POST') return methodNotAllowed('POST')
+export async function stripeWebhook(raw: string, signature: string, env: Env) {
 	const stripe = stripeClient(env)
-	const signature = request.headers.get('stripe-signature')
 	if (!signature) throw new HttpError(400, 'Missing Stripe signature')
-	const raw = new TextDecoder().decode(await readBody(request, 256 * 1024))
 	let event: Stripe.Event
 	try {
 		event = await stripe.webhooks.constructEventAsync(
@@ -163,106 +160,96 @@ export async function stripeWebhook(request: Request, env: Env) {
 				.where(eq(stripeEvents.id, event.id))
 				.get()
 		)
-			return json({ received: true })
+			return { received: true }
 		// Retrieve canonical Stripe state, so delayed/reordered events cannot undo a payment.
 		const session = await stripe.checkout.sessions.retrieve(
 			(event.data.object as Stripe.Checkout.Session).id,
 		)
 		await reconcile(env, session, event.id)
 	}
-	return json({ received: true })
+	return { received: true }
 }
 
-export async function checkoutRoute(
-	request: Request,
+export async function checkoutConfig(env: Env) {
+	const stripe = stripeClient(env)
+	return {
+		publishableKey: env.STRIPE_PUBLISHABLE_KEY ?? '',
+		offer: await offer(env, stripe),
+	}
+}
+export async function createCheckout(
 	env: Env,
 	user: { id: string; email: string },
+	body: { requestId: string },
 ) {
-	const url = new URL(request.url)
 	const db = billingDatabase(env.BILLING_DB)
 	const stripe = stripeClient(env)
-	if (url.pathname === '/api/checkout/config') {
-		if (request.method !== 'GET') return methodNotAllowed('GET')
-		return reply('checkoutConfig', {
-			publishableKey: env.STRIPE_PUBLISHABLE_KEY ?? '',
-			offer: await offer(env, stripe),
+	await rateLimit(env.IDENTITY_DB, `checkout:${user.id}`, 10, 60)
+	const product = await offer(env, stripe)
+	await db
+		.insert(orders)
+		.values({
+			id: crypto.randomUUID(),
+			user_id: user.id,
+			request_id: body.requestId,
+			amount: product.amount,
+			currency: product.currency,
+			credits: product.credits,
+			price_id: product.priceId,
 		})
+		.onConflictDoNothing({ target: [orders.user_id, orders.request_id] })
+	const order = await db
+		.select()
+		.from(orders)
+		.where(and(eq(orders.user_id, user.id), eq(orders.request_id, body.requestId)))
+		.get()
+	if (!order) throw new Error('Order could not be created')
+	const session = order.stripe_session_id
+		? await stripe.checkout.sessions.retrieve(order.stripe_session_id)
+		: await stripe.checkout.sessions.create(
+				{
+					ui_mode: 'elements',
+					mode: 'payment',
+					allowed_payment_method_types: ['card'],
+					adaptive_pricing: { enabled: false },
+					line_items: [{ price: order.price_id ?? env.STRIPE_PRICE_ID ?? '', quantity: 1 }],
+					customer_email: user.email,
+					client_reference_id: user.id,
+					metadata: { order_id: order.id },
+					return_url: `${env.AUTH_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+				},
+				{ idempotencyKey: `starter-checkout-${order.id}` },
+			)
+	await reconcile(env, session)
+	return {
+		clientSecret: session.client_secret,
+		sessionId: session.id,
+		status: checkoutStatus(session),
 	}
-	if (url.pathname === '/api/checkout/sessions') {
-		if (request.method !== 'POST') return methodNotAllowed('POST')
-		const body = await input(request, 'createCheckout')
-		await rateLimit(env.IDENTITY_DB, `checkout:${user.id}`, 10, 60)
-		const product = await offer(env, stripe)
-		await db
-			.insert(orders)
-			.values({
-				id: crypto.randomUUID(),
-				user_id: user.id,
-				request_id: body.requestId,
-				amount: product.amount,
-				currency: product.currency,
-				credits: product.credits,
-				price_id: product.priceId,
-			})
-			.onConflictDoNothing({ target: [orders.user_id, orders.request_id] })
-		const order = await db
-			.select()
-			.from(orders)
-			.where(and(eq(orders.user_id, user.id), eq(orders.request_id, body.requestId)))
-			.get()
-		if (!order) throw new Error('Order could not be created')
-		const session = order.stripe_session_id
-			? await stripe.checkout.sessions.retrieve(order.stripe_session_id)
-			: await stripe.checkout.sessions.create(
-					{
-						ui_mode: 'elements',
-						mode: 'payment',
-						allowed_payment_method_types: ['card'],
-						adaptive_pricing: { enabled: false },
-						line_items: [{ price: order.price_id ?? env.STRIPE_PRICE_ID ?? '', quantity: 1 }],
-						customer_email: user.email,
-						client_reference_id: user.id,
-						metadata: { order_id: order.id },
-						return_url: `${env.AUTH_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-					},
-					{ idempotencyKey: `starter-checkout-${order.id}` },
-				)
-		await reconcile(env, session)
-		return reply(
-			'createCheckout',
-			{
-				clientSecret: session.client_secret,
-				sessionId: session.id,
-				status: checkoutStatus(session),
-			},
-			201,
-		)
-	}
-	const match = url.pathname.match(/^\/api\/checkout\/sessions\/(cs_test_[A-Za-z0-9]+)$/)
-	if (match) {
-		if (request.method !== 'GET') return methodNotAllowed('GET')
-		const order = await db
-			.select()
-			.from(orders)
-			.where(and(eq(orders.stripe_session_id, match[1]), eq(orders.user_id, user.id)))
-			.get()
-		if (!order) throw new HttpError(404, 'Checkout not found')
-		await rateLimit(env.IDENTITY_DB, `checkout-status:${user.id}`, 60, 60)
-		const session = await stripe.checkout.sessions.retrieve(match[1])
-		await reconcile(env, session)
-		const saved = await db
-			.select({
-				id: orders.id,
-				amount: orders.amount,
-				currency: orders.currency,
-				credits: orders.credits,
-				status: orders.status,
-			})
-			.from(orders)
-			.where(eq(orders.id, order.id))
-			.get()
-		if (!saved) throw new HttpError(404, 'Checkout not found')
-		return reply('order', { order: saved, checkoutStatus: checkoutStatus(session) })
-	}
-	throw new HttpError(404, 'Checkout not found')
+}
+export async function getOrder(env: Env, user: { id: string }, sessionId: string) {
+	const db = billingDatabase(env.BILLING_DB)
+	const stripe = stripeClient(env)
+	const order = await db
+		.select()
+		.from(orders)
+		.where(and(eq(orders.stripe_session_id, sessionId), eq(orders.user_id, user.id)))
+		.get()
+	if (!order) throw new HttpError(404, 'Checkout not found')
+	await rateLimit(env.IDENTITY_DB, `checkout-status:${user.id}`, 60, 60)
+	const session = await stripe.checkout.sessions.retrieve(sessionId)
+	await reconcile(env, session)
+	const saved = await db
+		.select({
+			id: orders.id,
+			amount: orders.amount,
+			currency: orders.currency,
+			credits: orders.credits,
+			status: orders.status,
+		})
+		.from(orders)
+		.where(eq(orders.id, order.id))
+		.get()
+	if (!saved) throw new HttpError(404, 'Checkout not found')
+	return { order: saved, checkoutStatus: checkoutStatus(session) }
 }

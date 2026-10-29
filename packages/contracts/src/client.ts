@@ -1,34 +1,69 @@
-import { inputs, mutations, routes, type Input, type Responses } from './index'
-type Transport = (path: string, init?: RequestInit) => Promise<Response>
+import { decodeResponse, findOperation } from './http'
 
-// JSON is the single serialization boundary. Both producers (reply) and consumers
-// use the same contract; external/untrusted request bodies are validated with Zod.
-async function decode<K extends keyof Responses>(response: Response): Promise<Responses[K]> {
-	return response.json()
+export class ApiError<T = unknown> extends Error {
+	constructor(
+		readonly response: T,
+		readonly status: number,
+		message: string,
+	) {
+		super(message)
+	}
 }
-export function createClient(transport: Transport) {
-	return {
-		async get<K extends keyof typeof routes>(route: K) {
-			return decode<K>(await transport(routes[route]))
-		},
-		async mutate<K extends keyof typeof mutations>(route: K, body: Input<K>) {
-			const parsed = inputs[route].parse(body)
-			const config = mutations[route]
-			return decode<(typeof mutations)[K]['response']>(
-				await transport(config.path, {
-					method: config.method,
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(parsed),
-				}),
-			)
-		},
-		async order(sessionId: string) {
-			return decode<'order'>(
-				await transport(`/api/checkout/sessions/${encodeURIComponent(sessionId)}`),
-			)
-		},
-		async deleteKey(id: string) {
-			await transport(`/api/keys/${encodeURIComponent(id)}`, { method: 'DELETE' })
-		},
+export class TransportError extends Error {}
+export class ContractViolation extends Error {}
+export type ErrorType<T> = ApiError<T> | TransportError | ContractViolation
+
+export function createContractFetch(
+	transport: (url: string, options?: RequestInit) => Promise<Response>,
+	onUnauthorized?: () => void,
+) {
+	return async function contractFetch<T>(
+		url: string,
+		options: RequestInit = {},
+		metadata?: { errorResponses: readonly { status: number; contentType: string }[] },
+	): Promise<T> {
+		const operation = findOperation(
+			options.method ?? 'GET',
+			new URL(url, 'http://localhost').pathname,
+		)
+		if (!operation) throw new ContractViolation('No contract for this request')
+		let response: Response
+		try {
+			response = await transport(url, { ...options, credentials: 'same-origin' })
+		} catch (cause) {
+			throw new TransportError('Unable to reach the API', { cause })
+		}
+		let data: unknown
+		try {
+			const empty = operation.emptyStatuses.includes(response.status)
+			const binary = operation.binaryStatuses.includes(response.status)
+			if (!empty && !binary && !response.headers.get('content-type')?.includes('application/json'))
+				throw new Error('Expected a JSON response')
+			const body: unknown = empty
+				? undefined
+				: binary
+					? await response.blob()
+					: await response.json()
+
+			data = decodeResponse(operation, response.status, body)
+		} catch (cause) {
+			throw new ContractViolation('The API response does not match its contract', { cause })
+		}
+		const envelope = { data, status: response.status, headers: response.headers }
+		if (!response.ok) {
+			if (!metadata?.errorResponses.some((error) => error.status === response.status))
+				throw new ContractViolation(`Undeclared API error status ${response.status}`)
+			if (response.status === 401) onUnauthorized?.()
+			const message =
+				typeof data === 'object' &&
+				data !== null &&
+				'error' in data &&
+				typeof data.error === 'string'
+					? data.error
+					: `Request failed (${response.status})`
+			throw new ApiError(envelope, response.status, message)
+		}
+		// The status/body pair was checked against the same OpenAPI source that generates T.
+		return envelope as T
 	}
 }

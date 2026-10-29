@@ -4,7 +4,7 @@
 
 The [three domain schemas](databases.md) own identity, billing and product storage. `productDatabase(env.PRODUCT_DB)` creates a product Drizzle client; Better Auth uses `identityDatabase(env.IDENTITY_DB)` with its Drizzle adapter. The adapter maps the original ISO-string `date` columns to JavaScript `Date`, preserving existing sessions and users.
 
-Use Drizzle's `$inferSelect` and `$inferInsert` exports for database code. Todo REST types now come from OpenAPI, with typed Drizzle projections checked against the generated responses. Other public REST types in `@workspace/contracts` still derive from rows with `Pick`/`Omit`. The API explicitly selects public columns; hashes, OAuth tokens, internal email addresses and owner IDs do not appear in those read models. R2 and Stripe have separate transport types because they are not database rows.
+Use Drizzle's `$inferSelect` and `$inferInsert` exports for database code. Public REST types come from OpenAPI, with typed Drizzle projections checked against generated responses. `@workspace/contracts` exposes aliases of those generated types. The API explicitly selects public columns; hashes, OAuth tokens, internal email addresses and owner IDs do not appear in those read models. File and checkout transport types are also generated from their OpenAPI features.
 
 ```ts
 import { productDatabase } from '@workspace/data/client'
@@ -23,7 +23,7 @@ const rows = await db.select().from(todos).where(eq(todos.user_id, user.id))
 
 Todos use the [OpenAPI, Orval, Hono and Effect workflow](api-architecture.md). Edit `packages/contracts/openapi/features/todos.json`, run `pnpm api:generate`, and implement the generated Effect handler types in `apps/api/src/features/todos/get-todo.ts`. The dashboard uses generated TanStack Query hooks and HTTP functions. Both sides validate responses against the generated Effect schemas, including declared error status/body pairs.
 
-Other integrations retain strict Zod `inputs`, `reply(...)`, and the existing typed REST client. Their client decoding is compile-time checked and does not yet have the new todo runtime guarantees. Database imports into those contracts are type-only.
+Billing, checkout, keys, files, waitlist and email use the same generated contracts and shared validation boundary. The marketing waitlist uses a generated fetch client. Better Auth retains its provider-owned OAuth/session protocol behind a Hono mount.
 
 Credit charging and Stripe grants still use atomic Drizzle D1 batches. Guarded insert/select statements keep their conditions inside SQL, with bound parameters and schema column references. D1 does not support interactive transactions; don't turn these batches into separate awaited writes. Concurrent debit, rollback, replay and webhook/poll races are tested.
 

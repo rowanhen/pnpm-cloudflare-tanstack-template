@@ -1,0 +1,81 @@
+{
+	"paths": {
+		"/api/stripe/webhook": {
+			"post": {
+				"operationId": "receiveStripeWebhook",
+				"tags": ["webhooks"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"received": {
+											"type": "boolean"
+										}
+									},
+									"required": ["received"]
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"413": {
+						"$ref": "../shared/errors.json#/components/responses/PayloadTooLarge"
+					},
+					"415": {
+						"$ref": "../shared/errors.json#/components/responses/UnsupportedMediaType"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"additionalProperties": true
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "stripe-signature",
+						"in": "header",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"security": [
+					{
+						"stripe": []
+					}
+				],
+				"x-raw-body": true,
+				"x-max-body-bytes": 262144
+			}
+		}
+	},
+	"components": {
+		"schemas": {}
+	}
+}

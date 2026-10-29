@@ -1,6 +1,6 @@
 import { Effect } from 'effect'
 import type { CreateTodoHandler } from '@workspace/contracts/operations'
-import { todos } from '@workspace/data/schema'
+import { todos } from '@workspace/data/product'
 import { ApiRequest } from '../../contract/context'
 import { fields, query } from './repository'
 

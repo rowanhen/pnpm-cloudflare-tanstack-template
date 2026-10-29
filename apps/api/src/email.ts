@@ -4,7 +4,7 @@ import { emailDeliveries, type EmailDelivery } from '@workspace/data/product'
 import { desc, eq } from 'drizzle-orm'
 import type { User } from '@workspace/contracts'
 import type { Env } from './env'
-import { HttpError, input, methodNotAllowed, reply } from './http'
+import { HttpError } from './http'
 import { rateLimit } from './rate-limit'
 
 export const emailEnabled = (env: Env) =>
@@ -89,23 +89,21 @@ export async function sendEmail(
 	return { id: delivery.id, status: 'accepted' as const, messageId: result.messageId }
 }
 
-export async function emailRoute(request: Request, env: Env, user: User) {
-	if (request.method === 'GET') {
-		const emails = await productDatabase(env.PRODUCT_DB)
-			.select({
-				id: emailDeliveries.id,
-				status: emailDeliveries.status,
-				created_at: emailDeliveries.created_at,
-			})
-			.from(emailDeliveries)
-			.where(eq(emailDeliveries.user_id, user.id))
-			.orderBy(desc(emailDeliveries.created_at))
-			.limit(10)
-		return reply('emailStatus', { enabled: emailEnabled(env), emails })
-	}
-	if (request.method !== 'POST') return methodNotAllowed('GET, POST')
+export async function emailStatus(env: Env, user: User) {
+	const emails = await productDatabase(env.PRODUCT_DB)
+		.select({
+			id: emailDeliveries.id,
+			status: emailDeliveries.status,
+			created_at: emailDeliveries.created_at,
+		})
+		.from(emailDeliveries)
+		.where(eq(emailDeliveries.user_id, user.id))
+		.orderBy(desc(emailDeliveries.created_at))
+		.limit(10)
+	return { enabled: emailEnabled(env), emails }
+}
+export async function sendTestEmail(env: Env, user: User, requestId: string) {
 	if (!user.emailVerified) throw new HttpError(403, 'Verify your email before sending a test')
-	const { requestId } = await input(request, 'sendEmail')
 	if (!emailEnabled(env)) throw new HttpError(503, 'Email is not configured')
 	await rateLimit(env.IDENTITY_DB, `email-test:${user.id}`, 3, 3600)
 	const email = await sendEmail(env, {
@@ -114,5 +112,5 @@ export async function emailRoute(request: Request, env: Env, user: User) {
 		template: 'test',
 		dedupeKey: `test:${user.id}:${requestId}`,
 	})
-	return reply('email', { email }, 202)
+	return { email }
 }

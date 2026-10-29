@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { test } from 'node:test'
-import { cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { resolve } from 'node:path'
+import { relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = fileURLToPath(new URL('../..', import.meta.url))
@@ -20,6 +20,7 @@ async function fixture() {
 		'.oxfmtrc.json',
 		'apps/api/tsconfig.json',
 		'apps/dashboard/src/lib/contract-fetch.ts',
+		'apps/marketing/src/lib/contract-fetch.ts',
 	]) {
 		await mkdir(resolve(directory, file, '..'), { recursive: true })
 		await cp(resolve(root, file), resolve(directory, file), { recursive: true })
@@ -27,6 +28,50 @@ async function fixture() {
 	await symlink(resolve(root, 'node_modules'), resolve(directory, 'node_modules'), 'dir')
 	return directory
 }
+
+async function generatedFiles(directory: string) {
+	const files: Record<string, string> = {}
+	for (const folder of [
+		'apps/api/src/generated',
+		'packages/contracts/src/generated',
+		'apps/dashboard/src/generated',
+		'apps/marketing/src/generated',
+	]) {
+		const entries = await readdir(resolve(directory, folder), {
+			recursive: true,
+			withFileTypes: true,
+		})
+		for (const entry of entries) {
+			if (!entry.isFile()) continue
+			const path = resolve(entry.parentPath, entry.name)
+			files[relative(directory, path)] = await readFile(path, 'utf8')
+		}
+	}
+	return files
+}
+
+test('checked-in API output matches the spec and regeneration is deterministic', async (t) => {
+	const directory = await fixture()
+	t.after(() => rm(directory, { recursive: true, force: true }))
+	const generate = () =>
+		execFileSync('pnpm', ['exec', 'orval', '--config', 'orval.config.ts'], {
+			cwd: directory,
+			stdio: 'pipe',
+		})
+	generate()
+	const first = await generatedFiles(directory)
+	assert.deepEqual(
+		await generatedFiles(root),
+		first,
+		'Generated API files are stale. Run pnpm api:generate and include every generated change.',
+	)
+	generate()
+	assert.deepEqual(
+		await generatedFiles(directory),
+		first,
+		'Regeneration must be byte-for-byte stable',
+	)
+})
 
 const productFeature = {
 	paths: {
@@ -204,7 +249,7 @@ test('the Effect extension rejects operations outside the supported boundary', a
 			(operation: Record<string, unknown>) => {
 				operation.security = [{ unsupported: [] }]
 			},
-			/public or cookie-session security/,
+			/public, cookie-session, API-key or Stripe security/,
 		],
 		[
 			(operation: Record<string, unknown>) => {
@@ -214,9 +259,9 @@ test('the Effect extension rejects operations outside the supported boundary', a
 		],
 		[
 			(operation: Record<string, unknown>) => {
-				operation.parameters = [{ name: 'search', in: 'query', schema: { type: 'string' } }]
+				operation.parameters = [{ name: 'search', in: 'cookie', schema: { type: 'string' } }]
 			},
-			/only path parameters/,
+			/only path, query and header parameters/,
 		],
 	] as const) {
 		const feature = structuredClone(original)

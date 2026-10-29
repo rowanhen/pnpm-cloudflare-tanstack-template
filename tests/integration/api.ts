@@ -211,6 +211,26 @@ export async function testApi(
 		// Deleting the same filename from Bob's namespace cannot delete Alice's object.
 		await request(`/api/files/${files[0]}`, { method: 'DELETE' }, 1)
 		assert.equal((await request(`/api/files/${files[0]}`)).status, 200)
+		const head = await request(`/api/files/${files[0]}`, { method: 'HEAD' })
+		assert.equal(head.status, 200)
+		assert.equal(await head.text(), '')
+		assert.equal(
+			head.headers.get('Content-Length'),
+			String(new TextEncoder().encode('Hello R2!\n').length),
+		)
+		assert.ok(head.headers.get('ETag'))
+		assert.equal((await request(`/api/files/${files[0]}`, { method: 'HEAD' }, 1)).status, 404)
+		for (const query of [
+			'limit=0',
+			'limit=1001',
+			'limit=1.5',
+			'limit=hello',
+			'limit=',
+			'limit=1&limit=2',
+			'extra=value',
+		])
+			assert.equal((await request(`/api/files?${query}`)).status, 400, query)
+
 		let page = await (await request('/api/files?limit=1')).json()
 		let count = page.files.length
 		while (page.cursor) {
@@ -256,7 +276,9 @@ export async function testApi(
 			).status,
 			400,
 		)
-		assert.equal((await unauth('/api/waitlist')).status, 401)
+		const unsupported = await unauth('/api/waitlist')
+		assert.equal(unsupported.status, 405)
+		assert.equal(unsupported.headers.get('Allow'), 'POST')
 		assert.equal(
 			(await request('/api/todos', { headers: { Origin: 'https://evil.example' } })).status,
 			403,

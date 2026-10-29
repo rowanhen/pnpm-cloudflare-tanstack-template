@@ -65,7 +65,21 @@ test('a missing database row produces a typed Effect failure, not a rejected pro
 	} as unknown as Parameters<typeof productDatabase>[0])
 	const response = await Effect.runPromise(
 		getTodoHandler({ params: { id: 'missing' } }).pipe(
-			Effect.provideService(ApiRequest, { db, userId: 'owner' }),
+			Effect.provideService(ApiRequest, {
+				db,
+				userId: 'owner',
+				user: {
+					id: 'owner',
+					name: 'Owner',
+					email: 'owner@example.test',
+					emailVerified: true,
+					image: null,
+				},
+				request: new Request('http://localhost/api/todos/missing'),
+				get env(): never {
+					throw new Error('This query must only use PRODUCT_DB')
+				},
+			}),
 			Effect.match({ onSuccess: () => 'unexpected success', onFailure: (error) => error }),
 		),
 	)
@@ -118,4 +132,81 @@ test('frontend transport validates successes/errors and distinguishes contract/n
 		throw new Error('Network unavailable')
 	})
 	await assert.rejects(contractFetch('/api/todos'), TransportError)
+})
+
+test('browser transport preserves binary bytes and bodyless HEAD errors', async () => {
+	const { createContractFetch } = await import('../../packages/contracts/src/client.ts')
+	const bytes = new Uint8Array([0, 1, 128, 255])
+	const download = createContractFetch(
+		async () =>
+			new Response(bytes, {
+				headers: { 'Content-Type': 'application/octet-stream', ETag: '"file"' },
+			}),
+	)
+	const result = await download<{ data: Blob; status: number; headers: Headers }>(
+		'/api/files/test.bin',
+	)
+	assert.deepEqual(new Uint8Array(await result.data.arrayBuffer()), bytes)
+	assert.equal(result.headers.get('ETag'), '"file"')
+	const head = createContractFetch(async () => new Response(null, { status: 404 }))
+	await assert.rejects(
+		head(
+			'/api/files/missing',
+			{ method: 'HEAD' },
+			{
+				errorResponses: [{ status: 404, contentType: '' }],
+			},
+		),
+		(error) => {
+			assert.ok(error instanceof ApiError)
+			assert.equal(error.status, 404)
+			assert.deepEqual(error.response, { data: undefined, status: 404, headers: new Headers() })
+			return true
+		},
+	)
+})
+
+test('new application inputs and responses use generated schemas', async () => {
+	const { createKey, createSummary, uploadFile, getMe, getBilling, headFile } =
+		await import('../../packages/contracts/src/generated/operations.ts')
+	assert.throws(() =>
+		Schema.decodeUnknownSync(createKey.input)({ body: { name: ' ', scope: 'todos:read' } }),
+	)
+	assert.throws(() =>
+		Schema.decodeUnknownSync(createKey.input)({ body: { name: 'Key', scope: 'admin' } }),
+	)
+	assert.throws(() => Schema.decodeUnknownSync(createSummary.input)({ body: {}, headers: {} }))
+	assert.throws(() =>
+		Schema.decodeUnknownSync(createSummary.input)({
+			body: {},
+			headers: { 'idempotency-key': 'invalid' },
+		}),
+	)
+	assert.throws(() =>
+		Schema.decodeUnknownSync(uploadFile.input)({
+			params: { key: 'a/b' },
+			body: new File([], 'file'),
+		}),
+	)
+	assert.throws(() =>
+		decodeResponse(getMe, 200, {
+			user: {
+				id: 'id',
+				name: 'Name',
+				email: 'a@example.test',
+				emailVerified: true,
+				image: null,
+				password: 'private',
+			},
+		}),
+	)
+	assert.throws(() =>
+		decodeResponse(getBilling, 200, {
+			balance: '10',
+			summaryCost: 1,
+			packCredits: 1000,
+			activity: [],
+		}),
+	)
+	assert.equal(await contractError(headFile, 404, 'Missing').text(), '')
 })

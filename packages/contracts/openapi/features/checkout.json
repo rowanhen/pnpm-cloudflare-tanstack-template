@@ -1,0 +1,241 @@
+{
+	"paths": {
+		"/api/checkout/config": {
+			"get": {
+				"operationId": "getCheckoutConfig",
+				"tags": ["checkout"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CheckoutConfig"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					}
+				}
+			}
+		},
+		"/api/checkout/sessions": {
+			"post": {
+				"operationId": "createCheckout",
+				"tags": ["checkout"],
+				"responses": {
+					"201": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CheckoutSession"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"413": {
+						"$ref": "../shared/errors.json#/components/responses/PayloadTooLarge"
+					},
+					"415": {
+						"$ref": "../shared/errors.json#/components/responses/UnsupportedMediaType"
+					},
+					"429": {
+						"$ref": "../shared/errors.json#/components/responses/TooManyRequests"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"requestId": {
+										"type": "string",
+										"format": "uuid"
+									}
+								},
+								"required": ["requestId"]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/checkout/sessions/{sessionId}": {
+			"get": {
+				"operationId": "getOrder",
+				"tags": ["checkout"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/OrderStatus"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"404": {
+						"$ref": "../shared/errors.json#/components/responses/NotFound"
+					},
+					"429": {
+						"$ref": "../shared/errors.json#/components/responses/TooManyRequests"
+					}
+				},
+				"parameters": [
+					{
+						"name": "sessionId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "^cs_test_[A-Za-z0-9]+$"
+						}
+					}
+				]
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"CheckoutConfig": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"publishableKey": {
+						"type": "string"
+					},
+					"offer": {
+						"type": "object",
+						"additionalProperties": false,
+						"properties": {
+							"name": {
+								"type": "string"
+							},
+							"description": {
+								"type": "string",
+								"nullable": true
+							},
+							"amount": {
+								"type": "integer"
+							},
+							"currency": {
+								"type": "string"
+							},
+							"credits": {
+								"type": "integer"
+							},
+							"priceId": {
+								"type": "string"
+							}
+						},
+						"required": ["name", "description", "amount", "currency", "credits", "priceId"]
+					}
+				},
+				"required": ["publishableKey", "offer"]
+			},
+			"CheckoutSession": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"clientSecret": {
+						"type": "string",
+						"nullable": true
+					},
+					"sessionId": {
+						"type": "string"
+					},
+					"status": {
+						"type": "string",
+						"enum": ["open", "complete", "expired"],
+						"nullable": true
+					}
+				},
+				"required": ["clientSecret", "sessionId", "status"]
+			},
+			"OrderStatus": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"order": {
+						"type": "object",
+						"additionalProperties": false,
+						"properties": {
+							"id": {
+								"type": "string"
+							},
+							"amount": {
+								"type": "integer"
+							},
+							"currency": {
+								"type": "string"
+							},
+							"credits": {
+								"type": "integer"
+							},
+							"status": {
+								"type": "string",
+								"enum": ["pending", "paid", "expired", "failed"]
+							}
+						},
+						"required": ["id", "amount", "currency", "credits", "status"]
+					},
+					"checkoutStatus": {
+						"type": "string",
+						"enum": ["open", "complete", "expired"],
+						"nullable": true
+					}
+				},
+				"required": ["order", "checkoutStatus"]
+			}
+		}
+	}
+}

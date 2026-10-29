@@ -1,4 +1,3 @@
-import { inputs, type Responses, type Output } from '@workspace/contracts'
 export class HttpError extends Error {
 	constructor(
 		public status: number,
@@ -7,14 +6,6 @@ export class HttpError extends Error {
 	) {
 		super(message)
 	}
-}
-export const reply = <K extends keyof Responses>(_route: K, value: Responses[K], status = 200) =>
-	Response.json(value, { status })
-export async function input<K extends keyof typeof inputs>(request: Request, route: K) {
-	const parsed = inputs[route].safeParse(await readJson(request))
-	if (!parsed.success)
-		throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join('; '))
-	return parsed.data as Output<K>
 }
 export const json = (value: unknown, status = 200) => Response.json(value, { status })
 export function methodNotAllowed(allow: string) {
@@ -50,10 +41,13 @@ export async function readBody(request: Request, maxBytes: number) {
 	}
 	return bytes
 }
-export async function readJson(request: Request): Promise<Record<string, unknown>> {
+export async function readJson(
+	request: Request,
+	maxBytes = 16 * 1024,
+): Promise<Record<string, unknown>> {
 	if (request.headers.get('content-type')?.split(';')[0].trim() !== 'application/json')
 		throw new HttpError(415, 'Use Content-Type: application/json')
-	const bytes = await readBody(request, 16 * 1024)
+	const bytes = await readBody(request, maxBytes)
 	let value: unknown
 	try {
 		value = JSON.parse(new TextDecoder().decode(bytes))

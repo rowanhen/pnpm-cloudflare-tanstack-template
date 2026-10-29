@@ -2,7 +2,8 @@ import { useRouter } from '@tanstack/react-router'
 import { resetUser } from '@workspace/observability/browser'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useHydrated } from '@workspace/shared'
-import { api, client as apiClient } from '../lib/api'
+import { authRequest } from '../lib/auth-request'
+import { listFiles } from '../generated/files'
 import { useListTodos, useCreateTodo, useUpdateTodo, useDeleteTodo } from '../generated/todos'
 import type { TodosResponse } from '../generated/api.schemas'
 
@@ -18,7 +19,7 @@ export function useWorkspace(userId: string) {
 	})
 	const files = useQuery({
 		queryKey: ['files', userId],
-		queryFn: () => apiClient.get('files'),
+		queryFn: async () => (await listFiles()).data,
 		retry: false,
 	})
 	const mutation = useMutation({
@@ -55,7 +56,7 @@ export function useSignOut() {
 	const client = useQueryClient()
 	return useMutation({
 		mutationFn: async () => {
-			await api('/api/auth/sign-out', {
+			await authRequest('/api/auth/sign-out', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: '{}',

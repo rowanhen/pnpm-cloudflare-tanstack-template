@@ -1,0 +1,347 @@
+{
+	"paths": {
+		"/api/files": {
+			"get": {
+				"operationId": "listFiles",
+				"tags": ["files"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"files": {
+											"type": "array",
+											"items": {
+												"$ref": "#/components/schemas/StoredFile"
+											}
+										},
+										"cursor": {
+											"type": "string",
+											"nullable": true
+										}
+									},
+									"required": ["files", "cursor"]
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					}
+				},
+				"parameters": [
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 1000,
+							"default": 100
+						}
+					},
+					{
+						"name": "cursor",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/files/{key}": {
+			"put": {
+				"operationId": "uploadFile",
+				"tags": ["files"],
+				"responses": {
+					"201": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"file": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"key": {
+													"type": "string"
+												},
+												"size": {
+													"type": "integer"
+												},
+												"etag": {
+													"type": "string"
+												}
+											},
+											"required": ["key", "size", "etag"]
+										}
+									},
+									"required": ["file"]
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"413": {
+						"$ref": "../shared/errors.json#/components/responses/PayloadTooLarge"
+					},
+					"415": {
+						"$ref": "../shared/errors.json#/components/responses/UnsupportedMediaType"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/octet-stream": {
+							"schema": {
+								"type": "string",
+								"format": "binary"
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "key",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$"
+						}
+					}
+				],
+				"x-max-body-bytes": 5242880
+			},
+			"get": {
+				"operationId": "downloadFile",
+				"tags": ["files"],
+				"responses": {
+					"200": {
+						"description": "File content",
+						"headers": {
+							"ETag": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Content-Length": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Content-Disposition": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Content-Type": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						},
+						"content": {
+							"application/octet-stream": {
+								"schema": {
+									"type": "string",
+									"format": "binary"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"404": {
+						"$ref": "../shared/errors.json#/components/responses/NotFound"
+					}
+				},
+				"parameters": [
+					{
+						"name": "key",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$"
+						}
+					}
+				]
+			},
+			"head": {
+				"operationId": "headFile",
+				"tags": ["files"],
+				"responses": {
+					"200": {
+						"description": "File metadata",
+						"headers": {
+							"ETag": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Content-Length": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Content-Disposition": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Content-Type": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "bad_request",
+						"x-error-code": "bad_request"
+					},
+					"401": {
+						"description": "unauthorized",
+						"x-error-code": "unauthorized"
+					},
+					"403": {
+						"description": "forbidden",
+						"x-error-code": "forbidden"
+					},
+					"500": {
+						"description": "internal_error",
+						"x-error-code": "internal_error"
+					},
+					"503": {
+						"description": "unavailable",
+						"x-error-code": "unavailable"
+					},
+					"404": {
+						"description": "not_found",
+						"x-error-code": "not_found"
+					}
+				},
+				"parameters": [
+					{
+						"name": "key",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$"
+						}
+					}
+				]
+			},
+			"delete": {
+				"operationId": "deleteFile",
+				"tags": ["files"],
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					}
+				},
+				"parameters": [
+					{
+						"name": "key",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$"
+						}
+					}
+				]
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"StoredFile": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"key": {
+						"type": "string"
+					},
+					"size": {
+						"type": "integer"
+					},
+					"etag": {
+						"type": "string"
+					},
+					"uploaded": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": ["key", "size", "etag", "uploaded"]
+			}
+		}
+	}
+}

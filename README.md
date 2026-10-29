@@ -64,7 +64,7 @@ CI runs lint, unit tests, type checks and build. On main, a separate job deploys
 | Agent workflow and provider access                | [Agent setup](docs/agent-setup.md)                  |
 | Component conventions, folders and REST routes    | [Code and API reference](docs/reference.md)         |
 
-Start with the [one-page structure guide](docs/architecture.md). The [detailed API walkthrough](docs/api-architecture.md) explains the OpenAPI → Orval → Hono + Effect flow, demonstrated by todos. Add or edit feature contracts, run `pnpm api:generate`, and implement the typed entry points; routes, clients, hooks, and mocks are generated automatically.
+Start with the [one-page structure guide](docs/architecture.md). The [detailed API walkthrough](docs/api-architecture.md) explains the OpenAPI → Orval → Hono + Effect flow used by every application endpoint, with todos as the smallest example. Better Auth retains its provider-owned OAuth/session protocol. Add or edit feature contracts, run `pnpm api:generate`, and implement the typed entry points; routes, clients, hooks, and mocks are generated automatically.
 
 Application code, scripts and tests are TypeScript; OpenAPI and Wrangler configuration use JSON. D1 schema types live in `@workspace/data`; validated public API types and the client live in `@workspace/contracts`. Both apps share the UI and observability packages. GitHub's required **Verify** check gates dependency auto-merges.
 

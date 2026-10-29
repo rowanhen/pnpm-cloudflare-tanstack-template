@@ -1,6 +1,6 @@
 import type { LocalWorker } from '../support/local-worker.ts'
 import type { TestRequestInit } from '../../scripts/tooling.ts'
-import type { Responses } from '../../packages/contracts/src/index.ts'
+import type { BillingStatus } from '../../packages/contracts/src/index.ts'
 import assert from 'node:assert/strict'
 import { createHmac, randomUUID } from 'node:crypto'
 
@@ -116,7 +116,7 @@ export async function testCheckout(worker: LocalWorker) {
 		'expired',
 	)
 	assert.equal(await balance(), 1000)
-	const billing: Responses['billing'] = await (await call('/api/billing')).json()
+	const billing: BillingStatus = await (await call('/api/billing')).json()
 	const activity = billing.activity
 	assert.equal(activity.filter((entry) => entry.type === 'topup').length, 1)
 	const limits = await Promise.all(

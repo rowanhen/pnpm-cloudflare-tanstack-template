@@ -126,6 +126,48 @@
 					}
 				},
 				"required": ["code", "error"]
+			},
+			"Conflict": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["conflict"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"PaymentRequired": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["payment_required"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"BadGateway": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["bad_gateway"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
 			}
 		},
 		"responses": {
@@ -180,7 +222,7 @@
 				}
 			},
 			"PayloadTooLarge": {
-				"description": "Request exceeds 16 KiB",
+				"description": "Request exceeds the operation body limit",
 				"content": {
 					"application/json": {
 						"schema": {
@@ -215,6 +257,36 @@
 					"application/json": {
 						"schema": {
 							"$ref": "#/components/schemas/TooManyRequests"
+						}
+					}
+				}
+			},
+			"Conflict": {
+				"description": "Conflict",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/Conflict"
+						}
+					}
+				}
+			},
+			"PaymentRequired": {
+				"description": "PaymentRequired",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/PaymentRequired"
+						}
+					}
+				}
+			},
+			"BadGateway": {
+				"description": "BadGateway",
+				"content": {
+					"application/json": {
+						"schema": {
+							"$ref": "#/components/schemas/BadGateway"
 						}
 					}
 				}

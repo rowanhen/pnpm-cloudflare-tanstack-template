@@ -1,0 +1,220 @@
+{
+	"paths": {
+		"/api/keys": {
+			"get": {
+				"operationId": "listKeys",
+				"tags": ["keys"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"keys": {
+											"type": "array",
+											"items": {
+												"$ref": "#/components/schemas/Key"
+											}
+										}
+									},
+									"required": ["keys"]
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					}
+				}
+			},
+			"post": {
+				"operationId": "createKey",
+				"tags": ["keys"],
+				"responses": {
+					"201": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"key": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"id": {
+													"type": "string"
+												},
+												"name": {
+													"type": "string"
+												},
+												"prefix": {
+													"type": "string"
+												},
+												"scope": {
+													"$ref": "#/components/schemas/KeyScope"
+												},
+												"token": {
+													"type": "string"
+												}
+											},
+											"required": ["id", "name", "prefix", "scope", "token"]
+										}
+									},
+									"required": ["key"]
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"413": {
+						"$ref": "../shared/errors.json#/components/responses/PayloadTooLarge"
+					},
+					"415": {
+						"$ref": "../shared/errors.json#/components/responses/UnsupportedMediaType"
+					},
+					"409": {
+						"$ref": "../shared/errors.json#/components/responses/Conflict"
+					},
+					"429": {
+						"$ref": "../shared/errors.json#/components/responses/TooManyRequests"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateKeyBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/keys/{id}": {
+			"delete": {
+				"operationId": "deleteKey",
+				"tags": ["keys"],
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"404": {
+						"$ref": "../shared/errors.json#/components/responses/NotFound"
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"KeyScope": {
+				"type": "string",
+				"enum": ["todos:read", "summary:read"]
+			},
+			"Key": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"prefix": {
+						"type": "string"
+					},
+					"scope": {
+						"$ref": "#/components/schemas/KeyScope"
+					},
+					"created_at": {
+						"type": "string"
+					},
+					"last_used_at": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": ["id", "name", "prefix", "scope", "created_at", "last_used_at"]
+			},
+			"CreateKeyBody": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 60,
+						"pattern": ".*\\S.*"
+					},
+					"scope": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/KeyScope"
+							}
+						],
+						"default": "todos:read"
+					}
+				},
+				"required": ["name"]
+			}
+		}
+	}
+}

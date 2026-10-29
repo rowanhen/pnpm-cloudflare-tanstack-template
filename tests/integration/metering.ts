@@ -1,4 +1,4 @@
-import type { Responses, KeyScope } from '../../packages/contracts/src/index.ts'
+import type { BillingStatus, KeyScope } from '../../packages/contracts/src/index.ts'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 
@@ -14,7 +14,7 @@ export async function testMetering(
 			headers: { Cookie: cookie, Origin: origin, 'Content-Type': 'application/json' },
 			body: body === undefined ? undefined : JSON.stringify(body),
 		})
-	const billing = async (cookie = cookies[0]): Promise<Responses['billing']> => {
+	const billing = async (cookie = cookies[0]): Promise<BillingStatus> => {
 		const result = await session('/api/billing', 'GET', undefined, cookie)
 		assert.equal(result.status, 200, await result.clone().text())
 		return result.json()
@@ -22,7 +22,9 @@ export async function testMetering(
 	const createKey = async (
 		scope: KeyScope,
 		cookie = cookies[0],
-	): Promise<Responses['createKey']['key']> => {
+	): Promise<
+		import('../../packages/contracts/src/generated/operations.ts').CreateKeySuccess['body']['key']
+	> => {
 		const response = await session('/api/keys', 'POST', { name: 'Metering test', scope }, cookie)
 		assert.equal(response.status, 201, await response.clone().text())
 		return (await response.json()).key

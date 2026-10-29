@@ -34,7 +34,7 @@ apps/api/           Worker REST API, auth, rate limiting, D1 migrations, R2 bind
 apps/dashboard/     Protected workspace, private todos/files, API key management
 apps/marketing/     Waitlist, privacy example, SEO metadata, sitemap and robots
 packages/data/      Drizzle schema, inferred database types and server-only D1 client
-packages/contracts/ OpenAPI todo contract, generated Effect types; legacy Zod inputs and REST client
+packages/contracts/ OpenAPI application contracts, generated Effect types and shared client validation
 packages/shared/    Composables exports, theme, page states and shared hooks
 packages/observability/ Consent, analytics, replay, error capture and API telemetry
 codegen/            Orval Effect extension for typed handlers and wiring

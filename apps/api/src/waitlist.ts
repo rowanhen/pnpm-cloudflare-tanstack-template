@@ -1,21 +1,18 @@
 import { sendEmail, emailEnabled } from './email'
 import { productDatabase } from '@workspace/data/client'
 import { waitlist } from '@workspace/data/product'
-import { inputs } from '@workspace/contracts'
-import { HttpError, methodNotAllowed, readJson, reply, sha256 } from './http'
+import type { JoinWaitlistInput } from '@workspace/contracts/operations'
+import { sha256 } from './http'
 import { rateLimit } from './rate-limit'
 import type { Env } from './env'
 
-export async function waitlistRoute(request: Request, env: Env) {
-	if (request.method !== 'POST') return methodNotAllowed('POST')
-	const body = await readJson(request)
-	const response = () =>
-		reply('waitlist', { message: "You're on the list. Thanks for your interest!" }, 202)
+export async function joinWaitlist(request: Request, env: Env, body: JoinWaitlistInput['body']) {
+	const response = () => ({ message: "You're on the list. Thanks for your interest!" })
 	if (body.website) return response()
-	const result = inputs.waitlist.safeParse(body)
-	if (!result.success)
-		throw new HttpError(400, 'Enter a valid email address and agree to join the waitlist')
-	const { email, name, consent } = result.data
+	const email = body.email.toLowerCase()
+	const name = body.name.trim()
+	const consent = body.consent
+
 	await rateLimit(
 		env.IDENTITY_DB,
 		`waitlist-ip:${await sha256(request.headers.get('cf-connecting-ip') ?? 'local')}`,

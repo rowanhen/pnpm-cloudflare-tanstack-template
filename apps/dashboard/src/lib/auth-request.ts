@@ -1,7 +1,6 @@
 import { observedFetch, resetUser } from '@workspace/observability/browser'
-import { createClient } from '@workspace/contracts/client'
 import { signInPath } from './login'
-export async function api(path: string, init: RequestInit = {}) {
+export async function authRequest(path: `/api/auth/${string}`, init: RequestInit = {}) {
 	const response = await observedFetch(path, { ...init, credentials: 'same-origin' })
 	if (response.status === 401) {
 		resetUser()
@@ -19,5 +18,3 @@ export async function api(path: string, init: RequestInit = {}) {
 	}
 	return response
 }
-
-export const client = createClient(api)

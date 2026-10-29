@@ -9,6 +9,7 @@ import {
 	type GeneratorVerbOptions,
 	type OpenApiNonBooleanSchemaObject,
 	type OpenApiRequestBodyObject,
+	type OpenApiParameterObject,
 	type OpenApiResponseObject,
 	type OpenApiSchemaObject,
 	type OutputClientFunc,
@@ -47,28 +48,83 @@ const featureGroups = (operations: Record<string, GeneratorVerbOptions>) => {
 }
 
 // Extend Orval's schema generator with the application's typed HTTP/Effect boundary.
+function securityOf(spec: GeneratorVerbOptions['originalOperation'], context: ContextSpec) {
+	const security = JSON.stringify(spec.security ?? context.spec.security)
+	if (security === '[]') return 'public'
+	for (const name of ['session', 'apiKey', 'stripe'] as const)
+		if (security === JSON.stringify([{ [name]: [] }])) return name
+	throw new Error('This adapter supports public, cookie-session, API-key or Stripe security')
+}
+const adapter = (spec: GeneratorVerbOptions['originalOperation'], context: ContextSpec) => {
+	const security = securityOf(spec, context)
+	return security === 'session'
+		? 'effectHandler'
+		: security === 'apiKey'
+			? 'apiKeyEffectHandler'
+			: 'publicEffectHandler'
+}
 function operationContract(operation: GeneratorVerbOptions, context: ContextSpec) {
 	const { operationId: id, originalOperation: spec, pathRoute, verb } = operation
 	const name = typeName(operation)
-	const security = JSON.stringify(spec.security ?? context.spec.security)
-	if (security !== '[]' && security !== JSON.stringify([{ session: [] }]))
-		throw new Error(`${id}: this adapter supports public or cookie-session security`)
+	const security = securityOf(spec, context)
+	const scope = spec['x-api-key-scope']
+	if (security === 'apiKey' && scope !== 'todos:read' && scope !== 'summary:read')
+		throw new Error(`${id}: declare a supported x-api-key-scope`)
 	const parameters = [
 		...(context.spec.paths?.[pathRoute]?.parameters ?? []),
 		...(spec.parameters ?? []),
-	]
-	if (parameters.some((parameter) => '$ref' in parameter || parameter.in !== 'path'))
-		throw new Error(`${id}: only path parameters are supported by the Effect adapter`)
-	const input = parameters.length ? [`params: ${name}Params`] : []
+	].map((parameter) => resolveRef<OpenApiParameterObject>(parameter, context).schema)
+	if (parameters.some((parameter) => !['path', 'query', 'header'].includes(parameter.in)))
+		throw new Error(`${id}: only path, query and header parameters are supported`)
+	const input: string[] = []
+	for (const [location, key, suffix] of [
+		['path', 'params', 'Params'],
+		['query', 'query', 'QueryParams'],
+		['header', 'headers', 'Header'],
+	])
+		if (parameters.some((parameter) => parameter.in === location))
+			input.push(`${key}: ${name}${suffix}`)
+	const query = parameters
+		.filter((parameter) => parameter.in === 'query')
+		.map((parameter) => {
+			if (!('schema' in parameter) || !parameter.schema || typeof parameter.schema !== 'object')
+				throw new Error(`${id}: query parameters require a schema`)
+			const schema = resolveSchema(parameter.schema, context)
+			if (!['string', 'integer', 'number', 'boolean'].includes(String(schema.type)))
+				throw new Error(`${id}: only scalar query parameters are supported`)
+			return { name: parameter.name, type: schema.type }
+		})
+	let bodyKind = 'none'
+	const maxBodyBytes = spec['x-max-body-bytes'] ?? 16384
+	if (typeof maxBodyBytes !== 'number' || !Number.isSafeInteger(maxBodyBytes) || maxBodyBytes < 1)
+		throw new Error(`${id}: x-max-body-bytes must be a positive integer`)
 	if (spec.requestBody) {
 		const body = resolveRef<OpenApiRequestBodyObject>(spec.requestBody, context).schema
-		const schema = body.content['application/json']?.schema
-		if (!body.required || !schema || typeof schema !== 'object')
-			throw new Error(`${id}: use a required JSON request body`)
+		const content = body.content
+		const schema = (content['application/json'] ?? content['application/octet-stream'])?.schema
+		if (
+			!body.required ||
+			!schema ||
+			typeof schema !== 'object' ||
+			Object.keys(content).length !== 1
+		)
+			throw new Error(`${id}: use a required JSON or binary request body`)
 		const resolved = resolveSchema(schema, context)
-		// Orval omits minProperties; preserve it at the shared validation boundary.
+		bodyKind = content['application/octet-stream']
+			? 'binary'
+			: spec['x-raw-body'] === true
+				? 'raw'
+				: 'json'
+		if (
+			bodyKind === 'binary' &&
+			resolved.format !== 'binary' &&
+			resolved.contentMediaType !== 'application/octet-stream'
+		)
+			throw new Error(`${id}: binary bodies require string/binary`)
+		if (bodyKind === 'raw' && security !== 'stripe')
+			throw new Error(`${id}: raw bodies are reserved for signed webhooks`)
 		input.push(
-			`body: ${name}Body${resolved.minProperties === undefined ? '' : `.check(S.isMinProperties(${resolved.minProperties}))`}`,
+			`body: ${bodyKind === 'raw' ? 'S.String' : bodyKind === 'binary' ? 'S.instanceOf(File)' : `${name}Body${resolved.minProperties === undefined ? '' : `.check(S.isMinProperties(${resolved.minProperties}))`}`}`,
 		)
 	}
 	const responses = spec.responses ?? {}
@@ -82,37 +138,51 @@ function operationContract(operation: GeneratorVerbOptions, context: ContextSpec
 	])
 		if (!responses[status]) throw new Error(`${id}: declare boundary response ${status}`)
 	const errorCodes: string[] = []
+	const binaryStatuses: number[] = []
+	const emptyStatuses: number[] = []
 	const schemas = Object.entries(responses).map(([status, value]) => {
 		if (!/^[245][0-9]{2}$/.test(status)) throw new Error(`${id}: use explicit 2xx/4xx/5xx statuses`)
 		if (!value || typeof value !== 'object') throw new Error(`${id}/${status}: invalid response`)
-		// Orval has validated this response; its extension-key index signature erases the entry type.
 		const response = resolveRef<OpenApiResponseObject>(
 			value as OpenApiResponseObject,
 			context,
 		).schema
 		const json = response.content?.['application/json']
-		if ((response.content && !json) || (!json && status !== '204'))
-			throw new Error(`${id}/${status}: use JSON responses or a bodyless 204`)
+		const binary = response.content?.['application/octet-stream']
+		const empty = !response.content && (status === '204' || verb === 'head')
+		if (
+			(!json && !binary && !empty) ||
+			(response.content && Object.keys(response.content).length !== 1)
+		)
+			throw new Error(`${id}/${status}: use JSON, binary or bodyless responses`)
 		if (Number(status) >= 400) {
 			const schema =
 				typeof json?.schema === 'object' ? resolveSchema(json.schema, context) : undefined
 			const code = schema?.properties?.code
-			if (
-				!code ||
-				typeof code !== 'object' ||
-				'$ref' in code ||
-				code.enum?.length !== 1 ||
-				typeof code.enum[0] !== 'string'
-			)
-				throw new Error(`${id}/${status}: errors require a singleton string code enum`)
-			errorCodes.push(`${status}: ${JSON.stringify(code.enum[0])}`)
+			const errorCode =
+				empty && verb === 'head'
+					? response['x-error-code']
+					: code && typeof code === 'object' && !('$ref' in code) && code.enum?.length === 1
+						? code.enum[0]
+						: undefined
+			if (typeof errorCode !== 'string')
+				throw new Error(
+					`${id}/${status}: errors require a singleton string code enum or bodyless HEAD x-error-code`,
+				)
+			errorCodes.push(`${status}: ${JSON.stringify(errorCode)}`)
 		}
-		return `${status}: ${json ? `${name}${status}Response` : 'S.Undefined'}`
+		if (binary) binaryStatuses.push(Number(status))
+		if (empty) emptyStatuses.push(Number(status))
+		return `${status}: ${empty ? 'S.Undefined' : binary ? 'S.Union([S.instanceOf(ReadableStream), S.instanceOf(Blob)])' : `${name}${status}Response`}`
 	})
 	return `
 export const ${id} = {
  operationId: '${id}', method: '${verb.toUpperCase()}', path: ${JSON.stringify(pathRoute)},
- hasBody: ${Boolean(spec.requestBody)}, input: S.Struct({${input.join(',')}}),
+ security: '${security}', requireOrigin: ${security === 'session' || (security === 'public' && spec['x-require-origin'] !== false)}, scope: ${JSON.stringify(scope ?? null)},
+ query: ${JSON.stringify(query)}, headers: ${JSON.stringify(parameters.filter((p) => p.in === 'header').map((p) => p.name.toLowerCase()))},
+ hasBody: ${Boolean(spec.requestBody)}, bodyKind: '${bodyKind}', maxBodyBytes: ${maxBodyBytes},
+ binaryStatuses: ${JSON.stringify(binaryStatuses)}, emptyStatuses: ${JSON.stringify(emptyStatuses)},
+ input: S.Struct({${input.join(',')}}),
  responses: {${schemas.join(',')}}, errorCodes: {${errorCodes.join(',')}},
 } as const
 export type ${name}Input = InputOf<typeof ${id}>
@@ -171,10 +241,20 @@ export const operations = [${Object.values(operations)
 				content: `${header}
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
-import { ${[...new Set(items.map(({ originalOperation: spec }) => (JSON.stringify(spec.security ?? context.spec.security) === '[]' ? 'publicEffectHandler' : 'effectHandler')))].join(', ')} } from '../contract/handler'
+import { ${[...new Set([...items.map(({ originalOperation: spec }) => adapter(spec, context)), ...(items.some((item) => item.verb === 'head') ? ['headAware'] : [])])].join(', ')} } from '../contract/handler'
 ${items.map(({ operationId: id }) => `import { ${id} } from '../features/${feature}/${operationFile(id)}'`).join('\n')}
 const factory = createFactory()
-${items.map(({ operationId: id, originalOperation: spec }) => `export const ${id}Handlers = factory.createHandlers(${JSON.stringify(spec.security ?? context.spec.security) === '[]' ? 'publicEffectHandler' : 'effectHandler'}(operations.${id}, ${id}))`).join('\n')}
+${items
+	.map((item) => {
+		const id = item.operationId
+		const target = `${adapter(item.originalOperation, context)}(operations.${id}, ${id})`
+		const head =
+			item.verb === 'get'
+				? items.find((other) => other.verb === 'head' && other.pathRoute === item.pathRoute)
+				: undefined
+		return `export const ${id}Handlers = factory.createHandlers(${head ? `headAware(${target}, () => ${head.operationId}Handlers[0])` : target})`
+	})
+	.join('\n')}
 `,
 			})
 			for (const operation of items) {
@@ -189,9 +269,11 @@ ${items.map(({ operationId: id, originalOperation: spec }) => `export const ${id
 					if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT')) throw error
 				}
 				const requestContext =
-					JSON.stringify(operation.originalOperation.security ?? context.spec.security) === '[]'
-						? 'PublicApiRequest'
-						: 'ApiRequest'
+					securityOf(operation.originalOperation, context) === 'session'
+						? 'ApiRequest'
+						: securityOf(operation.originalOperation, context) === 'apiKey'
+							? 'ApiKeyRequest'
+							: 'PublicApiRequest'
 				files.push({
 					path,
 					content: `import type { ${typeName(operation)}Handler } from '@workspace/contracts/operations'
@@ -212,8 +294,8 @@ export const effectHono: OutputClientFunc = (clients) => ({
 	extraFiles: async (...args) => {
 		if (!clients.hono.extraFiles)
 			throw new Error('Orval Hono must provide its extraFiles generator')
-		return (await clients.hono.extraFiles(...args)).filter(
-			(file) => file.path === args[1].override.hono.compositeRoute,
-		)
+		return (await clients.hono.extraFiles(...args))
+			.filter((file) => file.path === args[1].override.hono.compositeRoute)
+			.map((file) => ({ ...file, content: file.content.replaceAll('.head(', ".on('HEAD', ") }))
 	},
 })

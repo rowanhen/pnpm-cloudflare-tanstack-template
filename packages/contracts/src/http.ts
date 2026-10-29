@@ -30,12 +30,29 @@ export function decodeResponse(operation: Operation, status: number, body: unkno
 	return Schema.decodeUnknownSync(schema, { onExcessProperty: 'error' })(body)
 }
 
-export function contractResponse(operation: Operation, status: number, body: unknown): Response {
+export function contractResponse(
+	operation: Operation,
+	status: number,
+	body: unknown,
+	headers?: HeadersInit,
+): Response {
 	const value = decodeResponse(operation, status, body)
-	return status === 204 ? new Response(null, { status }) : Response.json(value, { status })
+	if (operation.emptyStatuses.includes(status)) return new Response(null, { status, headers })
+	if (operation.binaryStatuses.includes(status)) {
+		if (!(value instanceof ReadableStream || value instanceof Blob))
+			throw new Error('Invalid binary response')
+		return new Response(value, { status, headers })
+	}
+	return Response.json(value, { status, headers })
 }
 
 // Middleware failures use the operation's declared schema, just like business failures.
 export function contractError(operation: Operation, status: number, message: string): Response {
-	return contractResponse(operation, status, { code: operation.errorCodes[status], error: message })
+	return contractResponse(
+		operation,
+		status,
+		operation.emptyStatuses.includes(status)
+			? undefined
+			: { code: operation.errorCodes[status], error: message },
+	)
 }

@@ -1,0 +1,102 @@
+{
+	"paths": {
+		"/api/health": {
+			"get": {
+				"operationId": "getHealth",
+				"tags": ["system"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"ok": {
+											"type": "boolean"
+										},
+										"maintenance": {
+											"type": "boolean"
+										}
+									},
+									"required": ["ok"]
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					}
+				},
+				"security": []
+			}
+		},
+		"/api/config": {
+			"get": {
+				"operationId": "getConfig",
+				"tags": ["system"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AppConfig"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					}
+				},
+				"security": []
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"AppConfig": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"googleEnabled": {
+						"type": "boolean"
+					},
+					"checkoutEnabled": {
+						"type": "boolean"
+					},
+					"emailEnabled": {
+						"type": "boolean"
+					}
+				},
+				"required": ["googleEnabled", "checkoutEnabled", "emailEnabled"]
+			}
+		}
+	}
+}

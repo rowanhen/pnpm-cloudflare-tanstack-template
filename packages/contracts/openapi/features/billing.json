@@ -1,0 +1,79 @@
+{
+	"paths": {
+		"/api/billing": {
+			"get": {
+				"operationId": "getBilling",
+				"tags": ["billing"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BillingStatus"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"BillingStatus": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"balance": {
+						"type": "integer"
+					},
+					"summaryCost": {
+						"type": "integer"
+					},
+					"packCredits": {
+						"type": "integer"
+					},
+					"activity": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string"
+								},
+								"credits": {
+									"type": "integer"
+								},
+								"created_at": {
+									"type": "string"
+								}
+							},
+							"required": ["id", "type", "credits", "created_at"]
+						}
+					}
+				},
+				"required": ["balance", "summaryCost", "packCredits", "activity"]
+			}
+		}
+	}
+}
