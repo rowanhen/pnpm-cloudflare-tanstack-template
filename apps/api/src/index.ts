@@ -1,3 +1,4 @@
+import { trustedOrigins } from './origins'
 import { reportRequest } from '@workspace/observability/server'
 import { safeError, safePath } from '@workspace/observability/privacy'
 import generatedApi from './generated/routes'
@@ -35,9 +36,7 @@ export default {
 		const path = new URL(request.url).pathname
 		let unexpectedError: unknown
 		const origin = request.headers.get('origin')
-		const allowed = env.ALLOWED_ORIGINS.split(',')
-			.map((value) => value.trim())
-			.includes(origin ?? '')
+		const allowed = trustedOrigins(env.ALLOWED_ORIGINS).includes(origin ?? '')
 		let response: Response
 		try {
 			request = await trustedProxyRequest(request, env)

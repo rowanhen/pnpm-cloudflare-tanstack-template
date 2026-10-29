@@ -1,28 +1,18 @@
 import { Effect } from 'effect'
 import { listFiles as operation, type ListFilesHandler } from '@workspace/contracts/operations'
 import { ApiRequest } from '../../contract/context'
-import { attempt } from '../../contract/service'
+import { respond } from '../../contract/service'
+import { FileStore } from './service'
+import { userFileLayer } from '../../runtime/user-layers'
 
 export const listFiles: ListFilesHandler<ApiRequest> = (input) =>
 	Effect.gen(function* () {
-		const context = yield* ApiRequest
-		const result = yield* attempt(operation, () =>
-			context.env.FILES.list({
-				limit: input.query.limit,
-				prefix: `${context.userId}/`,
-				cursor: input.query.cursor,
-			}),
+		const ctx = yield* ApiRequest
+		const value = yield* respond(
+			operation,
+			Effect.flatMap(FileStore, (s) => s.list(input.query)).pipe(
+				Effect.provide(userFileLayer(ctx.env, ctx.userId)),
+			),
 		)
-		return {
-			status: 200,
-			body: {
-				files: result.objects.map((object) => ({
-					key: object.key.slice(context.userId.length + 1),
-					size: object.size,
-					etag: object.httpEtag,
-					uploaded: object.uploaded.toISOString(),
-				})),
-				cursor: result.truncated ? result.cursor : null,
-			},
-		}
+		return { status: 200, body: value }
 	})

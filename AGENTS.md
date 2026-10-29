@@ -17,7 +17,7 @@ Read [the one-page structure guide](docs/architecture.md) before changing applic
 
 ## Backend service pattern
 
-Read [application services and boundaries](docs/api-architecture.md#application-services-and-boundaries) before extending backend workflows. Todos are the executable example; the existing provider adapters have the limitations documented there.
+Read [application services and boundaries](docs/api-architecture.md#application-services-and-boundaries) before extending backend workflows. Todos are the smallest executable example; checkout, billing, metering, email, waitlist, credentials and storefront use the same dependency direction. Files expose an owned storage capability directly.
 
 - Define capabilities and their dependency contracts with Effect 4 Context.Service in a feature's service.ts. Methods return Effects with tagged failures. Put application composition in live.ts, pure rules/types in domain.ts and Drizzle/provider implementations beside them. Small features need only the files that have a meaningful responsibility; do not add pass-through program.ts/app.ts or generic service containers.
 - Compose dependencies with Layer in apps/api/src/runtime/. Bind repositories to the trusted user established at the session or API-key entry point. Request identity and Cloudflare bindings are request-scoped, never held in a process-global runtime. Tests provide fake dependency Layers to the same live application layer.
@@ -25,7 +25,7 @@ Read [application services and boundaries](docs/api-architecture.md#application-
 - Use Effect Clock for workflow time, pass cancellation to network providers, and await non-abortable D1 writes before interruption cleanup. Preserve defects and interruption during typed recovery. Never blindly retry an ambiguous external send or payment.
 - Keep domain failures transport-independent. Map expected failures into generated status/body unions at HTTP entry handlers; unknown failures reach sanitized reporting. Reuse value schemas from contracts without making services depend on HTTP operations. Validate stored/provider data before it enters application logic.
 - Use Drizzle for application reads, writes and atomic batches. No direct D1 prepare/exec/batch calls or separate database clients. Use schema-backed query builders and parameterized Drizzle sql where needed. Raw SQL belongs in versioned migrations and infrastructure tooling/tests.
-- Follow the lint-protected service.ts/live.ts/domain.ts roles; do not rename a workflow to bypass its checks. Adapter filenames describe the integration they own. New shared infrastructure needs a concrete consumer and a clear responsibility.
+- Follow the graph-checked dependency direction: generated operation entry points are HTTP adapters; runtime composes dependencies; repository/provider/stripe/r2 files implement infrastructure; other feature modules are application code by default. Cross-feature imports use service/domain contracts (HTTP adapters may share HTTP mapping helpers). Do not add cycles, dynamic module paths or suppressions. New shared infrastructure needs a concrete consumer and a clear responsibility.
 
 ## Repository conventions
 

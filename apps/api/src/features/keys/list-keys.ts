@@ -1,11 +1,16 @@
 import { Effect } from 'effect'
 import { listKeys as operation, type ListKeysHandler } from '@workspace/contracts/operations'
 import { ApiRequest } from '../../contract/context'
-import { attempt } from '../../contract/service'
-import { listKeys as service } from './credentials'
+import { respond } from '../../contract/service'
+import { KeyService } from './service'
+import { keyLayer } from '../../runtime/key-layers'
+
 export const listKeys: ListKeysHandler<ApiRequest> = () =>
 	Effect.gen(function* () {
-		const context = yield* ApiRequest
-		const body = yield* attempt(operation, () => service(context.env, context.userId))
-		return { status: 200, body }
+		const ctx = yield* ApiRequest
+		const value = yield* respond(
+			operation,
+			Effect.flatMap(KeyService, (s) => s.list).pipe(Effect.provide(keyLayer(ctx.env, ctx.userId))),
+		)
+		return { status: 200, body: { keys: value } }
 	})

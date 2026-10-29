@@ -1,19 +1,21 @@
 import { Effect } from 'effect'
-import type { GetStorefrontHandler } from '@workspace/contracts/operations'
+import {
+	getStorefront as operation,
+	type GetStorefrontHandler,
+} from '@workspace/contracts/operations'
 import { PublicApiRequest } from '../../contract/context'
-import { attempt, product, storefrontEnabled, limit } from './stripe'
+import { respond } from '../../contract/service'
+import { StorefrontService } from './service'
+import { storefrontLayer } from '../../runtime/storefront-layers'
+
 export const getStorefront: GetStorefrontHandler<PublicApiRequest> = () =>
 	Effect.gen(function* () {
-		const { env, request } = yield* PublicApiRequest
-		if (!storefrontEnabled(env)) return { status: 200, body: { enabled: false, products: [] } }
-		const products = yield* attempt(async () => {
-			await limit(env, request, 'catalogue', 60)
-			return Promise.all(
-				(['purchase', 'subscription'] as const).map(async (id) => {
-					const { priceId: _priceId, ...item } = await product(env, id)
-					return item
-				}),
-			)
-		})
-		return { status: 200, body: { enabled: true, products } }
+		const ctx = yield* PublicApiRequest
+		const value = yield* respond(
+			operation,
+			Effect.flatMap(StorefrontService, (s) =>
+				s.catalogue(ctx.request.headers.get('cf-connecting-ip') ?? 'local'),
+			).pipe(Effect.provide(storefrontLayer(ctx.env))),
+		)
+		return { status: 200, body: value }
 	})

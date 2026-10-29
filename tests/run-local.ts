@@ -1,3 +1,4 @@
+import { testMeteredValidation } from './integration/metered-validation.ts'
 import { testTodoStorage } from './integration/todo-storage.ts'
 import { testStorefront } from './integration/storefront.ts'
 import { testObservability } from './integration/observability.ts'
@@ -18,6 +19,7 @@ try {
 	await testCheckout(worker)
 	await testStorefront(worker)
 	await testEmail(worker)
+	await testMeteredValidation(worker)
 	await testObservability(worker)
 } finally {
 	await worker.stop()

@@ -69,6 +69,9 @@ export async function testStorefront(worker: LocalWorker) {
 	await patch(checkout.sessionId, { livemode: true })
 	assert.equal((await status(checkout.sessionId)).status, 404)
 	await patch(checkout.sessionId, { livemode: false })
+	await patch(checkout.sessionId, { amount_total: null, currency: null })
+	assert.equal((await status(checkout.sessionId)).status, 503)
+	await patch(checkout.sessionId, { amount_total: 1200, currency: 'gbp' })
 	// Guest purchases deliberately never fulfil a workspace credit order.
 	const before = worker.query('SELECT SUM(balance) AS balance FROM credit_accounts', 'billing')[0]
 		.balance

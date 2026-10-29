@@ -44,19 +44,23 @@
 		{
 			"files": ["apps/api/src/**/*.ts"],
 			"rules": {
-				"no-restricted-properties": [
+				"typescript/no-explicit-any": "error",
+				"typescript/no-non-null-assertion": "error",
+				"no-unused-vars": "error",
+				"typescript/no-unused-expressions": "error",
+				"no-restricted-globals": [
 					"error",
 					{
-						"property": "prepare",
-						"message": "Use the matching Drizzle client for application persistence."
-					},
-					{
-						"property": "exec",
-						"message": "Raw SQL execution belongs in migration tooling, not application code."
+						"name": "process",
+						"message": "Cloudflare bindings belong at request boundaries; do not read process state."
 					}
 				],
-				"typescript/no-explicit-any": "error",
-				"typescript/no-non-null-assertion": "error"
+				"no-underscore-dangle": [
+					"error",
+					{
+						"allow": ["_tag"]
+					}
+				]
 			}
 		},
 		{
@@ -95,7 +99,10 @@
 									"**/delivery",
 									"**/credentials",
 									"**/registration",
-									"**/ledger"
+									"**/ledger",
+									"node:*",
+									"process",
+									"effect/*"
 								],
 								"message": "Application/domain code depends on service contracts and value schemas. Compose concrete adapters in runtime/ and translate HTTP at entry handlers."
 							}
@@ -119,14 +126,6 @@
 				],
 				"no-restricted-properties": [
 					"error",
-					{
-						"property": "prepare",
-						"message": "Use the matching Drizzle client for application persistence."
-					},
-					{
-						"property": "exec",
-						"message": "Raw SQL execution belongs in migration tooling, not application code."
-					},
 					{
 						"property": "runPromise",
 						"message": "Run Effects only at host boundaries and adapt promises only at infrastructure boundaries."

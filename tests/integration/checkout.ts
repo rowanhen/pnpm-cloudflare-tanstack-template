@@ -39,6 +39,27 @@ export async function testCheckout(worker: LocalWorker) {
 			body: payload,
 		})
 	}
+	// A valid signature does not make malformed event data valid.
+	for (const payload of [
+		'{',
+		JSON.stringify({
+			id: 'evt_invalid',
+			type: 'checkout.session.completed',
+			livemode: false,
+			data: { object: {} },
+		}),
+	]) {
+		const timestamp = Math.floor(Date.now() / 1000)
+		const digest = createHmac('sha256', 'whsec_fixture')
+			.update(`${timestamp}.${payload}`)
+			.digest('hex')
+		const response = await fetch(worker.base + '/api/stripe/webhook', {
+			method: 'POST',
+			body: payload,
+			headers: { 'Stripe-Signature': `t=${timestamp},v1=${digest}` },
+		})
+		assert.equal(response.status, 400)
+	}
 	assert.equal((await fetch(worker.base + '/api/checkout/config')).status, 401)
 	assert.equal(
 		(
@@ -75,6 +96,18 @@ export async function testCheckout(worker: LocalWorker) {
 		404,
 	)
 	assert.equal((await (await call(sessionPath)).json()).order.status, 'pending')
+	const providerSession = await (
+		await fetch(`${worker.stripeUrl}/__test/${first.sessionId}`)
+	).json()
+	for (const metadata of [{}, { order_id: 'foreign-order' }]) {
+		await patchProvider(first.sessionId, { metadata })
+		assert.equal((await create({ requestId })).status, 400)
+		assert.equal((await call(sessionPath)).status, 400)
+		assert.equal(await balance(), 0)
+		// A webhook for an unrelated application on the same Stripe account is ignored.
+		assert.equal((await webhook(first.sessionId)).status, 200)
+	}
+	await patchProvider(first.sessionId, { metadata: providerSession.metadata })
 	assert.equal((await webhook(first.sessionId, undefined, { signature: false })).status, 400)
 	assert.equal(
 		(await webhook(first.sessionId, undefined, { timestamp: Math.floor(Date.now() / 1000) - 600 }))
