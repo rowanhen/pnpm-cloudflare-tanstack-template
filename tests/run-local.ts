@@ -1,3 +1,5 @@
+import { testMeteredValidation } from './integration/metered-validation.ts'
+import { testTodoStorage } from './integration/todo-storage.ts'
 import { testStorefront } from './integration/storefront.ts'
 import { testObservability } from './integration/observability.ts'
 import { testEmail } from './integration/email.ts'
@@ -12,10 +14,12 @@ for (const signal of ['SIGINT', 'SIGTERM'])
 	})
 try {
 	await testApi(worker.base, worker.fixture.cookies, worker.proxySecret)
+	await testTodoStorage(worker)
 	await testMetering(worker.base, worker.fixture.cookies)
 	await testCheckout(worker)
 	await testStorefront(worker)
 	await testEmail(worker)
+	await testMeteredValidation(worker)
 	await testObservability(worker)
 } finally {
 	await worker.stop()

@@ -80,6 +80,24 @@ export async function testEmail(worker: LocalWorker) {
 			.status,
 		'failed',
 	)
+	// A delivery-ledger failure is not an optional provider failure.
+	query(
+		"CREATE TRIGGER reject_confirmation BEFORE INSERT ON email_deliveries WHEN NEW.to_email='storage-failure@example.test' BEGIN SELECT RAISE(ABORT, 'private-storage-error'); END;",
+	)
+	try {
+		const response = await fetch(`${base}/api/waitlist`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', 'cf-connecting-ip': '192.0.2.121' },
+			body: JSON.stringify({ email: 'storage-failure@example.test', consent: true }),
+		})
+		assert.equal(response.status, 500)
+		assert.deepEqual(await response.json(), {
+			code: 'internal_error',
+			error: 'Internal server error',
+		})
+	} finally {
+		query('DROP TRIGGER reject_confirmation')
+	}
 	console.log(
 		'PASS email: native local binding, deduplication/replay, privacy, verified recipient, CSRF, rate limit, provider failure, signup survives mail failure (simulated delivery)',
 	)

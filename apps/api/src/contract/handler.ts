@@ -1,4 +1,6 @@
+import { trustedOrigins } from '../origins'
 import { Context, Effect, Exit, Schema } from 'effect'
+import { preserveFatal } from '../effect-errors'
 import type { Handler, Operation } from '@workspace/contracts/operation'
 import { contractError, contractResponse } from '@workspace/contracts/http'
 import { productDatabase } from '@workspace/data/client'
@@ -8,7 +10,7 @@ import type { Env } from '../env'
 import { HttpError, readJson, readBody } from '../http'
 import { ApiRequest, PublicApiRequest, ApiKeyRequest } from './context'
 
-import { apiKeyUser } from '../keys'
+import { apiKeyUser } from './api-key'
 
 type ApiContext = HonoContext<{ Bindings: Env }>
 
@@ -86,12 +88,7 @@ function boundary<O extends Operation, R>(
 			const services = await context(c)
 			if (operation.requireOrigin && !['GET', 'HEAD'].includes(c.req.method)) {
 				const origin = c.req.header('origin')
-				if (
-					!origin ||
-					!c.env.ALLOWED_ORIGINS.split(',')
-						.map((v) => v.trim())
-						.includes(origin)
-				)
+				if (!origin || !trustedOrigins(c.env.ALLOWED_ORIGINS).includes(origin))
 					throw new HttpError(403, 'A trusted Origin header is required')
 			}
 			const raw = {
@@ -126,6 +123,7 @@ function boundary<O extends Operation, R>(
 			if (Exit.isFailure(parsed)) throw new HttpError(400, 'Invalid request')
 			const program = handler(parsed.value).pipe(
 				Effect.provide(services),
+				preserveFatal,
 				Effect.match({ onFailure: (failure) => failure, onSuccess: (success) => success }),
 			)
 			const response = await Effect.runPromise(program, { signal: c.req.raw.signal })

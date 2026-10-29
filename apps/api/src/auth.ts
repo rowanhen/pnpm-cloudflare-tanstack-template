@@ -1,3 +1,4 @@
+import { trustedOrigins } from './origins'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { identityDatabase } from '@workspace/data/client'
@@ -19,7 +20,7 @@ export function createAuth(env: Env) {
 		}),
 		secret: env.BETTER_AUTH_SECRET,
 		baseURL: env.AUTH_URL,
-		trustedOrigins: env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()),
+		trustedOrigins: trustedOrigins(env.ALLOWED_ORIGINS),
 		user: { modelName: 'users' },
 		session: {
 			modelName: 'sessions',

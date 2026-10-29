@@ -4,13 +4,18 @@ import {
 	type ReceiveStripeWebhookHandler,
 } from '@workspace/contracts/operations'
 import { PublicApiRequest } from '../../contract/context'
-import { attempt } from '../../contract/service'
-import { stripeWebhook } from '../../checkout'
+import { respond } from '../../contract/service'
+import { CheckoutWebhook } from '../checkout/service'
+import { checkoutWebhookLayer } from '../../runtime/checkout-layers'
+
 export const receiveStripeWebhook: ReceiveStripeWebhookHandler<PublicApiRequest> = (input) =>
 	Effect.gen(function* () {
-		const context = yield* PublicApiRequest
-		const body = yield* attempt(operation, () =>
-			stripeWebhook(input.body, input.headers['stripe-signature'], context.env),
+		const ctx = yield* PublicApiRequest
+		const value = yield* respond(
+			operation,
+			Effect.flatMap(CheckoutWebhook, (s) =>
+				s.receive(input.body, input.headers['stripe-signature']),
+			).pipe(Effect.provide(checkoutWebhookLayer(ctx.env))),
 		)
-		return { status: 200, body }
+		return { status: 200, body: value }
 	})

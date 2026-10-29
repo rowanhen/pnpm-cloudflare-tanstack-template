@@ -16,7 +16,7 @@
 		"build:dashboard": "pnpm --filter dashboard build",
 		"test": "pnpm db:check && pnpm test:unit && tsx tests/run-local.ts",
 		"typecheck": "pnpm typecheck:tools && pnpm -r --parallel run typecheck",
-		"lint": "oxlint",
+		"lint": "oxlint && pnpm lint:architecture",
 		"format": "oxfmt . --write",
 		"format:check": "oxfmt . --check",
 		"precommit:check": "pnpm check",
@@ -33,7 +33,8 @@
 		"typecheck:tools": "tsc -p tsconfig.tools.json && tsc -p tests/support/workers/tsconfig.json",
 		"api:generate": "orval --config orval.config.ts",
 		"test:unit": "node --import tsx --experimental-sqlite --test tests/unit/*.test.ts",
-		"db:split": "tsx scripts/split-database.ts"
+		"db:split": "tsx scripts/split-database.ts",
+		"lint:architecture": "tsx scripts/check-architecture.ts"
 	},
 	"devDependencies": {
 		"@dotenvx/dotenvx": "^2.38.2",

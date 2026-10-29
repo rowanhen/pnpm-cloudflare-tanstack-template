@@ -2,6 +2,33 @@
 
 Read [the one-page structure guide](docs/architecture.md) before changing application architecture or adding API features. Use [the detailed API walkthrough](docs/api-architecture.md) for implementation conventions and current limitations.
 
+## Codebase stewardship
+
+- Before editing, locate the behaviour's owner, callers, authoritative types and relevant tests. Read the nearest implementation and identify the invariants to preserve.
+- Organise by feature and responsibility. Keep application policy, domain types, validation and adapters with their feature. Do not add top-level controllers/services/repositories/models directories or generic utils/helpers/common dumping grounds.
+- Prefer straightforward code and small interfaces that hide meaningful implementation detail. Extract an abstraction for shared knowledge or a real boundary; avoid pass-through services, speculative configuration and files that must always be read together.
+- Give each fact one authoritative definition. Derive public types and boundary schemas from OpenAPI, persistence types from Drizzle. Share rules only when their meaning and reasons for changing match. Keep public and stored shapes distinct.
+- Decode external values from unknown at HTTP, database, queue and provider boundaries. Enforce domain invariants for internal callers too. Use discriminated unions, validated constructors and explicit results for state-dependent data; avoid interacting flags and optional fields that permit invalid combinations. Do not hide mismatches with any, unchecked assertions, non-null assertions or suppression comments.
+- Keep coherent changes local to their feature. Centralise shared policy and provider contracts; do not scatter provider switches, status mappings or business constants across consumers. Split modules by reasons to change, not arbitrary line counts.
+- Finish replacements: update callers and remove superseded exports, dependencies, fixtures and documentation. Check generated consumers, scripts and runtime references before deletion. Preserve migrations and operational assets.
+- Fix cleanup caused by the change in the same diff. Keep unrelated refactors separate and report concrete remaining debt. Preserve ownership, consent, rate limits, atomic ledger updates, idempotency, saved billing receipts and ambiguous-send safeguards; verify through public boundaries.
+- Keep documentation to commands, decisions, constraints and non-obvious reasons. Update the authoritative section instead of adding duplicate walkthroughs or task diaries.
+- Before finishing, review the whole diff for unnecessary layers, repeated knowledge, misleading names, dead files and stale references. Run pnpm check; add behaviour/regression tests rather than tests that mirror implementation. Never weaken checks to make a change pass.
+
+## Backend service pattern
+
+Read [application services and boundaries](docs/api-architecture.md#application-services-and-boundaries) before extending backend workflows. Todos are the smallest executable example; checkout, billing, metering, email, waitlist, credentials and storefront use the same dependency direction. Files expose an owned storage capability directly.
+
+- Define capabilities and their dependency contracts with Effect 4 Context.Service in a feature's service.ts. Methods return Effects with tagged failures. Put application composition in live.ts, pure rules/types in domain.ts and Drizzle/provider implementations beside them. Small features need only the files that have a meaningful responsibility; do not add pass-through program.ts/app.ts or generic service containers.
+- Compose dependencies with Layer in apps/api/src/runtime/. Bind repositories to the trusted user established at the session or API-key entry point. Request identity and Cloudflare bindings are request-scoped, never held in a process-global runtime. Tests provide fake dependency Layers to the same live application layer.
+- Compose workflows with Effect.gen. Keep tryPromise at D1/SDK/provider boundaries and runPromise at host boundaries (HTTP, queue/CLI entry points, SDK callbacks, scripts and tests). Application/domain modules must not import HTTP frameworks, request contexts, concrete persistence or provider adapters.
+- Use Effect Clock for workflow time, pass cancellation to network providers, and await non-abortable D1 writes before interruption cleanup. Preserve defects and interruption during typed recovery. Never blindly retry an ambiguous external send or payment.
+- Keep domain failures transport-independent. Map expected failures into generated status/body unions at HTTP entry handlers; unknown failures reach sanitized reporting. Reuse value schemas from contracts without making services depend on HTTP operations. Validate stored/provider data before it enters application logic.
+- Use Drizzle for application reads, writes and atomic batches. No direct D1 prepare/exec/batch calls or separate database clients. Use schema-backed query builders and parameterized Drizzle sql where needed. Raw SQL belongs in versioned migrations and infrastructure tooling/tests.
+- Follow the graph-checked dependency direction: generated operation entry points are HTTP adapters; runtime composes dependencies; repository/provider/stripe/r2 files implement infrastructure; other feature modules are application code by default. Cross-feature imports use service/domain contracts (HTTP adapters may share HTTP mapping helpers). Do not add cycles, dynamic module paths or suppressions. New shared infrastructure needs a concrete consumer and a clear responsibility.
+
+## Repository conventions
+
 - Keep operational commands in `scripts/` and tests/fixtures in the corresponding `tests/` folders.
 - Use the Node and pnpm versions pinned in `.nvmrc` and `package.json`.
 - Commit the root `.env.local` only with dotenvx-encrypted values; its public encryption key is safe to track. Keep `.env.keys`, private decryption keys and plaintext secrets out of Git.

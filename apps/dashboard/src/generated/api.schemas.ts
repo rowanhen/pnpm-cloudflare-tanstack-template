@@ -5,13 +5,16 @@
  * OpenAPI-first contracts with generated Hono routes, Effect handlers, and frontend clients.
  * OpenAPI spec version: 1.0.0
  */
+/**
+ * @minLength 1
+ * @maxLength 200
+ * @pattern \S
+ */
+export type TodoTitle = string
+
 export interface Todo {
 	id: string
-	/**
-	 * @minLength 1
-	 * @maxLength 200
-	 */
-	title: string
+	title: TodoTitle
 	completed: boolean
 	created_at: string
 }
@@ -26,21 +29,11 @@ export interface TodosResponse {
 }
 
 export interface CreateTodoInput {
-	/**
-	 * @minLength 1
-	 * @maxLength 200
-	 * @pattern \S
-	 */
-	title: string
+	title: TodoTitle
 }
 
 export interface UpdateTodoInput {
-	/**
-	 * @minLength 1
-	 * @maxLength 200
-	 * @pattern \S
-	 */
-	title?: string
+	title?: TodoTitle
 	completed?: boolean
 }
 

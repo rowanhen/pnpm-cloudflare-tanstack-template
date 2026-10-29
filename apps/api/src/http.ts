@@ -41,10 +41,7 @@ export async function readBody(request: Request, maxBytes: number) {
 	}
 	return bytes
 }
-export async function readJson(
-	request: Request,
-	maxBytes = 16 * 1024,
-): Promise<Record<string, unknown>> {
+export async function readJson(request: Request, maxBytes = 16 * 1024): Promise<unknown> {
 	if (request.headers.get('content-type')?.split(';')[0].trim() !== 'application/json')
 		throw new HttpError(415, 'Use Content-Type: application/json')
 	const bytes = await readBody(request, maxBytes)
@@ -56,9 +53,5 @@ export async function readJson(
 	}
 	if (!value || typeof value !== 'object' || Array.isArray(value))
 		throw new HttpError(400, 'Expected a JSON object')
-	return value as Record<string, unknown>
-}
-export async function sha256(value: string) {
-	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
-	return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+	return value
 }

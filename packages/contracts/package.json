@@ -7,7 +7,9 @@
 		"./client": "./src/client.ts",
 		"./operations": "./src/generated/operations.ts",
 		"./operation": "./src/operation.ts",
-		"./http": "./src/http.ts"
+		"./http": "./src/http.ts",
+		"./todos": "./src/todos.ts",
+		"./values": "./src/values.ts"
 	},
 	"scripts": {
 		"typecheck": "tsc --noEmit"

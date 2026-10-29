@@ -12,6 +12,8 @@ export const listApiTodos200ResponseTodosMax = 100
 
 export const listApiTodos200ResponseTodosItemTitleMax = 200
 
+export const listApiTodos200ResponseTodosItemTitleRegExp = new RegExp('\\S')
+
 export const ListApiTodos200Response = S.Struct({
 	todos: S.Array(
 		S.Struct({
@@ -19,6 +21,7 @@ export const ListApiTodos200Response = S.Struct({
 			title: S.String.check(
 				S.isMinLength(1),
 				S.isMaxLength(listApiTodos200ResponseTodosItemTitleMax),
+				S.isPattern(listApiTodos200ResponseTodosItemTitleRegExp),
 			),
 			completed: S.Boolean,
 			created_at: S.String,

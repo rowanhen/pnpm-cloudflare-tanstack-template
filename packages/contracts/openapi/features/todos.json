@@ -237,9 +237,7 @@
 						"type": "string"
 					},
 					"title": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 200
+						"$ref": "#/components/schemas/TodoTitle"
 					},
 					"completed": {
 						"type": "boolean"
@@ -279,10 +277,7 @@
 				"additionalProperties": false,
 				"properties": {
 					"title": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 200,
-						"pattern": "\\S"
+						"$ref": "#/components/schemas/TodoTitle"
 					}
 				},
 				"required": ["title"]
@@ -292,10 +287,7 @@
 				"additionalProperties": false,
 				"properties": {
 					"title": {
-						"type": "string",
-						"minLength": 1,
-						"maxLength": 200,
-						"pattern": "\\S"
+						"$ref": "#/components/schemas/TodoTitle"
 					},
 					"completed": {
 						"type": "boolean"
@@ -316,6 +308,12 @@
 					}
 				},
 				"required": ["code", "error"]
+			},
+			"TodoTitle": {
+				"type": "string",
+				"minLength": 1,
+				"maxLength": 200,
+				"pattern": "\\S"
 			}
 		}
 	}

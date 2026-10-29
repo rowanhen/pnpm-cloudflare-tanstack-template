@@ -62,13 +62,14 @@ Scope, header/body validation and response types come from `openapi/features/met
 
 ## Backend map
 
-| File                                                                 | Responsibility                                                                                 |
-| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [`summary.ts`](../apps/api/src/summary.ts)                           | Server-selected price, private business query and contract-validated replay                    |
-| [`billing.ts`](../apps/api/src/billing.ts)                           | Credit pack size, per-operation price, atomic charge and replay, account history               |
-| [`checkout.ts`](../apps/api/src/checkout.ts)                         | Server-selected Stripe price, order snapshot, payment verification, one credit grant per order |
-| [`keys.ts`](../apps/api/src/keys.ts)                                 | Hashed keys, explicit single-endpoint scopes, revocation, rate limiting                        |
-| [`0005_credits.sql`](../apps/api/legacy-migrations/0005_credits.sql) | Account balances, immutable grants/receipts, uniqueness and non-negative-balance constraints   |
+| File                                                                      | Responsibility                                                                                 |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [`metered/live.ts`](../apps/api/src/features/metered/live.ts)             | Server-selected price, private business query and contract-validated replay                    |
+| [`billing/domain.ts`](../apps/api/src/features/billing/domain.ts)         | Credit pack size, per-operation price and ledger value types                                   |
+| [`billing/repository.ts`](../apps/api/src/features/billing/repository.ts) | Atomic charge, saved replay and account history                                                |
+| [`checkout/live.ts`](../apps/api/src/features/checkout/live.ts)           | Server-selected Stripe price, order snapshot, payment verification, one credit grant per order |
+| [`keys/live.ts`](../apps/api/src/features/keys/live.ts)                   | Hashed keys, explicit single-endpoint scopes, revocation, rate limiting                        |
+| [`0005_credits.sql`](../apps/api/legacy-migrations/0005_credits.sql)      | Account balances, immutable grants/receipts, uniqueness and non-negative-balance constraints   |
 
 `GET /api/billing` requires the user's session and returns `balance`, `summaryCost`, `packCredits`, and the latest ten grants/debits. API keys cannot read it or manage billing. New accounts start at zero. There is no public endpoint for minting credits. The isolated automated-test fixture seeds three credits per user directly into its temporary database.
 
@@ -78,8 +79,8 @@ Stripe orders snapshot the price ID, amount, currency, and credit quantity. A ca
 
 ## Adapt it for another idea
 
-- Set `CREDIT_PACK` and `SUMMARY_COST` in `billing.ts`, then configure your one-time Stripe price. Credits are integer product units, not a currency balance. Existing orders retain their purchased pack size.
-- Replace the product query in `summary.ts` with your private, bounded database result, keeping owner filters and parameter bindings. `chargeForResult` accepts a server-produced JSON string, saved atomically with its debit. Never accept a caller-supplied billing result. Keep responses small because D1 stores each one for retries.
+- Set `CREDIT_PACK` and `SUMMARY_COST` in `features/billing/domain.ts`, then configure your one-time Stripe price. Credits are integer product units, not a currency balance. Existing orders retain their purchased pack size.
+- Replace the query in `features/metered/repository.ts` with your private, bounded database result, keeping owner filters and parameter bindings. Validate that result in the live workflow before calling `BillingLedger.charge`, which saves the server-produced JSON atomically with its debit. Never accept a caller-supplied billing result. Keep responses small because D1 stores each one for retries.
 - For another paid operation, add an explicit scope in the schema and key UI, register its route, and give it a stable operation name. Hash a canonical representation of every input that changes the result. Version operation names when behavior changes incompatibly.
 - Keep grants and paid receipts as your audit history. Deleting a key preserves receipts; deleting receipt IDs allows old requests to charge again. Define a documented retention/retry window before introducing pruning. Account deletion is a separate deliberate operation; no public account-deletion endpoint is included.
 - This atomic helper covers **persisting a prepared result and its credit debit within billing**. An R2 write, AI call, or third-party API cannot join a D1 transaction. For those, introduce a durable job with reservation, idempotent execution, and settle/refund states (plus an outbox/Queue) before charging for completion. The current R2 file example keeps its independent session permissions.
