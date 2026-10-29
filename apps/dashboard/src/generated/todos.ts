@@ -434,7 +434,7 @@ export type getTodoResponseError = (
 }
 
 export const getGetTodoUrl = (id: string) => {
-	return `/api/todos/${id}`
+	return `/api/todos/${encodeURIComponent(String(id))}`
 }
 
 export const getTodo = async (
@@ -626,7 +626,7 @@ export type updateTodoResponseError = (
 }
 
 export const getUpdateTodoUrl = (id: string) => {
-	return `/api/todos/${id}`
+	return `/api/todos/${encodeURIComponent(String(id))}`
 }
 
 export const updateTodo = async (
@@ -788,7 +788,7 @@ export type deleteTodoResponseError = (
 }
 
 export const getDeleteTodoUrl = (id: string) => {
-	return `/api/todos/${id}`
+	return `/api/todos/${encodeURIComponent(String(id))}`
 }
 
 export const deleteTodo = async (

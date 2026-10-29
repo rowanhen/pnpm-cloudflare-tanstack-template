@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useHydrated } from '@workspace/shared'
-import { client } from '../lib/api'
+import { getEmailStatus, sendTestEmail } from '../generated/emails'
 
 export function useEmail() {
 	const hydrated = useHydrated()
@@ -10,12 +10,12 @@ export function useEmail() {
 	const status = useQuery({
 		queryKey: ['email'],
 		enabled: hydrated,
-		queryFn: () => client.get('emailStatus'),
+		queryFn: async () => (await getEmailStatus()).data,
 	})
 	const send = useMutation({
 		mutationFn: () => {
 			requestId.current ??= crypto.randomUUID()
-			return client.mutate('sendEmail', { requestId: requestId.current })
+			return sendTestEmail({ requestId: requestId.current }).then((response) => response.data)
 		},
 		onSuccess: () => {
 			requestId.current = null

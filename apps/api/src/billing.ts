@@ -2,7 +2,7 @@ import { now } from '@workspace/data/columns'
 import { billingDatabase } from '@workspace/data/client'
 import { creditAccounts, creditGrants, paidRequests } from '@workspace/data/billing'
 import { and, desc, eq, sql } from 'drizzle-orm'
-import { HttpError, reply } from './http'
+import { HttpError } from './http'
 
 export const CREDIT_PACK = 1_000
 export const SUMMARY_COST = 1
@@ -77,7 +77,8 @@ export async function chargeForResult(
 		})
 	if (saved.operation !== operation || saved.input_hash !== inputHash)
 		throw new HttpError(409, 'Idempotency-Key was already used for a different request')
-	return new Response(saved.response, {
+	return {
+		response: saved.response,
 		headers: {
 			'Content-Type': 'application/json',
 			'X-Request-Id': saved.id,
@@ -85,7 +86,7 @@ export async function chargeForResult(
 			'X-Credits-Balance': String(balance),
 			'Idempotency-Replayed': String(saved.id !== attemptId),
 		},
-	})
+	}
 }
 
 export async function billingStatus(binding: D1Database, userId: string) {
@@ -119,10 +120,10 @@ export async function billingStatus(binding: D1Database, userId: string) {
 			.where(eq(creditAccounts.user_id, userId)),
 		activity,
 	])
-	return reply('billing', {
+	return {
 		balance: results[0][0]?.balance ?? 0,
 		summaryCost: SUMMARY_COST,
 		packCredits: CREDIT_PACK,
 		activity: results[1],
-	})
+	}
 }

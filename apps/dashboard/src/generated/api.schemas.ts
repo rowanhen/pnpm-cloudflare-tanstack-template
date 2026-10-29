@@ -155,6 +155,39 @@ export interface TooManyRequests {
 	error: string
 }
 
+export type ConflictCode = (typeof ConflictCode)[keyof typeof ConflictCode]
+
+export const ConflictCode = {
+	conflict: 'conflict',
+} as const
+
+export interface Conflict {
+	code: ConflictCode
+	error: string
+}
+
+export type PaymentRequiredCode = (typeof PaymentRequiredCode)[keyof typeof PaymentRequiredCode]
+
+export const PaymentRequiredCode = {
+	payment_required: 'payment_required',
+} as const
+
+export interface PaymentRequired {
+	code: PaymentRequiredCode
+	error: string
+}
+
+export type BadGatewayCode = (typeof BadGatewayCode)[keyof typeof BadGatewayCode]
+
+export const BadGatewayCode = {
+	bad_gateway: 'bad_gateway',
+} as const
+
+export interface BadGateway {
+	code: BadGatewayCode
+	error: string
+}
+
 export type StorefrontProductId = (typeof StorefrontProductId)[keyof typeof StorefrontProductId]
 
 export const StorefrontProductId = {
@@ -230,4 +263,308 @@ export interface StorefrontStatus {
 	mode: StorefrontStatusMode
 	amount: number
 	currency: string
+}
+
+export interface AppConfig {
+	googleEnabled: boolean
+	checkoutEnabled: boolean
+	emailEnabled: boolean
+}
+
+export interface User {
+	id: string
+	name: string
+	email: string
+	emailVerified: boolean
+	/** @nullable */
+	image: string | null
+}
+
+export type KeyScope = (typeof KeyScope)[keyof typeof KeyScope]
+
+export const KeyScope = {
+	'todos:read': 'todos:read',
+	'summary:read': 'summary:read',
+} as const
+
+export interface Key {
+	id: string
+	name: string
+	prefix: string
+	scope: KeyScope
+	created_at: string
+	/** @nullable */
+	last_used_at: string | null
+}
+
+export interface CreateKeyBody {
+	/**
+	 * @minLength 1
+	 * @maxLength 60
+	 * @pattern .*\S.*
+	 */
+	name: string
+	scope?: KeyScope
+}
+
+export type BillingStatusActivityItem = {
+	id: string
+	type: string
+	credits: number
+	created_at: string
+}
+
+export interface BillingStatus {
+	balance: number
+	summaryCost: number
+	packCredits: number
+	activity: BillingStatusActivityItem[]
+}
+
+export type CheckoutConfigOffer = {
+	name: string
+	/** @nullable */
+	description: string | null
+	amount: number
+	currency: string
+	credits: number
+	priceId: string
+}
+
+export interface CheckoutConfig {
+	publishableKey: string
+	offer: CheckoutConfigOffer
+}
+
+/**
+ * @nullable
+ */
+export type CheckoutSessionStatus =
+	| (typeof CheckoutSessionStatus)[keyof typeof CheckoutSessionStatus]
+	| null
+
+export const CheckoutSessionStatus = {
+	open: 'open',
+	complete: 'complete',
+	expired: 'expired',
+} as const
+
+export interface CheckoutSession {
+	/** @nullable */
+	clientSecret: string | null
+	sessionId: string
+	/** @nullable */
+	status: CheckoutSessionStatus
+}
+
+export type OrderStatusOrderStatus =
+	(typeof OrderStatusOrderStatus)[keyof typeof OrderStatusOrderStatus]
+
+export const OrderStatusOrderStatus = {
+	pending: 'pending',
+	paid: 'paid',
+	expired: 'expired',
+	failed: 'failed',
+} as const
+
+export type OrderStatusOrder = {
+	id: string
+	amount: number
+	currency: string
+	credits: number
+	status: OrderStatusOrderStatus
+}
+
+/**
+ * @nullable
+ */
+export type OrderStatusCheckoutStatus =
+	| (typeof OrderStatusCheckoutStatus)[keyof typeof OrderStatusCheckoutStatus]
+	| null
+
+export const OrderStatusCheckoutStatus = {
+	open: 'open',
+	complete: 'complete',
+	expired: 'expired',
+} as const
+
+export interface OrderStatus {
+	order: OrderStatusOrder
+	/** @nullable */
+	checkoutStatus: OrderStatusCheckoutStatus
+}
+
+export type EmailStatusEmailsItemStatus =
+	(typeof EmailStatusEmailsItemStatus)[keyof typeof EmailStatusEmailsItemStatus]
+
+export const EmailStatusEmailsItemStatus = {
+	sending: 'sending',
+	accepted: 'accepted',
+	failed: 'failed',
+} as const
+
+export type EmailStatusEmailsItem = {
+	id: string
+	status: EmailStatusEmailsItemStatus
+	created_at: string
+}
+
+export interface EmailStatus {
+	enabled: boolean
+	emails: EmailStatusEmailsItem[]
+}
+
+export interface WaitlistInput {
+	/** @maxLength 254 */
+	email: string
+	/** @maxLength 100 */
+	name?: string
+	consent: true
+	website?: string
+}
+
+export type SummaryResponseSummary = {
+	total: number
+	completed: number
+	open: number
+}
+
+export type SummaryResponseStatus =
+	(typeof SummaryResponseStatus)[keyof typeof SummaryResponseStatus]
+
+export const SummaryResponseStatus = {
+	all: 'all',
+	open: 'open',
+	completed: 'completed',
+} as const
+
+export interface SummaryResponse {
+	summary: SummaryResponseSummary
+	status: SummaryResponseStatus
+}
+
+export interface StoredFile {
+	key: string
+	size: number
+	etag: string
+	uploaded: string
+}
+
+export type GetHealth200 = {
+	ok: boolean
+	maintenance?: boolean
+}
+
+export type GetMe200 = {
+	user: User
+}
+
+export type ListKeys200 = {
+	keys: Key[]
+}
+
+export type CreateKey201Key = {
+	id: string
+	name: string
+	prefix: string
+	scope: KeyScope
+	token: string
+}
+
+export type CreateKey201 = {
+	key: CreateKey201Key
+}
+
+export type CreateCheckoutBody = {
+	requestId: string
+}
+
+export type SendTestEmailBody = {
+	requestId: string
+}
+
+export type SendTestEmail202EmailStatus =
+	(typeof SendTestEmail202EmailStatus)[keyof typeof SendTestEmail202EmailStatus]
+
+export const SendTestEmail202EmailStatus = {
+	accepted: 'accepted',
+} as const
+
+export type SendTestEmail202Email = {
+	id: string
+	status: SendTestEmail202EmailStatus
+	messageId: string
+}
+
+export type SendTestEmail202 = {
+	email: SendTestEmail202Email
+}
+
+export type JoinWaitlist202 = {
+	message: string
+}
+
+/**
+ * @nullable
+ */
+export type GetWaitlistStatus200Entry = {
+	created_at: string
+} | null
+
+export type GetWaitlistStatus200 = {
+	joined: boolean
+	/** @nullable */
+	entry: GetWaitlistStatus200Entry
+}
+
+export type CreateSummaryHeaders = {
+	'idempotency-key': string
+}
+
+export type CreateSummaryBodyStatus =
+	(typeof CreateSummaryBodyStatus)[keyof typeof CreateSummaryBodyStatus]
+
+export const CreateSummaryBodyStatus = {
+	all: 'all',
+	open: 'open',
+	completed: 'completed',
+} as const
+
+export type CreateSummaryBody = {
+	status?: CreateSummaryBodyStatus
+}
+
+export type ListFilesParams = {
+	/**
+	 * @minimum 1
+	 * @maximum 1000
+	 */
+	limit?: number
+	cursor?: string
+}
+
+export type ListFiles200 = {
+	files: StoredFile[]
+	/** @nullable */
+	cursor: string | null
+}
+
+export type UploadFile201File = {
+	key: string
+	size: number
+	etag: string
+}
+
+export type UploadFile201 = {
+	file: UploadFile201File
+}
+
+export type ReceiveStripeWebhookHeaders = {
+	'stripe-signature': string
+}
+
+export type ReceiveStripeWebhookBody = { [key: string]: unknown }
+
+export type ReceiveStripeWebhook200 = {
+	received: boolean
 }

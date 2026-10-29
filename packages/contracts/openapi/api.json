@@ -20,6 +20,57 @@
 		},
 		"/api/storefront/status": {
 			"$ref": "./features/storefront.json#/paths/~1api~1storefront~1status"
+		},
+		"/api/health": {
+			"$ref": "./features/system.json#/paths/~1api~1health"
+		},
+		"/api/config": {
+			"$ref": "./features/system.json#/paths/~1api~1config"
+		},
+		"/api/me": {
+			"$ref": "./features/account.json#/paths/~1api~1me"
+		},
+		"/api/keys": {
+			"$ref": "./features/keys.json#/paths/~1api~1keys"
+		},
+		"/api/keys/{id}": {
+			"$ref": "./features/keys.json#/paths/~1api~1keys~1{id}"
+		},
+		"/api/billing": {
+			"$ref": "./features/billing.json#/paths/~1api~1billing"
+		},
+		"/api/checkout/config": {
+			"$ref": "./features/checkout.json#/paths/~1api~1checkout~1config"
+		},
+		"/api/checkout/sessions": {
+			"$ref": "./features/checkout.json#/paths/~1api~1checkout~1sessions"
+		},
+		"/api/checkout/sessions/{sessionId}": {
+			"$ref": "./features/checkout.json#/paths/~1api~1checkout~1sessions~1{sessionId}"
+		},
+		"/api/email": {
+			"$ref": "./features/emails.json#/paths/~1api~1email"
+		},
+		"/api/waitlist": {
+			"$ref": "./features/waitlist.json#/paths/~1api~1waitlist"
+		},
+		"/api/waitlist/me": {
+			"$ref": "./features/waitlist.json#/paths/~1api~1waitlist~1me"
+		},
+		"/api/v1/todos": {
+			"$ref": "./features/metered.json#/paths/~1api~1v1~1todos"
+		},
+		"/api/v1/summary": {
+			"$ref": "./features/metered.json#/paths/~1api~1v1~1summary"
+		},
+		"/api/files": {
+			"$ref": "./features/files.json#/paths/~1api~1files"
+		},
+		"/api/files/{key}": {
+			"$ref": "./features/files.json#/paths/~1api~1files~1{key}"
+		},
+		"/api/stripe/webhook": {
+			"$ref": "./features/webhooks.json#/paths/~1api~1stripe~1webhook"
 		}
 	},
 	"components": {
@@ -28,6 +79,16 @@
 				"type": "apiKey",
 				"in": "cookie",
 				"name": "better-auth.session_token"
+			},
+			"apiKey": {
+				"type": "http",
+				"scheme": "bearer",
+				"bearerFormat": "idea_<token>"
+			},
+			"stripe": {
+				"type": "apiKey",
+				"in": "header",
+				"name": "stripe-signature"
 			}
 		}
 	},

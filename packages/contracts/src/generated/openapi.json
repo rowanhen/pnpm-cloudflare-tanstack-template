@@ -118,7 +118,7 @@
 						}
 					},
 					"413": {
-						"description": "Request exceeds 16 KiB",
+						"description": "Request exceeds the operation body limit",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -314,7 +314,7 @@
 						}
 					},
 					"413": {
-						"description": "Request exceeds 16 KiB",
+						"description": "Request exceeds the operation body limit",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -581,7 +581,7 @@
 						}
 					},
 					"413": {
-						"description": "Request exceeds 16 KiB",
+						"description": "Request exceeds the operation body limit",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -700,7 +700,7 @@
 						}
 					},
 					"413": {
-						"description": "Request exceeds 16 KiB",
+						"description": "Request exceeds the operation body limit",
 						"content": {
 							"application/json": {
 								"schema": {
@@ -761,6 +761,2199 @@
 					}
 				}
 			}
+		},
+		"/api/health": {
+			"get": {
+				"operationId": "getHealth",
+				"tags": ["system"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"ok": {
+											"type": "boolean"
+										},
+										"maintenance": {
+											"type": "boolean"
+										}
+									},
+									"required": ["ok"]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"security": []
+			}
+		},
+		"/api/config": {
+			"get": {
+				"operationId": "getConfig",
+				"tags": ["system"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AppConfig"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"security": []
+			}
+		},
+		"/api/me": {
+			"get": {
+				"operationId": "getMe",
+				"tags": ["account"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"user": {
+											"$ref": "#/components/schemas/User"
+										}
+									},
+									"required": ["user"]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/keys": {
+			"get": {
+				"operationId": "listKeys",
+				"tags": ["keys"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"keys": {
+											"type": "array",
+											"items": {
+												"$ref": "#/components/schemas/Key"
+											}
+										}
+									},
+									"required": ["keys"]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"operationId": "createKey",
+				"tags": ["keys"],
+				"responses": {
+					"201": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"key": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"id": {
+													"type": "string"
+												},
+												"name": {
+													"type": "string"
+												},
+												"prefix": {
+													"type": "string"
+												},
+												"scope": {
+													"$ref": "#/components/schemas/KeyScope"
+												},
+												"token": {
+													"type": "string"
+												}
+											},
+											"required": ["id", "name", "prefix", "scope", "token"]
+										}
+									},
+									"required": ["key"]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Conflict"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Request exceeds the operation body limit",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PayloadTooLarge"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "JSON content type required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UnsupportedMediaType"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Request rate exceeded",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TooManyRequests"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateKeyBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/keys/{id}": {
+			"delete": {
+				"operationId": "deleteKey",
+				"tags": ["keys"],
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Resource not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/NotFound"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "id",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/billing": {
+			"get": {
+				"operationId": "getBilling",
+				"tags": ["billing"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BillingStatus"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/checkout/config": {
+			"get": {
+				"operationId": "getCheckoutConfig",
+				"tags": ["checkout"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CheckoutConfig"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/checkout/sessions": {
+			"post": {
+				"operationId": "createCheckout",
+				"tags": ["checkout"],
+				"responses": {
+					"201": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/CheckoutSession"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Request exceeds the operation body limit",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PayloadTooLarge"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "JSON content type required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UnsupportedMediaType"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Request rate exceeded",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TooManyRequests"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"requestId": {
+										"type": "string",
+										"format": "uuid"
+									}
+								},
+								"required": ["requestId"]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/checkout/sessions/{sessionId}": {
+			"get": {
+				"operationId": "getOrder",
+				"tags": ["checkout"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/OrderStatus"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Resource not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/NotFound"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Request rate exceeded",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TooManyRequests"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "sessionId",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "^cs_test_[A-Za-z0-9]+$"
+						}
+					}
+				]
+			}
+		},
+		"/api/email": {
+			"get": {
+				"operationId": "getEmailStatus",
+				"tags": ["emails"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EmailStatus"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				}
+			},
+			"post": {
+				"operationId": "sendTestEmail",
+				"tags": ["emails"],
+				"responses": {
+					"202": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"email": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"id": {
+													"type": "string"
+												},
+												"status": {
+													"type": "string",
+													"enum": ["accepted"]
+												},
+												"messageId": {
+													"type": "string"
+												}
+											},
+											"required": ["id", "status", "messageId"]
+										}
+									},
+									"required": ["email"]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Conflict"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Request exceeds the operation body limit",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PayloadTooLarge"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "JSON content type required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UnsupportedMediaType"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Request rate exceeded",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TooManyRequests"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"502": {
+						"description": "BadGateway",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadGateway"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"requestId": {
+										"type": "string",
+										"format": "uuid"
+									}
+								},
+								"required": ["requestId"]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/waitlist": {
+			"post": {
+				"operationId": "joinWaitlist",
+				"tags": ["waitlist"],
+				"responses": {
+					"202": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": ["message"]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Request exceeds the operation body limit",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PayloadTooLarge"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "JSON content type required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UnsupportedMediaType"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Request rate exceeded",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TooManyRequests"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/WaitlistInput"
+							}
+						}
+					}
+				},
+				"security": [],
+				"x-require-origin": false
+			}
+		},
+		"/api/waitlist/me": {
+			"get": {
+				"operationId": "getWaitlistStatus",
+				"tags": ["waitlist"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"joined": {
+											"type": "boolean"
+										},
+										"entry": {
+											"type": ["object", "null"],
+											"additionalProperties": false,
+											"properties": {
+												"created_at": {
+													"type": "string"
+												}
+											},
+											"required": ["created_at"]
+										}
+									},
+									"required": ["joined", "entry"]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/v1/todos": {
+			"get": {
+				"operationId": "listApiTodos",
+				"tags": ["metered"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TodosResponse"
+								}
+							}
+						},
+						"headers": {
+							"X-RateLimit-Limit": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Request rate exceeded",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TooManyRequests"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"security": [
+					{
+						"apiKey": []
+					}
+				],
+				"x-api-key-scope": "todos:read"
+			}
+		},
+		"/api/v1/summary": {
+			"post": {
+				"operationId": "createSummary",
+				"tags": ["metered"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SummaryResponse"
+								}
+							}
+						},
+						"headers": {
+							"X-RateLimit-Limit": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-Request-Id": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-Credits-Charged": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-Credits-Balance": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Idempotency-Replayed": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"402": {
+						"description": "PaymentRequired",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PaymentRequired"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"409": {
+						"description": "Conflict",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Conflict"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Request exceeds the operation body limit",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PayloadTooLarge"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "JSON content type required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UnsupportedMediaType"
+								}
+							}
+						}
+					},
+					"429": {
+						"description": "Request rate exceeded",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/TooManyRequests"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"status": {
+										"type": "string",
+										"enum": ["all", "open", "completed"],
+										"default": "all"
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "idempotency-key",
+						"in": "header",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"security": [
+					{
+						"apiKey": []
+					}
+				],
+				"x-api-key-scope": "summary:read"
+			}
+		},
+		"/api/files": {
+			"get": {
+				"operationId": "listFiles",
+				"tags": ["files"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"files": {
+											"type": "array",
+											"items": {
+												"$ref": "#/components/schemas/StoredFile"
+											}
+										},
+										"cursor": {
+											"type": ["string", "null"]
+										}
+									},
+									"required": ["files", "cursor"]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "limit",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"type": "integer",
+							"minimum": 1,
+							"maximum": 1000,
+							"default": 100
+						}
+					},
+					{
+						"name": "cursor",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/files/{key}": {
+			"put": {
+				"operationId": "uploadFile",
+				"tags": ["files"],
+				"responses": {
+					"201": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"file": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"key": {
+													"type": "string"
+												},
+												"size": {
+													"type": "integer"
+												},
+												"etag": {
+													"type": "string"
+												}
+											},
+											"required": ["key", "size", "etag"]
+										}
+									},
+									"required": ["file"]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Request exceeds the operation body limit",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PayloadTooLarge"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "JSON content type required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UnsupportedMediaType"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/octet-stream": {
+							"schema": {
+								"type": "string",
+								"contentMediaType": "application/octet-stream"
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "key",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$"
+						}
+					}
+				],
+				"x-max-body-bytes": 5242880
+			},
+			"get": {
+				"operationId": "downloadFile",
+				"tags": ["files"],
+				"responses": {
+					"200": {
+						"description": "File content",
+						"headers": {
+							"ETag": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Content-Length": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Content-Disposition": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Content-Type": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						},
+						"content": {
+							"application/octet-stream": {
+								"schema": {
+									"type": "string",
+									"contentMediaType": "application/octet-stream"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Resource not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/NotFound"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "key",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$"
+						}
+					}
+				]
+			},
+			"head": {
+				"operationId": "headFile",
+				"tags": ["files"],
+				"responses": {
+					"200": {
+						"description": "File metadata",
+						"headers": {
+							"ETag": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Content-Length": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Content-Disposition": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Content-Type": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "bad_request",
+						"x-error-code": "bad_request"
+					},
+					"401": {
+						"description": "unauthorized",
+						"x-error-code": "unauthorized"
+					},
+					"403": {
+						"description": "forbidden",
+						"x-error-code": "forbidden"
+					},
+					"404": {
+						"description": "not_found",
+						"x-error-code": "not_found"
+					},
+					"500": {
+						"description": "internal_error",
+						"x-error-code": "internal_error"
+					},
+					"503": {
+						"description": "unavailable",
+						"x-error-code": "unavailable"
+					}
+				},
+				"parameters": [
+					{
+						"name": "key",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$"
+						}
+					}
+				]
+			},
+			"delete": {
+				"operationId": "deleteFile",
+				"tags": ["files"],
+				"responses": {
+					"204": {
+						"description": "Deleted"
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "key",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$"
+						}
+					}
+				]
+			}
+		},
+		"/api/stripe/webhook": {
+			"post": {
+				"operationId": "receiveStripeWebhook",
+				"tags": ["webhooks"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"received": {
+											"type": "boolean"
+										}
+									},
+									"required": ["received"]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/BadRequest"
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Sign in required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unauthorized"
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Untrusted origin",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Forbidden"
+								}
+							}
+						}
+					},
+					"413": {
+						"description": "Request exceeds the operation body limit",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PayloadTooLarge"
+								}
+							}
+						}
+					},
+					"415": {
+						"description": "JSON content type required",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/UnsupportedMediaType"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Unexpected server failure",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/InternalError"
+								}
+							}
+						}
+					},
+					"503": {
+						"description": "Authentication unavailable",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Unavailable"
+								}
+							}
+						}
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"additionalProperties": true
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "stripe-signature",
+						"in": "header",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"security": [
+					{
+						"stripe": []
+					}
+				],
+				"x-raw-body": true,
+				"x-max-body-bytes": 262144
+			}
 		}
 	},
 	"components": {
@@ -769,6 +2962,16 @@
 				"type": "apiKey",
 				"in": "cookie",
 				"name": "better-auth.session_token"
+			},
+			"apiKey": {
+				"type": "http",
+				"scheme": "bearer",
+				"bearerFormat": "idea_<token>"
+			},
+			"stripe": {
+				"type": "apiKey",
+				"in": "header",
+				"name": "stripe-signature"
 			}
 		},
 		"schemas": {
@@ -986,6 +3189,48 @@
 				},
 				"required": ["code", "error"]
 			},
+			"Conflict": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["conflict"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"PaymentRequired": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["payment_required"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
+			"BadGateway": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"code": {
+						"type": "string",
+						"enum": ["bad_gateway"]
+					},
+					"error": {
+						"type": "string"
+					}
+				},
+				"required": ["code", "error"]
+			},
 			"StorefrontProduct": {
 				"type": "object",
 				"additionalProperties": false,
@@ -1099,6 +3344,319 @@
 					}
 				},
 				"required": ["status", "mode", "amount", "currency"]
+			},
+			"AppConfig": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"googleEnabled": {
+						"type": "boolean"
+					},
+					"checkoutEnabled": {
+						"type": "boolean"
+					},
+					"emailEnabled": {
+						"type": "boolean"
+					}
+				},
+				"required": ["googleEnabled", "checkoutEnabled", "emailEnabled"]
+			},
+			"User": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"email": {
+						"type": "string"
+					},
+					"emailVerified": {
+						"type": "boolean"
+					},
+					"image": {
+						"type": ["string", "null"]
+					}
+				},
+				"required": ["id", "name", "email", "emailVerified", "image"]
+			},
+			"KeyScope": {
+				"type": "string",
+				"enum": ["todos:read", "summary:read"]
+			},
+			"Key": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"prefix": {
+						"type": "string"
+					},
+					"scope": {
+						"$ref": "#/components/schemas/KeyScope"
+					},
+					"created_at": {
+						"type": "string"
+					},
+					"last_used_at": {
+						"type": ["string", "null"]
+					}
+				},
+				"required": ["id", "name", "prefix", "scope", "created_at", "last_used_at"]
+			},
+			"CreateKeyBody": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"maxLength": 60,
+						"pattern": ".*\\S.*"
+					},
+					"scope": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/KeyScope"
+							}
+						],
+						"default": "todos:read"
+					}
+				},
+				"required": ["name"]
+			},
+			"BillingStatus": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"balance": {
+						"type": "integer"
+					},
+					"summaryCost": {
+						"type": "integer"
+					},
+					"packCredits": {
+						"type": "integer"
+					},
+					"activity": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"type": {
+									"type": "string"
+								},
+								"credits": {
+									"type": "integer"
+								},
+								"created_at": {
+									"type": "string"
+								}
+							},
+							"required": ["id", "type", "credits", "created_at"]
+						}
+					}
+				},
+				"required": ["balance", "summaryCost", "packCredits", "activity"]
+			},
+			"CheckoutConfig": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"publishableKey": {
+						"type": "string"
+					},
+					"offer": {
+						"type": "object",
+						"additionalProperties": false,
+						"properties": {
+							"name": {
+								"type": "string"
+							},
+							"description": {
+								"type": ["string", "null"]
+							},
+							"amount": {
+								"type": "integer"
+							},
+							"currency": {
+								"type": "string"
+							},
+							"credits": {
+								"type": "integer"
+							},
+							"priceId": {
+								"type": "string"
+							}
+						},
+						"required": ["name", "description", "amount", "currency", "credits", "priceId"]
+					}
+				},
+				"required": ["publishableKey", "offer"]
+			},
+			"CheckoutSession": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"clientSecret": {
+						"type": ["string", "null"]
+					},
+					"sessionId": {
+						"type": "string"
+					},
+					"status": {
+						"type": ["string", "null"],
+						"enum": ["open", "complete", "expired", null]
+					}
+				},
+				"required": ["clientSecret", "sessionId", "status"]
+			},
+			"OrderStatus": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"order": {
+						"type": "object",
+						"additionalProperties": false,
+						"properties": {
+							"id": {
+								"type": "string"
+							},
+							"amount": {
+								"type": "integer"
+							},
+							"currency": {
+								"type": "string"
+							},
+							"credits": {
+								"type": "integer"
+							},
+							"status": {
+								"type": "string",
+								"enum": ["pending", "paid", "expired", "failed"]
+							}
+						},
+						"required": ["id", "amount", "currency", "credits", "status"]
+					},
+					"checkoutStatus": {
+						"type": ["string", "null"],
+						"enum": ["open", "complete", "expired", null]
+					}
+				},
+				"required": ["order", "checkoutStatus"]
+			},
+			"EmailStatus": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"enabled": {
+						"type": "boolean"
+					},
+					"emails": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"status": {
+									"type": "string",
+									"enum": ["sending", "accepted", "failed"]
+								},
+								"created_at": {
+									"type": "string"
+								}
+							},
+							"required": ["id", "status", "created_at"]
+						}
+					}
+				},
+				"required": ["enabled", "emails"]
+			},
+			"WaitlistInput": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"email": {
+						"type": "string",
+						"format": "email",
+						"maxLength": 254
+					},
+					"name": {
+						"type": "string",
+						"maxLength": 100,
+						"default": ""
+					},
+					"consent": {
+						"type": "boolean",
+						"enum": [true]
+					},
+					"website": {
+						"type": "string"
+					}
+				},
+				"required": ["email", "consent"]
+			},
+			"SummaryResponse": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"summary": {
+						"type": "object",
+						"additionalProperties": false,
+						"properties": {
+							"total": {
+								"type": "integer"
+							},
+							"completed": {
+								"type": "integer"
+							},
+							"open": {
+								"type": "integer"
+							}
+						},
+						"required": ["total", "completed", "open"]
+					},
+					"status": {
+						"type": "string",
+						"enum": ["all", "open", "completed"]
+					}
+				},
+				"required": ["summary", "status"]
+			},
+			"StoredFile": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"key": {
+						"type": "string"
+					},
+					"size": {
+						"type": "integer"
+					},
+					"etag": {
+						"type": "string"
+					},
+					"uploaded": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": ["key", "size", "etag", "uploaded"]
 			}
 		}
 	},

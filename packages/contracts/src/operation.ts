@@ -4,6 +4,15 @@ export interface Operation {
 	readonly operationId: string
 	readonly method: string
 	readonly path: string
+	readonly requireOrigin: boolean
+	readonly security: 'session' | 'public' | 'apiKey' | 'stripe'
+	readonly scope: 'todos:read' | 'summary:read' | null
+	readonly query: readonly { readonly name: string; readonly type: string }[]
+	readonly headers: readonly string[]
+	readonly bodyKind: 'none' | 'json' | 'binary' | 'raw'
+	readonly maxBodyBytes: number
+	readonly binaryStatuses: readonly number[]
+	readonly emptyStatuses: readonly number[]
 	readonly hasBody: boolean
 	readonly input: Schema.Codec<unknown>
 	readonly responses: Readonly<Record<number, Schema.Codec<unknown>>>
@@ -14,6 +23,7 @@ export type InputOf<O extends Operation> = O['input']['Type']
 export type ResponseOf<O extends Operation> = {
 	[S in keyof O['responses'] & number]: {
 		readonly status: S
+		readonly headers?: Readonly<Record<string, string>>
 		readonly body: Schema.Schema.Type<O['responses'][S]>
 	}
 }[keyof O['responses'] & number]

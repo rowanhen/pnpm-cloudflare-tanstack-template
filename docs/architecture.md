@@ -1,6 +1,6 @@
 # Project structure: the one-page guide
 
-OpenAPI defines the public API. Orval generates its HTTP plumbing, models, schemas, frontend hooks and mocks. Effect gives handlers typed success and failure channels; Drizzle checks database queries. Todos demonstrate the complete flow.
+OpenAPI defines the public API. Orval generates its HTTP plumbing, models, schemas, frontend hooks and mocks. Effect gives handlers typed success and failure channels; Drizzle checks database queries. Every application endpoint uses this flow; todos are the smallest example.
 
 ```text
 OpenAPI root → feature contracts + shared schemas
@@ -34,6 +34,6 @@ Effect handler → typed Drizzle query → Cloudflare D1
 
 Shared adapters validate requests and each declared status/body pair at runtime. Generated types check expected failures; business logic still owns permissions and unexpected defects become sanitized 500 responses. Drizzle's storage schema stays separate from the public contract, with query results checked against generated response types.
 
-Todos and the public storefront use this pattern. Public operations explicitly declare `security: []`; all other operations require a cookie session. The adapter supports cookie sessions, JSON bodies/responses, path parameters and bodyless 204 responses. See the [API walkthrough](api-architecture.md) for examples and limitations, and [deployment](manual-deployment.md) for provider setup.
+Todos, storefront, account/config, billing, checkout, keys, waitlist, email, metered API calls, files and the Stripe webhook all use this pattern. Public operations declare `security: []`; cookie sessions are the default, with explicit API-key and Stripe security schemes. The adapter supports JSON, binary transfers, signed raw bodies, path/query/header parameters and bodyless responses. Better Auth alone remains a delegated Hono mount because it owns OAuth redirects and cookies. See the [API walkthrough](api-architecture.md) for examples and limitations, and [deployment](manual-deployment.md) for provider setup.
 
 Storage is split into identity, billing and product D1 databases. See [database boundaries](databases.md) for ownership, consistency and migration from the original database.

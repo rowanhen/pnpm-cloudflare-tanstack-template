@@ -1,5 +1,5 @@
 import { AppShell, Button, Stack, Alert, appTitle, Typography } from '@workspace/shared'
-import { client } from '../lib/api'
+import { getConfig } from '../generated/system'
 import { useEffect, useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
@@ -28,9 +28,8 @@ function LoginPage() {
 				? 'Google sign-in could not be completed. Please try again.'
 				: ''
 	useEffect(() => {
-		client
-			.get('config')
-			.then((data) => {
+		getConfig()
+			.then(({ data }) => {
 				setGoogleEnabled(data.googleEnabled)
 				setReady(true)
 			})

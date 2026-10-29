@@ -1,0 +1,156 @@
+{
+	"paths": {
+		"/api/email": {
+			"get": {
+				"operationId": "getEmailStatus",
+				"tags": ["emails"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/EmailStatus"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					}
+				}
+			},
+			"post": {
+				"operationId": "sendTestEmail",
+				"tags": ["emails"],
+				"responses": {
+					"202": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"email": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"id": {
+													"type": "string"
+												},
+												"status": {
+													"type": "string",
+													"enum": ["accepted"]
+												},
+												"messageId": {
+													"type": "string"
+												}
+											},
+											"required": ["id", "status", "messageId"]
+										}
+									},
+									"required": ["email"]
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"413": {
+						"$ref": "../shared/errors.json#/components/responses/PayloadTooLarge"
+					},
+					"415": {
+						"$ref": "../shared/errors.json#/components/responses/UnsupportedMediaType"
+					},
+					"409": {
+						"$ref": "../shared/errors.json#/components/responses/Conflict"
+					},
+					"429": {
+						"$ref": "../shared/errors.json#/components/responses/TooManyRequests"
+					},
+					"502": {
+						"$ref": "../shared/errors.json#/components/responses/BadGateway"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"requestId": {
+										"type": "string",
+										"format": "uuid"
+									}
+								},
+								"required": ["requestId"]
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"EmailStatus": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"enabled": {
+						"type": "boolean"
+					},
+					"emails": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"id": {
+									"type": "string"
+								},
+								"status": {
+									"type": "string",
+									"enum": ["sending", "accepted", "failed"]
+								},
+								"created_at": {
+									"type": "string"
+								}
+							},
+							"required": ["id", "status", "created_at"]
+						}
+					}
+				},
+				"required": ["enabled", "emails"]
+			}
+		}
+	}
+}

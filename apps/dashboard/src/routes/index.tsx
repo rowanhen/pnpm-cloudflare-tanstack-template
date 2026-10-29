@@ -23,7 +23,7 @@ import { useState } from 'react'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
 import { getSession } from '../lib/session'
-import { api } from '../lib/api'
+import { uploadFile, downloadFile, deleteFile } from '../generated/files'
 import { ApiKeys } from '../lib/api-keys'
 import { Billing } from '../components/billing'
 import { useSignOut, useWorkspace } from '../hooks/use-workspace'
@@ -143,10 +143,8 @@ function DashboardHomePage() {
 								if (file)
 									mutation.mutate(
 										() =>
-											api(`/api/files/${encodeURIComponent(file.name)}`, {
-												method: 'PUT',
+											uploadFile(file.name, file, {
 												headers: { 'Content-Type': file.type || 'application/octet-stream' },
-												body: file,
 											}),
 										{ onSuccess: () => setFile(null) },
 									)
@@ -224,8 +222,8 @@ function DashboardHomePage() {
 											size="sm"
 											onClick={() =>
 												mutation.mutate(async () => {
-													const response = await api(`/api/files/${encodeURIComponent(item.key)}`)
-													const url = URL.createObjectURL(await response.blob())
+													const response = await downloadFile(item.key)
+													const url = URL.createObjectURL(response.data)
 													const anchor = document.createElement('a')
 													anchor.href = url
 													anchor.download = item.key
@@ -242,11 +240,7 @@ function DashboardHomePage() {
 											variant="destructive"
 											size="sm"
 											disabled={busy}
-											onClick={() =>
-												mutation.mutate(() =>
-													api(`/api/files/${encodeURIComponent(item.key)}`, { method: 'DELETE' }),
-												)
-											}
+											onClick={() => mutation.mutate(() => deleteFile(item.key))}
 											aria-label={`Delete file ${item.key}`}
 										>
 											Delete

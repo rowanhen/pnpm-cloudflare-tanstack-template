@@ -8,7 +8,7 @@ The starter has three D1 databases. They are grouped by responsibility, rather t
 | Billing  | `BILLING_DB`  | `orders`, `stripe_events`, `credit_accounts`, `credit_grants`, `paid_requests`                  |
 | Product  | `PRODUCT_DB`  | `todos`, `waitlist`, `email_deliveries`                                                         |
 
-Schema files are `packages/data/src/identity.ts`, `billing.ts` and `product.ts`. Each has a matching migration directory under `apps/api/migrations/`. Use `identityDatabase`, `billingDatabase` or `productDatabase` from `@workspace/data/client` and import tables from the matching domain export. `@workspace/data/schema` only aggregates the public row types for existing API contracts; do not use it for runtime queries.
+Schema files are `packages/data/src/identity.ts`, `billing.ts` and `product.ts`. Each has a matching migration directory under `apps/api/migrations/`. Use `identityDatabase`, `billingDatabase` or `productDatabase` from `@workspace/data/client` and import tables from the matching domain export. `@workspace/data/schema` is a legacy aggregate; use domain imports for runtime queries. Public API types come from OpenAPI, independently of database row types.
 
 The identity database owns authentication and API-key validity. Rate-limit counters are security infrastructure and stay here too. Billing owns the full credit ledger: payment events, order fulfilment, balances and receipts must remain together so their D1 batches commit or roll back together. Product holds the starter's application examples; a real project can rename it or add a domain when there is a concrete ownership boundary. Avoid creating an empty database for every future feature.
 

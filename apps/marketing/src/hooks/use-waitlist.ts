@@ -1,21 +1,8 @@
-import { observedFetch, track } from '@workspace/observability/browser'
-import { createClient } from '@workspace/contracts/client'
+import { track } from '@workspace/observability/browser'
+import { joinWaitlist } from '../generated/waitlist'
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useHydrated } from '@workspace/shared'
-
-const client = createClient(async (path, init) => {
-	const response = await observedFetch(path, init)
-	if (!response.ok) {
-		const body: unknown = await response.json().catch(() => null)
-		throw new Error(
-			body && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
-				? body.error
-				: 'Could not save your signup. Please try again.',
-		)
-	}
-	return response
-})
 
 export function useWaitlist() {
 	const hydrated = useHydrated()
@@ -28,7 +15,7 @@ export function useWaitlist() {
 		const fields = new FormData(form)
 		try {
 			if (fields.get('consent') !== 'on') throw new Error('Please agree to join the waitlist')
-			await client.mutate('waitlist', {
+			await joinWaitlist({
 				name: fields.get('name')?.toString() ?? '',
 				email: fields.get('email')?.toString() ?? '',
 				website: fields.get('website')?.toString() ?? '',

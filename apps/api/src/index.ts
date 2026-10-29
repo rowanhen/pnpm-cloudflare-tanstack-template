@@ -1,163 +1,32 @@
 import { reportRequest } from '@workspace/observability/server'
 import { safeError, safePath } from '@workspace/observability/privacy'
-import { emailEnabled, emailRoute } from './email'
-import { productDatabase } from '@workspace/data/client'
-import { waitlist } from '@workspace/data/product'
-import { eq } from 'drizzle-orm'
-import { listTodos } from './features/todos/repository'
 import generatedApi from './generated/routes'
 import { allowedMethods, contractError, findOperation } from '@workspace/contracts/http'
-import { waitlistRoute } from './waitlist'
 import type { Env } from './env'
 import { trustedProxyRequest } from './proxy'
 import { createAuth } from './auth'
-import { HttpError, json, reply, readBody, methodNotAllowed } from './http'
-import { apiKeyUser, keysRoute } from './keys'
-import { checkoutEnabled, checkoutRoute, stripeWebhook } from './checkout'
-import { billingStatus } from './billing'
-import { summaryRoute } from './summary'
+import { HttpError, json, methodNotAllowed } from './http'
+import { Hono } from 'hono'
 
-generatedApi.onError((error) => {
+// Better Auth owns its OAuth/cookie protocol; all application routes are generated.
+const app = new Hono<{ Bindings: Env }>()
+app.on(['GET', 'POST'], '/api/auth/*', (c) => {
+	if (!c.env.BETTER_AUTH_SECRET) throw new HttpError(503, 'Authentication is not configured')
+	return createAuth(c.env).handler(c.req.raw)
+})
+app.route('/', generatedApi)
+app.onError((error) => {
 	throw error
 })
-generatedApi.notFound((c) => {
+app.notFound((c) => {
 	const methods = allowedMethods(c.req.path)
 	return methods.length ? methodNotAllowed(methods.join(', ')) : json({ error: 'Not found' }, 404)
 })
 
 async function route(request: Request, env: Env): Promise<Response> {
-	const url = new URL(request.url)
-	const path = url.pathname
-	const method = request.method
-	if (env.DATABASE_MAINTENANCE === 'true') {
-		if (path === '/api/health') return json({ ok: true, maintenance: true })
+	if (env.DATABASE_MAINTENANCE === 'true' && new URL(request.url).pathname !== '/api/health')
 		throw new HttpError(503, 'Temporarily unavailable', { 'Retry-After': '60' })
-	}
-	if (allowedMethods(path).length) return generatedApi.fetch(request, env)
-	if (path === '/api/health') return method === 'GET' ? json({ ok: true }) : methodNotAllowed('GET')
-	if (path === '/api/config')
-		return reply('config', {
-			emailEnabled: emailEnabled(env),
-			googleEnabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
-			checkoutEnabled: checkoutEnabled(env),
-		})
-	if (path === '/api/stripe/webhook') return stripeWebhook(request, env)
-	if (path.startsWith('/api/auth/')) {
-		if (!env.BETTER_AUTH_SECRET)
-			throw new HttpError(503, 'Run pnpm setup:local or configure the authentication secrets')
-		return createAuth(env).handler(request)
-	}
-	if (path === '/api/waitlist' && method === 'POST') return waitlistRoute(request, env)
-	if (path === '/api/v1/summary') return summaryRoute(request, env)
-	if (path === '/api/v1/todos') {
-		if (method !== 'GET') return methodNotAllowed('GET')
-		const { userId, headers } = await apiKeyUser(request, env)
-		const response = reply('todos', { todos: await listTodos(env.PRODUCT_DB, userId) })
-		for (const [name, value] of Object.entries(headers)) response.headers.set(name, value)
-		return response
-	}
-	if (!env.BETTER_AUTH_SECRET) throw new HttpError(503, 'Authentication is not configured')
-	const session = await createAuth(env).api.getSession({ headers: request.headers })
-	if (!session) throw new HttpError(401, 'Sign in to continue')
-	const userId = session.user.id
-	if (path === '/api/billing')
-		return method === 'GET' ? billingStatus(env.BILLING_DB, userId) : methodNotAllowed('GET')
-	if (path === '/api/me' && method === 'GET')
-		return reply('me', {
-			user: {
-				id: session.user.id,
-				name: session.user.name,
-				email: session.user.email,
-				emailVerified: session.user.emailVerified,
-				image: session.user.image ?? null,
-			},
-		})
-	// Cookie-authenticated mutations must originate from an explicitly trusted browser origin.
-	if (!['GET', 'HEAD'].includes(method)) {
-		const origin = request.headers.get('origin')
-		if (
-			!origin ||
-			!env.ALLOWED_ORIGINS.split(',')
-				.map((value) => value.trim())
-				.includes(origin)
-		)
-			throw new HttpError(403, 'A trusted Origin header is required')
-	}
-	if (path === '/api/email')
-		return emailRoute(request, env, { ...session.user, image: session.user.image ?? null })
-	if (path === '/api/keys' || path.startsWith('/api/keys/')) return keysRoute(request, env, userId)
-	if (path.startsWith('/api/checkout/')) return checkoutRoute(request, env, session.user)
-	if (path === '/api/waitlist/me' && method === 'GET') {
-		const entry = session.user.emailVerified
-			? ((await productDatabase(env.PRODUCT_DB)
-					.select({ created_at: waitlist.created_at })
-					.from(waitlist)
-					.where(eq(waitlist.email, session.user.email))
-					.get()) ?? null)
-			: null
-		return reply('waitlistStatus', { joined: Boolean(entry), entry })
-	}
-	if (path === '/api/files') {
-		if (method !== 'GET') return methodNotAllowed('GET')
-		const limit = Number(url.searchParams.get('limit') ?? 100)
-		if (!Number.isInteger(limit) || limit < 1 || limit > 1000)
-			throw new HttpError(400, 'limit must be an integer from 1 to 1000')
-		const result = await env.FILES.list({
-			limit,
-			prefix: `${userId}/`,
-			cursor: url.searchParams.get('cursor') ?? undefined,
-		})
-		return reply('files', {
-			files: result.objects.map((object) => ({
-				key: object.key.slice(userId.length + 1),
-				size: object.size,
-				etag: object.httpEtag,
-				uploaded: object.uploaded.toISOString(),
-			})),
-			cursor: result.truncated ? result.cursor : null,
-		})
-	}
-	if (path.startsWith('/api/files/')) {
-		let key: string
-		try {
-			key = decodeURIComponent(path.slice('/api/files/'.length))
-		} catch {
-			throw new HttpError(400, 'Invalid file key encoding')
-		}
-		if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$/.test(key))
-			throw new HttpError(
-				400,
-				'Use a 1–200 character filename with letters, numbers, dots, underscores or hyphens',
-			)
-		if (method === 'PUT') {
-			const body = await readBody(request, 5 * 1024 * 1024)
-			const object = await env.FILES.put(`${userId}/${key}`, body, {
-				httpMetadata: {
-					contentType: request.headers.get('content-type') ?? 'application/octet-stream',
-				},
-			})
-			return reply('file', { file: { key, size: object.size, etag: object.httpEtag } }, 201)
-		}
-		if (method === 'GET' || method === 'HEAD') {
-			const object =
-				method === 'HEAD'
-					? await env.FILES.head(`${userId}/${key}`)
-					: await env.FILES.get(`${userId}/${key}`)
-			if (!object) throw new HttpError(404, 'File not found')
-			const headers = new Headers()
-			object.writeHttpMetadata(headers)
-			headers.set('ETag', object.httpEtag)
-			headers.set('Content-Length', String(object.size))
-			headers.set('Content-Disposition', `attachment; filename="${key}"`)
-			return new Response('body' in object ? (object as R2ObjectBody).body : null, { headers })
-		}
-		if (method === 'DELETE') {
-			await env.FILES.delete(`${userId}/${key}`)
-			return new Response(null, { status: 204 })
-		}
-		return methodNotAllowed('GET, HEAD, PUT, DELETE')
-	}
-	throw new HttpError(404, 'Not found')
+	return app.fetch(request, env)
 }
 
 export default {

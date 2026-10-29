@@ -1,6 +1,17 @@
 # OpenAPI → Orval → Hono + Effect
 
-The todo feature uses this architecture end to end. Each feature owns a small OpenAPI fragment. Orval resolves their standard `$ref` links into one valid OpenAPI document and produces routes, Effect schemas and handler contracts, frontend query/mutation hooks, and MSW mocks.
+Every application endpoint uses this architecture end to end. Each feature owns a small OpenAPI fragment. Orval resolves their standard `$ref` links into one valid OpenAPI document and produces routes, Effect schemas and handler contracts, frontend query/mutation hooks, and MSW mocks.
+
+The authoritative spec lives in `packages/contracts/openapi/api.json`, shared by the backend and frontend through the workspace contracts package. It is not inferred from Hono routes or frontend types. All four targets in `orval.config.ts` read this same entry point.
+
+| Generated from OpenAPI                                                    | Implemented by hand                                             |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Hono routes and operation wiring                                          | Worker entry point, bindings and shared middleware              |
+| Effect schemas, inputs and typed success/failure unions                   | Business rules, permissions, queries and provider calls         |
+| Missing handler entry points, preserved after creation                    | Handler implementations using `Effect.gen` and request services |
+| Frontend HTTP functions, TanStack Query hooks, models and dashboard mocks | Pages and UI interactions consuming those hooks                 |
+
+A new endpoint starts with a spec change and `pnpm api:generate`, followed by implementing the scaffolded handler. OpenAPI describes the HTTP contract; it cannot infer business behaviour or database migrations. Effect schemas and handler types are generated; request service classes and application services are handwritten. This is the same generation foundation used by Astumi, whose internal-operation filtering and provider-specific boundaries are application extensions.
 
 ```mermaid
 flowchart TD
@@ -19,7 +30,7 @@ flowchart TD
     Drizzle <--> D1[("Cloudflare D1")]
 ```
 
-Dotted arrows represent generation. Solid arrows represent runtime calls. Users and products illustrate future feature modules; todos and the public storefront are migrated.
+Dotted arrows represent generation. Solid arrows represent runtime calls. The Worker mounts the generated router once; there is no handwritten application path dispatcher.
 
 ## Contract ownership
 
@@ -56,7 +67,7 @@ Each operation has a globally unique camelCase `operationId` and one lowercase k
 1. Add operations to an existing feature file, or create another file in `openapi/features/`. Define public inputs, success responses, and typed error responses there. Use the reusable responses in `shared/errors.json` for boundary errors.
 2. Reference new paths from `api.json`, then run `pnpm api:generate` (the native Orval CLI). No router imports or handwritten handler registry changes are needed.
 3. Implement the new entry points created under `apps/api/src/features/<feature>/<operation-in-kebab-case>.ts`. Each is annotated with its generated Effect handler type. Regeneration never overwrites existing entry points, even when an operation is removed.
-4. Use the generated frontend hooks and functions in `apps/dashboard/src/generated/<feature>.ts`.
+4. Use the generated frontend hooks and functions in `apps/dashboard/src/generated/<feature>.ts`. Marketing generates a fetch client for the waitlist; extend its input filter when it needs another feature.
 5. Run `pnpm check`. The unresolved `TODO_IMPLEMENT_OPERATION` expression makes unfinished stubs fail ordinary TypeScript checking. Regenerate after contract changes and review changed or untracked output before committing. Naming conventions above are authoring conventions; there is no separate custom naming/collision scanner.
 
 For example, adding `getProduct` to `features/products.json` creates:
@@ -89,7 +100,8 @@ One operation gets one implementation file. Put shared queries and services besi
 | `packages/contracts/src/http.ts`                 | Validates response status/body pairs on both sides.                                       |
 | `apps/dashboard/src/generated/todos.ts`          | Generated HTTP functions and TanStack Query hooks.                                        |
 | `apps/dashboard/src/generated/api.schemas.ts`    | Shared generated frontend models.                                                         |
-| `apps/dashboard/src/lib/contract-fetch.ts`       | Response validation, typed errors, network errors, and session redirects.                 |
+| `packages/contracts/src/client.ts`               | Shared response validation, typed errors, binary decoding and network errors.             |
+| `apps/dashboard/src/lib/contract-fetch.ts`       | Observed fetch and session redirects for generated dashboard calls.                       |
 
 ## Typed handlers and errors
 
@@ -107,10 +119,21 @@ All `src/generated/` directories are owned by generation. Orval cleans those spe
 
 Tests exercise a temporary second products feature, native shared references, router/type/client/mock generation, preserved implementations, TypeScript rejection of unfinished handlers, unsupported boundary rejection, and removal of stale generated outputs. Separate local contract tests and Worker integration tests cover response validation, authentication, CSRF, ownership, malformed requests, and real database behaviour. Mocks are development helpers rather than independent evidence of correct behaviour.
 
-## Deliberate boundaries
+`pnpm test:unit` also regenerates in a temporary workspace, compares every generated file against the checked-in output, and regenerates again to check byte-for-byte stability. This runs in CI and in `pnpm check`; stale, missing or extra generated files fail verification without rewriting the checkout. Run `pnpm api:generate` after changing the spec, generator or Orval version and include the resulting output.
 
-All five todo operations and the three public storefront operations are migrated. Better Auth, billing/Stripe, files, keys, waitlist, and email retain their existing contracts and handlers. The free API-key todo endpoint reuses the typed query.
+## Supported transports and security
 
-The current adapter supports explicit 2xx/4xx/5xx statuses, required JSON request bodies, JSON responses, path parameters, cookie-session security, and bodyless 204 responses. Shared response/schema references are supported. Unsupported parameter locations, optional bodies, and media types are rejected. Every operation declares 400/401/403/500/503 responses, plus 413/415 when it accepts a body. Cookie-session security defaults come from `api.json`; only explicit `security: []` operations use the public boundary. Public handlers receive request/environment context without a user identity, retain trusted-Origin checks, and own their rate limits.
+All application routes are defined in OpenAPI: todos, storefront, account/config/health, keys, billing, checkout, waitlist, email, API-key todos/summary, files and the Stripe webhook. `packages/contracts/src/index.ts` only exposes aliases of generated types; it has no parallel Zod inputs, endpoint registry or database-derived public DTOs.
 
-Orval does not generate Effect handler signatures or preserve `minProperties` in its Effect output. The Orval extension supplies those pieces. The shared Effect boundary replaces Hono's stock response validators and covers every declared status. Effect 4 is used here; Zod remains for the integrations that have not migrated.
+- Cookie sessions are the default. Their Effect request service carries the verified user, request, bindings and product client. Mutations require a trusted Origin.
+- `security: []` declares public operations. Storefront mutations require a trusted Origin. Waitlist explicitly sets `x-require-origin: false` for server callers; a supplied untrusted Origin is still rejected by the outer boundary.
+- `security: [{ "apiKey": [] }]` with `x-api-key-scope` selects the API-key adapter. It verifies the bearer key and scope, applies rate limiting and preserves quota headers. These requests do not require a browser Origin.
+- Stripe security selects the signed-webhook protocol. `x-raw-body: true` preserves the raw text for signature verification before event parsing; `x-max-body-bytes: 262144` bounds the read. The handler uses Stripe's signature verifier and the existing atomic reconciliation logic. It does not accept a browser session in place of a signature.
+
+Path parameters, scalar query parameters and declared headers are validated with generated Effect schemas. Numeric/boolean query values are converted before validation; repeated or unknown query keys are rejected on query-bearing operations. Optional bodies, cookie parameters, non-scalar query parameters and unsupported media types fail generation. Every operation declares boundary errors; domain errors such as 402, 409, 429 and 502 are declared where used. Service `HttpError`s enter the generated failure channel only after schema validation; unexpected defects reach sanitized reporting.
+
+JSON bodies default to 16 KiB. File uploads use `application/octet-stream`, a bounded 5 MiB read and a generated File input schema; the supplied content type is preserved as object metadata. Downloads stream the R2 body without buffering it on the Worker. Generated browser calls return a Blob. Response headers preserve ETag, length and disposition. HEAD returns only metadata, including bodyless errors. The extension adapts Orval's HEAD registration to Hono's `.on` API and routes Hono's implicit GET dispatch to the generated HEAD handler. Bodyless 204 responses are validated too.
+
+Better Auth is the sole provider-owned HTTP mount at `/api/auth/*`. It retains its native OAuth callbacks, redirects, cookie handling, session response and sign-in/out protocol. Inventing an application JSON contract for those responses would discard provider semantics. Account data at `/api/me` is a generated application operation. The outer Worker retains proxy verification, CORS, maintenance checks and telemetry.
+
+Orval's native Effect output does not generate application handler signatures, preserve `minProperties`, or provide the required binary/HEAD boundary. The extension supplies those pieces through its custom client and `extraFiles` hooks. Business logic and D1 migrations remain handwritten. Zod is used only in local tooling/fixtures, not application API contracts.

@@ -18,6 +18,26 @@ import {
 	createStorefrontCheckoutHandlers,
 	checkStorefrontCheckoutHandlers,
 } from './storefront.handlers'
+import { getHealthHandlers, getConfigHandlers } from './system.handlers'
+import { getMeHandlers } from './account.handlers'
+import { listKeysHandlers, createKeyHandlers, deleteKeyHandlers } from './keys.handlers'
+import { getBillingHandlers } from './billing.handlers'
+import {
+	getCheckoutConfigHandlers,
+	createCheckoutHandlers,
+	getOrderHandlers,
+} from './checkout.handlers'
+import { getEmailStatusHandlers, sendTestEmailHandlers } from './emails.handlers'
+import { joinWaitlistHandlers, getWaitlistStatusHandlers } from './waitlist.handlers'
+import { listApiTodosHandlers, createSummaryHandlers } from './metered.handlers'
+import {
+	listFilesHandlers,
+	uploadFileHandlers,
+	downloadFileHandlers,
+	headFileHandlers,
+	deleteFileHandlers,
+} from './files.handlers'
+import { receiveStripeWebhookHandlers } from './webhooks.handlers'
 
 const app = new Hono()
 	.get('/api/todos', ...listTodosHandlers)
@@ -28,5 +48,27 @@ const app = new Hono()
 	.get('/api/storefront', ...getStorefrontHandlers)
 	.post('/api/storefront/checkouts', ...createStorefrontCheckoutHandlers)
 	.post('/api/storefront/status', ...checkStorefrontCheckoutHandlers)
+	.get('/api/health', ...getHealthHandlers)
+	.get('/api/config', ...getConfigHandlers)
+	.get('/api/me', ...getMeHandlers)
+	.get('/api/keys', ...listKeysHandlers)
+	.post('/api/keys', ...createKeyHandlers)
+	.delete('/api/keys/:id', ...deleteKeyHandlers)
+	.get('/api/billing', ...getBillingHandlers)
+	.get('/api/checkout/config', ...getCheckoutConfigHandlers)
+	.post('/api/checkout/sessions', ...createCheckoutHandlers)
+	.get('/api/checkout/sessions/:sessionId', ...getOrderHandlers)
+	.get('/api/email', ...getEmailStatusHandlers)
+	.post('/api/email', ...sendTestEmailHandlers)
+	.post('/api/waitlist', ...joinWaitlistHandlers)
+	.get('/api/waitlist/me', ...getWaitlistStatusHandlers)
+	.get('/api/v1/todos', ...listApiTodosHandlers)
+	.post('/api/v1/summary', ...createSummaryHandlers)
+	.get('/api/files', ...listFilesHandlers)
+	.put('/api/files/:key', ...uploadFileHandlers)
+	.get('/api/files/:key', ...downloadFileHandlers)
+	.on('HEAD', '/api/files/:key', ...headFileHandlers)
+	.delete('/api/files/:key', ...deleteFileHandlers)
+	.post('/api/stripe/webhook', ...receiveStripeWebhookHandlers)
 
 export default app

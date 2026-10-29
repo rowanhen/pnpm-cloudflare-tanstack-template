@@ -2,7 +2,8 @@ import { useNavigate } from '@tanstack/react-router'
 import { useRef } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useHydrated } from '@workspace/shared'
-import { client } from '../lib/api'
+import { getConfig } from '../generated/system'
+import { getCheckoutConfig, createCheckout, getOrder } from '../generated/checkout'
 
 export type { CheckoutConfig, CheckoutSession, OrderStatus } from '@workspace/contracts'
 export function money(amount: number, currency: string) {
@@ -17,18 +18,18 @@ export function useCheckoutSession() {
 		queryKey: ['app-config'],
 		enabled: hydrated,
 		retry: false,
-		queryFn: () => client.get('config'),
+		queryFn: async () => (await getConfig()).data,
 	})
 	const config = useQuery({
 		queryKey: ['checkout-config'],
 		enabled: hydrated && availability.data?.checkoutEnabled === true,
 		retry: false,
-		queryFn: () => client.get('checkoutConfig'),
+		queryFn: async () => (await getCheckoutConfig()).data,
 	})
 	const create = useMutation({
 		mutationFn: async () => {
 			requestId.current ??= crypto.randomUUID()
-			const session = await client.mutate('createCheckout', { requestId: requestId.current })
+			const { data: session } = await createCheckout({ requestId: requestId.current })
 			if (session.status !== 'open')
 				await navigate({ to: '/checkout/success', search: { session_id: session.sessionId } })
 			return session
@@ -42,7 +43,7 @@ export function useOrderStatus(sessionId: string) {
 		queryKey: ['order', sessionId],
 		enabled: hydrated && Boolean(sessionId),
 		retry: false,
-		queryFn: () => client.order(sessionId),
+		queryFn: async () => (await getOrder(sessionId)).data,
 		refetchInterval: (query) =>
 			query.state.data?.order.status === 'pending' &&
 			query.state.data.checkoutStatus === 'complete' &&

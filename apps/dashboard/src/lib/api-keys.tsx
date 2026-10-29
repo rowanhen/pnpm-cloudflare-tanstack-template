@@ -14,9 +14,9 @@ import {
 
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { client as apiClient } from './api'
+import { listKeys, createKey, deleteKey } from '../generated/keys'
 
-import { keyScope, type KeyScope } from '@workspace/contracts'
+import { KeyScope } from '../generated/api.schemas'
 export function ApiKeys() {
 	const hydrated = useHydrated()
 	const [name, setName] = useState('')
@@ -27,7 +27,7 @@ export function ApiKeys() {
 	const client = useQueryClient()
 	const keys = useQuery({
 		queryKey: ['keys'],
-		queryFn: () => apiClient.get('keys'),
+		queryFn: async () => (await listKeys()).data,
 	})
 	const mutation = useMutation({
 		mutationFn: async (action: () => Promise<unknown>) => action(),
@@ -41,7 +41,7 @@ export function ApiKeys() {
 					onSubmit={(event) => {
 						event.preventDefault()
 						mutation.mutate(async () => {
-							const result = await apiClient.mutate('createKey', { name, scope })
+							const { data: result } = await createKey({ name, scope })
 							setNewToken(result.key.token)
 							setNewScope(result.key.scope)
 							setExampleId(crypto.randomUUID())
@@ -66,7 +66,13 @@ export function ApiKeys() {
 							size="sm"
 							disabled={!hydrated || mutation.isPending}
 							value={scope}
-							onValueChange={(value) => setScope(keyScope.parse(value))}
+							onValueChange={(value) =>
+								setScope(
+									value === KeyScope['summary:read']
+										? KeyScope['summary:read']
+										: KeyScope['todos:read'],
+								)
+							}
 							options={[
 								{ value: 'todos:read', label: 'Todos · free' },
 								{ value: 'summary:read', label: 'Summary · 1 credit' },
@@ -122,7 +128,7 @@ export function ApiKeys() {
 								aria-label={`Delete API key ${key.name}`}
 								onClick={() =>
 									mutation.mutate(async () => {
-										await apiClient.deleteKey(key.id)
+										await deleteKey(key.id)
 										setNewToken('')
 									})
 								}

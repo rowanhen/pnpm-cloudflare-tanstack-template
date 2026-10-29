@@ -58,11 +58,13 @@ Run the **same curl command** again: it returns exactly the same body and receip
 
 Non-successful requests spend no credits. A lost HTTP response may still represent a committed request; reusing its ID is how the caller recovers safely. Insufficient-credit and invalid-input attempts do not reserve an ID. Idempotency is scoped to the user, shared across their authorized Summary keys, and persists for the lifetime of the receipt. Replays still require a valid scoped key and pass rate limiting.
 
+Scope, header/body validation and response types come from `openapi/features/metered.json` through the generated Effect boundary.
+
 ## Backend map
 
 | File                                                                 | Responsibility                                                                                 |
 | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [`summary.ts`](../apps/api/src/summary.ts)                           | Scope check, input validation, server-selected price, private business query                   |
+| [`summary.ts`](../apps/api/src/summary.ts)                           | Server-selected price, private business query and contract-validated replay                    |
 | [`billing.ts`](../apps/api/src/billing.ts)                           | Credit pack size, per-operation price, atomic charge and replay, account history               |
 | [`checkout.ts`](../apps/api/src/checkout.ts)                         | Server-selected Stripe price, order snapshot, payment verification, one credit grant per order |
 | [`keys.ts`](../apps/api/src/keys.ts)                                 | Hashed keys, explicit single-endpoint scopes, revocation, rate limiting                        |

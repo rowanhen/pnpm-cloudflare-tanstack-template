@@ -1,0 +1,214 @@
+{
+	"paths": {
+		"/api/v1/todos": {
+			"get": {
+				"operationId": "listApiTodos",
+				"tags": ["metered"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "./todos.json#/components/schemas/TodosResponse"
+								}
+							}
+						},
+						"headers": {
+							"X-RateLimit-Limit": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"429": {
+						"$ref": "../shared/errors.json#/components/responses/TooManyRequests"
+					}
+				},
+				"security": [
+					{
+						"apiKey": []
+					}
+				],
+				"x-api-key-scope": "todos:read"
+			}
+		},
+		"/api/v1/summary": {
+			"post": {
+				"operationId": "createSummary",
+				"tags": ["metered"],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SummaryResponse"
+								}
+							}
+						},
+						"headers": {
+							"X-RateLimit-Limit": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-RateLimit-Remaining": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-RateLimit-Reset": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-Request-Id": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-Credits-Charged": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"X-Credits-Balance": {
+								"schema": {
+									"type": "string"
+								}
+							},
+							"Idempotency-Replayed": {
+								"schema": {
+									"type": "string"
+								}
+							}
+						}
+					},
+					"400": {
+						"$ref": "../shared/errors.json#/components/responses/BadRequest"
+					},
+					"401": {
+						"$ref": "../shared/errors.json#/components/responses/Unauthorized"
+					},
+					"403": {
+						"$ref": "../shared/errors.json#/components/responses/Forbidden"
+					},
+					"500": {
+						"$ref": "../shared/errors.json#/components/responses/InternalError"
+					},
+					"503": {
+						"$ref": "../shared/errors.json#/components/responses/Unavailable"
+					},
+					"413": {
+						"$ref": "../shared/errors.json#/components/responses/PayloadTooLarge"
+					},
+					"415": {
+						"$ref": "../shared/errors.json#/components/responses/UnsupportedMediaType"
+					},
+					"402": {
+						"$ref": "../shared/errors.json#/components/responses/PaymentRequired"
+					},
+					"409": {
+						"$ref": "../shared/errors.json#/components/responses/Conflict"
+					},
+					"429": {
+						"$ref": "../shared/errors.json#/components/responses/TooManyRequests"
+					}
+				},
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"additionalProperties": false,
+								"properties": {
+									"status": {
+										"type": "string",
+										"enum": ["all", "open", "completed"],
+										"default": "all"
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"name": "idempotency-key",
+						"in": "header",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						}
+					}
+				],
+				"security": [
+					{
+						"apiKey": []
+					}
+				],
+				"x-api-key-scope": "summary:read"
+			}
+		}
+	},
+	"components": {
+		"schemas": {
+			"SummaryResponse": {
+				"type": "object",
+				"additionalProperties": false,
+				"properties": {
+					"summary": {
+						"type": "object",
+						"additionalProperties": false,
+						"properties": {
+							"total": {
+								"type": "integer"
+							},
+							"completed": {
+								"type": "integer"
+							},
+							"open": {
+								"type": "integer"
+							}
+						},
+						"required": ["total", "completed", "open"]
+					},
+					"status": {
+						"type": "string",
+						"enum": ["all", "open", "completed"]
+					}
+				},
+				"required": ["summary", "status"]
+			}
+		}
+	}
+}

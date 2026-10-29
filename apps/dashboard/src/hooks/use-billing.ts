@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useHydrated } from '@workspace/shared'
-import { client } from '../lib/api'
+import { getBilling } from '../generated/billing'
 
 export type { BillingStatus } from '@workspace/contracts'
 export function useBilling() {
@@ -8,6 +8,6 @@ export function useBilling() {
 	return useQuery({
 		queryKey: ['billing'],
 		enabled: hydrated,
-		queryFn: () => client.get('billing'),
+		queryFn: async () => (await getBilling()).data,
 	})
 }
