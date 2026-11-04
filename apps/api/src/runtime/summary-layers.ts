@@ -8,7 +8,7 @@ export const summaryLayer = (env: Env, userId: string) =>
 	SummaryLive.pipe(
 		Layer.provide(
 			Layer.mergeAll(
-				summaryRepositoryLayer(env.PRODUCT_DB, userId),
+				summaryRepositoryLayer(env.DB, userId),
 				billingLayer(env, userId),
 				IdentityCryptoLive,
 			),

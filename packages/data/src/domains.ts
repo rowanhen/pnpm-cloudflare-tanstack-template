@@ -1,3 +1,4 @@
+// Legacy source bindings and table groups used only by the data-copy tooling.
 export const domains = {
 	identity: {
 		binding: 'IDENTITY_DB',

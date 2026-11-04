@@ -68,4 +68,4 @@ Start with the [one-page structure guide](docs/architecture.md). The [detailed A
 
 Application code, scripts and tests are TypeScript; OpenAPI and Wrangler configuration use JSON. D1 schema types live in `@workspace/data`; validated public API types and the client live in `@workspace/contracts`. Both apps share the UI and observability packages. GitHub's required **Verify** check gates dependency auto-merges.
 
-Storage starts with three D1 databases: identity, billing and product. Each has its own schema, typed client and migration history. See [database setup and boundaries](docs/databases.md).
+Storage starts with one D1 database containing all application tables, one typed client and one migration history. See [database setup and boundaries](docs/databases.md).

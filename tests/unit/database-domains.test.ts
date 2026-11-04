@@ -10,7 +10,7 @@ async function migrate(database: DatabaseSync, directory: URL) {
 	for (const file of (await readdir(directory)).filter((name) => name.endsWith('.sql')).sort())
 		database.exec(await readFile(new URL(file, directory), 'utf8'))
 }
-test('legacy data splits into isolated databases without losing sessions, payments or private data', async () => {
+test('legacy data consolidates into one database without losing sessions, payments or private data', async () => {
 	const source = new DatabaseSync(':memory:')
 	try {
 		await migrate(source, new URL('../../apps/api/legacy-migrations/', import.meta.url))
@@ -24,19 +24,32 @@ test('legacy data splits into isolated databases without losing sessions, paymen
 		INSERT INTO stripe_events(id) VALUES ('event');
 		INSERT INTO credit_grants(id,user_id,order_id,credits) VALUES ('grant','e2e-alice','order',1000);
 		INSERT INTO paid_requests(id,user_id,key_id,idempotency_key,operation,input_hash,credits,response) VALUES ('receipt','e2e-alice','key','request','summary','hash',1,'{}');`)
-		for (const [domain, { tables }] of Object.entries(domains)) {
-			const target = new DatabaseSync(':memory:')
-			try {
-				target.exec('PRAGMA foreign_keys=ON')
-				await migrate(target, new URL(`../../apps/api/migrations/${domain}/`, import.meta.url))
-				target.exec(copySql(source, domain as Domain))
-				verifyCopy(source, target, domain as Domain)
+		const target = new DatabaseSync(':memory:')
+		try {
+			target.exec('PRAGMA foreign_keys=ON')
+			await migrate(target, new URL('../../apps/api/migrations/', import.meta.url))
+			for (const domain of Object.keys(domains)) {
+				const split = new DatabaseSync(':memory:')
+				try {
+					await migrate(
+						split,
+						new URL(`../../apps/api/split-migrations/${domain}/`, import.meta.url),
+					)
+					split.exec(copySql(source, domain as Domain))
+					target.exec(copySql(split, domain as Domain))
+					verifyCopy(split, target, domain as Domain)
+					verifyCopy(source, target, domain as Domain)
+				} finally {
+					split.close()
+				}
 				assert.deepEqual(
 					target
 						.prepare("SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name")
 						.all()
 						.map((row) => row.name),
-					[...tables].sort(),
+					Object.values(domains)
+						.flatMap(({ tables }) => [...tables])
+						.sort(),
 				)
 				assert.throws(() => target.exec(copySql(source, domain as Domain)), /UNIQUE/)
 				if (domain === 'billing') {
@@ -65,9 +78,9 @@ test('legacy data splits into isolated databases without losing sessions, paymen
 							),
 						/UNIQUE/,
 					)
-			} finally {
-				target.close()
 			}
+		} finally {
+			target.close()
 		}
 		assert.equal(source.prepare('SELECT balance FROM credit_accounts LIMIT 1').get()?.balance, 3)
 	} finally {

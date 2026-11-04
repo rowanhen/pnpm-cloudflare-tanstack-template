@@ -9,7 +9,7 @@ export const keyLayer = (env: Env, userId: string) =>
 	KeyLive.pipe(
 		Layer.provide(
 			Layer.mergeAll(
-				keyRepositoryLayer(env.IDENTITY_DB, userId),
+				keyRepositoryLayer(env.DB, userId),
 				Layer.succeed(KeyOwner, { userId }),
 				rateLimiterLayer(env),
 				IdentityCryptoLive,
@@ -21,7 +21,7 @@ export const keyAuthenticationLayer = (env: Env) =>
 	KeyAuthenticationLive.pipe(
 		Layer.provide(
 			Layer.mergeAll(
-				keyAuthenticationRepositoryLayer(env.IDENTITY_DB),
+				keyAuthenticationRepositoryLayer(env.DB),
 				rateLimiterLayer(env),
 				IdentityCryptoLive,
 			),

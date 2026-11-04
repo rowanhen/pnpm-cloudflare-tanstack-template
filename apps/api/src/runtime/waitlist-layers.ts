@@ -9,7 +9,7 @@ export const waitlistLayer = (env: Env) =>
 	WaitlistLive.pipe(
 		Layer.provide(
 			Layer.mergeAll(
-				waitlistRepositoryLayer(env.PRODUCT_DB),
+				waitlistRepositoryLayer(env.DB),
 				IdentityCryptoLive,
 				emailLayer(env),
 				rateLimiterLayer(env),

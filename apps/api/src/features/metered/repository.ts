@@ -1,15 +1,12 @@
 import { Effect, Layer } from 'effect'
 import { todos } from '@workspace/data/product'
-import { productDatabase } from '@workspace/data/client'
+import { database } from '@workspace/data/client'
 import { and, eq, count, sum } from 'drizzle-orm'
 import { decodeStored, storageEffect, StorageError } from '../../persistence'
 import { SummaryResult, SummaryCounts } from './domain'
 import { SummaryRepository } from './service'
-export const summaryRepositoryLayer = (
-	binding: Parameters<typeof productDatabase>[0],
-	userId: string,
-) => {
-	const db = productDatabase(binding)
+export const summaryRepositoryLayer = (binding: Parameters<typeof database>[0], userId: string) => {
+	const db = database(binding)
 	return Layer.succeed(SummaryRepository, {
 		decodeReplay: (value) =>
 			Effect.try({

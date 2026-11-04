@@ -1,5 +1,5 @@
 import { Effect, Layer, Schema } from 'effect'
-import type { productDatabase } from '@workspace/data/client'
+import type { database } from '@workspace/data/client'
 import { todos } from '@workspace/data/product'
 import { TodoData, TodoListData, TodoListLimit } from '@workspace/contracts/todos'
 import { and, desc, eq } from 'drizzle-orm'
@@ -18,7 +18,7 @@ const decodeOptionalTodo = (value: unknown) =>
 const storageFailure = (cause: unknown) =>
 	cause instanceof StorageError ? cause : new StorageError({ cause })
 
-export const todoRepositoryLayer = (db: ReturnType<typeof productDatabase>, userId: string) => {
+export const todoRepositoryLayer = (db: ReturnType<typeof database>, userId: string) => {
 	const owned = (id: string) => and(eq(todos.id, id), eq(todos.user_id, userId))
 	return Layer.succeed(TodoRepository, {
 		list: storageEffect(() =>

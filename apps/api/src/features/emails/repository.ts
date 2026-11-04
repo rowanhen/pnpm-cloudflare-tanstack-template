@@ -1,13 +1,13 @@
 import { Effect, Layer, Schema } from 'effect'
-import { productDatabase } from '@workspace/data/client'
+import { database } from '@workspace/data/client'
 import { emailDeliveries } from '@workspace/data/product'
 import { and, desc, eq } from 'drizzle-orm'
 import { EmailStatusData } from '@workspace/contracts/values'
 import { storageEffect, decodeStored, StorageError } from '../../persistence'
 import { DeliveryState } from './domain'
 import { EmailRepository } from './service'
-export const emailRepositoryLayer = (binding: Parameters<typeof productDatabase>[0]) => {
-	const db = productDatabase(binding)
+export const emailRepositoryLayer = (binding: Parameters<typeof database>[0]) => {
+	const db = database(binding)
 	return Layer.succeed(EmailRepository, {
 		reserve: (mail) =>
 			Effect.gen(function* () {

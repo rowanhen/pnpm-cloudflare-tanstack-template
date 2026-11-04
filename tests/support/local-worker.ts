@@ -1,4 +1,4 @@
-import { domains, type Domain } from '../../packages/data/src/domains.ts'
+import { type Domain } from '../../packages/data/src/domains.ts'
 import { observabilityFixture } from './observability-fixture.ts'
 import { z } from 'zod'
 import type { ChildProcess } from 'node:child_process'
@@ -41,13 +41,12 @@ export async function localWorker(port: string | number) {
 		await rm(storage, { recursive: true, force: true })
 	}
 	try {
-		for (const { binding } of Object.values(domains))
-			run(['d1', 'migrations', 'apply', binding, '--local', ...common])
+		run(['d1', 'migrations', 'apply', 'DB', '--local', ...common])
 		const sql = join(storage, 'fixtures.sql')
 		await writeFile(sql, fixture.sql, { mode: 0o600 })
-		run(['d1', 'execute', 'IDENTITY_DB', '--local', ...common, '--file', sql])
+		run(['d1', 'execute', 'DB', '--local', ...common, '--file', sql])
 		await writeFile(sql, fixture.billingSql, { mode: 0o600 })
-		run(['d1', 'execute', 'BILLING_DB', '--local', ...common, '--file', sql])
+		run(['d1', 'execute', 'DB', '--local', ...common, '--file', sql])
 		await rm(sql)
 		stripe = await stripeFixture()
 		telemetry = await observabilityFixture()
@@ -102,7 +101,7 @@ export async function localWorker(port: string | number) {
 			stripeUrl: stripe.url,
 			telemetry,
 			stop,
-			query(statement: string, domain: Domain) {
+			query(statement: string, _domain: Domain) {
 				const result: unknown = JSON.parse(
 					execFileSync(
 						'pnpm',
@@ -111,7 +110,7 @@ export async function localWorker(port: string | number) {
 							'wrangler',
 							'd1',
 							'execute',
-							domains[domain].binding,
+							'DB',
 							'--local',
 							...common,
 							'--command',

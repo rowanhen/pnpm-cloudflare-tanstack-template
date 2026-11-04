@@ -1,11 +1,11 @@
 import { Effect, Layer, Schema } from 'effect'
-import { productDatabase } from '@workspace/data/client'
+import { database } from '@workspace/data/client'
 import { waitlist } from '@workspace/data/product'
 import { eq } from 'drizzle-orm'
 import { storageEffect, decodeStored } from '../../persistence'
 import { WaitlistRepository } from './service'
-export const waitlistRepositoryLayer = (binding: Parameters<typeof productDatabase>[0]) => {
-	const db = productDatabase(binding)
+export const waitlistRepositoryLayer = (binding: Parameters<typeof database>[0]) => {
+	const db = database(binding)
 	return Layer.succeed(WaitlistRepository, {
 		join: (entry) =>
 			storageEffect(() =>
