@@ -105,4 +105,4 @@ Metering tests exercise scope isolation, input conflicts, cross-user results, co
 
 Local suites use the real Worker/D1 runtime with temporary storage. Stripe fixture tests create no Stripe resources and do not complete a real card payment. Follow the [sandbox payment check](payments.md) for that provider integration. Manage remote resources and obsolete Stripe test catalog/webhook entries with their native provider tools.
 
-The credit ledger now lives in `BILLING_DB`; product summary data is read from `PRODUCT_DB` before its response snapshot and debit are saved atomically. See [database consistency](databases.md#references-and-consistency).
+The credit ledger and product data share `DB`. The summary is read before its response snapshot and debit are saved atomically; the initial read is still outside that batch. See [database consistency](databases.md#references-and-consistency).

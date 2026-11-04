@@ -2,13 +2,12 @@ import { mkdtemp, cp, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve, relative } from 'node:path'
 import { spawnSync } from 'node:child_process'
-import { domains } from '../packages/data/src/domains.ts'
 import { root } from './setup-env.ts'
 
-for (const domain of Object.keys(domains)) {
+{
 	const temporary = await mkdtemp(join(tmpdir(), 'starter-schema-'))
 	try {
-		await cp(resolve(root, `apps/api/migrations/${domain}/meta`), join(temporary, 'meta'), {
+		await cp(resolve(root, 'apps/api/migrations/meta'), join(temporary, 'meta'), {
 			recursive: true,
 		})
 		const result = spawnSync(
@@ -22,7 +21,7 @@ for (const domain of Object.keys(domains)) {
 				'--dialect',
 				'sqlite',
 				'--schema',
-				resolve(root, `packages/data/src/${domain}.ts`),
+				resolve(root, 'packages/data/src/schema.ts'),
 				'--out',
 				relative(resolve(root, 'packages/data'), temporary),
 			],

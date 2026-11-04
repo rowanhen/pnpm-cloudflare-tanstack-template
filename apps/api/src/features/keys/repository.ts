@@ -1,6 +1,6 @@
 import { Effect, Layer, Schema } from 'effect'
 import { now } from '@workspace/data/columns'
-import { identityDatabase } from '@workspace/data/client'
+import { database } from '@workspace/data/client'
 import { apiKeys } from '@workspace/data/identity'
 import type { KeyScope } from '@workspace/contracts'
 import { KeysData } from '@workspace/contracts/values'
@@ -15,11 +15,8 @@ const fields = {
 	created_at: apiKeys.created_at,
 	last_used_at: apiKeys.last_used_at,
 }
-export const keyRepositoryLayer = (
-	binding: Parameters<typeof identityDatabase>[0],
-	userId: string,
-) => {
-	const db = identityDatabase(binding)
+export const keyRepositoryLayer = (binding: Parameters<typeof database>[0], userId: string) => {
+	const db = database(binding)
 	return Layer.succeed(KeyRepository, {
 		list: storageEffect(() =>
 			db
@@ -65,10 +62,8 @@ export const keyRepositoryLayer = (
 	})
 }
 
-export const keyAuthenticationRepositoryLayer = (
-	binding: Parameters<typeof identityDatabase>[0],
-) => {
-	const db = identityDatabase(binding)
+export const keyAuthenticationRepositoryLayer = (binding: Parameters<typeof database>[0]) => {
+	const db = database(binding)
 	return Layer.succeed(KeyAuthenticationRepository, {
 		find: (hash) =>
 			storageEffect(() =>

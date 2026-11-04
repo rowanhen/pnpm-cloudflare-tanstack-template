@@ -10,7 +10,7 @@ export const emailLayer = (env: Env) =>
 		Layer.provide(
 			Layer.mergeAll(
 				emailProviderLayer(env.EMAIL, env.EMAIL_FROM, emailEnabled(env)),
-				emailRepositoryLayer(env.PRODUCT_DB),
+				emailRepositoryLayer(env.DB),
 				rateLimiterLayer(env),
 			),
 		),

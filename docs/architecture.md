@@ -21,7 +21,7 @@ HTTP handler → application service → repository contract
 | `packages/contracts/openapi/features/<feature>.json` | Related operations, public schemas and response statuses.                          |
 | `packages/contracts/openapi/shared/`                 | Reusable schemas, errors and responses.                                            |
 | `apps/api/src/features/<feature>/`                   | HTTP entry handlers, application capabilities, domain rules and concrete adapters. |
-| `packages/data/src/{identity,billing,product}.ts`    | Domain storage schemas; independent migrations in `apps/api/migrations/<domain>/`. |
+| `packages/data/src/{identity,billing,product}.ts`    | Feature schemas sharing one database; migrations in `apps/api/migrations/`.        |
 | `src/generated/` directories                         | Generated routes, schemas, contracts, client models, hooks and mocks.              |
 
 `orval.config.ts` uses native multi-file references, tag grouping, cleaning and formatting. `codegen/effect-handlers.ts` is the one custom extension: it adds typed Effect handler contracts, wiring and missing implementation stubs. `scripts/` contains small local setup and migration checks; `tests/` separates unit, API integration and shared support code. Wrangler handles deployment.
@@ -38,7 +38,7 @@ Shared adapters validate requests and each declared status/body pair at runtime.
 
 Todos, storefront, account/config, billing, checkout, keys, waitlist, email, metered API calls, files and the Stripe webhook all use this pattern. Public operations declare `security: []`; cookie sessions are the default, with explicit API-key and Stripe security schemes. The adapter supports JSON, binary transfers, signed raw bodies, path/query/header parameters and bodyless responses. Better Auth alone remains a delegated Hono mount because it owns OAuth redirects and cookies. See the [API walkthrough](api-architecture.md) for examples and limitations, and [deployment](manual-deployment.md) for provider setup.
 
-Storage is split into identity, billing and product D1 databases. See [database boundaries](databases.md) for ownership, consistency and migration from the original database.
+Identity, billing and product tables share one D1 database. See [database boundaries](databases.md) for ownership, consistency and migration from the original database.
 
 ## Rules that survive new features
 

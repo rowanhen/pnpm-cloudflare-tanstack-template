@@ -3,7 +3,7 @@ import { Context, Effect, Exit, Schema } from 'effect'
 import { preserveFatal } from '../effect-errors'
 import type { Handler, Operation } from '@workspace/contracts/operation'
 import { contractError, contractResponse } from '@workspace/contracts/http'
-import { productDatabase } from '@workspace/data/client'
+import { database } from '@workspace/data/client'
 import type { Context as HonoContext, Handler as HonoHandler } from 'hono'
 import { createAuth } from '../auth'
 import type { Env } from '../env'
@@ -20,7 +20,7 @@ export const effectHandler = <O extends Operation>(operation: O, handler: Handle
 		const session = await createAuth(c.env).api.getSession({ headers: c.req.raw.headers })
 		if (!session) throw new HttpError(401, 'Sign in to continue')
 		return Context.make(ApiRequest, {
-			db: productDatabase(c.env.PRODUCT_DB),
+			db: database(c.env.DB),
 			userId: session.user.id,
 			user: {
 				id: session.user.id,

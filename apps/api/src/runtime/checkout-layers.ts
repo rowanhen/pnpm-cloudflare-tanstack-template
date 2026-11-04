@@ -9,7 +9,7 @@ import { rateLimiterLayer } from './rate-limit-layers'
 const dependencies = (env: Env) =>
 	Layer.mergeAll(
 		Layer.succeed(CheckoutSettings, checkoutSettings(env)),
-		checkoutRepositoryLayer(env.BILLING_DB, env.STRIPE_PRICE_ID ?? ''),
+		checkoutRepositoryLayer(env.DB, env.STRIPE_PRICE_ID ?? ''),
 		stripeLayer({
 			secretKey: env.STRIPE_SECRET_KEY,
 			webhookSecret: env.STRIPE_WEBHOOK_SECRET,

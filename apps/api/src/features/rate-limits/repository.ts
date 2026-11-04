@@ -1,11 +1,11 @@
 import { Effect, Layer, Schema } from 'effect'
-import { identityDatabase } from '@workspace/data/client'
+import { database } from '@workspace/data/client'
 import { rateLimits } from '@workspace/data/identity'
 import { sql } from 'drizzle-orm'
 import { storageEffect, decodeStored } from '../../persistence'
 import { RateLimitRepository } from './service'
-export const rateLimitRepositoryLayer = (binding: Parameters<typeof identityDatabase>[0]) => {
-	const db = identityDatabase(binding)
+export const rateLimitRepositoryLayer = (binding: Parameters<typeof database>[0]) => {
+	const db = database(binding)
 	return Layer.succeed(RateLimitRepository, {
 		acquire: (key, limit, window) =>
 			storageEffect(() =>

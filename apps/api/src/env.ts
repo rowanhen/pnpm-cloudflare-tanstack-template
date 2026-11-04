@@ -4,9 +4,7 @@ export interface Env extends ServerConfig {
 	API_PROXY_SECRET?: string
 	EMAIL?: SendEmail
 	EMAIL_FROM?: string
-	IDENTITY_DB: D1Database
-	BILLING_DB: D1Database
-	PRODUCT_DB: D1Database
+	DB: D1Database
 	DATABASE_MAINTENANCE?: string
 	FILES: R2Bucket
 	ALLOWED_ORIGINS: string

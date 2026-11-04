@@ -1,5 +1,5 @@
 import { Context } from 'effect'
-import { productDatabase } from '@workspace/data/client'
+import { database } from '@workspace/data/client'
 import type { Env } from '../env'
 import type { User } from '@workspace/contracts'
 
@@ -11,7 +11,7 @@ export class PublicApiRequest extends Context.Service<
 export class ApiRequest extends Context.Service<
 	ApiRequest,
 	{
-		readonly db: ReturnType<typeof productDatabase>
+		readonly db: ReturnType<typeof database>
 		readonly userId: string
 		readonly user: User
 		readonly request: Request

@@ -15,7 +15,7 @@ test('backend lint rules reject boundary violations and allow adapters', async (
 	await writeFile(join(directory, '.oxlintrc.json'), await readFile(join(root, '.oxlintrc.json')))
 	const cases = [
 		['service.ts', "import type { Context } from 'hono'; export type Request = Context", false],
-		['domain.ts', "export { productDatabase } from '@workspace/data/client'", false],
+		['domain.ts', "export { database } from '@workspace/data/client'", false],
 		[
 			'live.ts',
 			"import { TodoRepository } from './repository'; export const repo = TodoRepository",

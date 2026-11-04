@@ -28,7 +28,7 @@ export default {
 				APP_ENV: 'test',
 			}
 			if (request.headers.get('x-test-observability') === 'error')
-				env.IDENTITY_DB = new Proxy(env.IDENTITY_DB, {
+				env.DB = new Proxy(env.DB, {
 					get() {
 						throw new Error('private-exception')
 					},

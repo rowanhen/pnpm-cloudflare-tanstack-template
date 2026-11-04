@@ -1,6 +1,6 @@
 import { Effect, Layer, Schema } from 'effect'
 import { now } from '@workspace/data/columns'
-import { billingDatabase } from '@workspace/data/client'
+import { database } from '@workspace/data/client'
 import { orders, creditAccounts, creditGrants, stripeEvents } from '@workspace/data/billing'
 import { and, eq, sql } from 'drizzle-orm'
 import { decodeStored, storageEffect } from '../../persistence'
@@ -18,10 +18,10 @@ const fields = {
 	stripe_session_id: orders.stripe_session_id,
 }
 export const checkoutRepositoryLayer = (
-	binding: Parameters<typeof billingDatabase>[0],
+	binding: Parameters<typeof database>[0],
 	fallbackPrice: string,
 ) => {
-	const db = billingDatabase(binding)
+	const db = database(binding)
 	const decodeRow = (row: unknown) => decodeStored(StoredOrder, row)
 	const find = (id: string) =>
 		storageEffect(() => db.select(fields).from(orders).where(eq(orders.id, id)).get()).pipe(

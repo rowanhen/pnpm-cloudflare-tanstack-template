@@ -45,17 +45,17 @@ const sourceSettings = JSON.parse(await readFile(sourceConfig, 'utf8')) as {
 	d1_databases: { binding: string; database_id: string }[]
 }
 const targetSettings = JSON.parse(await readFile(targetConfig, 'utf8')) as typeof sourceSettings
-const sourceId = sourceSettings.d1_databases.find(
-	(db) => db.binding === values['source-binding'],
-)?.database_id
-if (!sourceId) throw new Error('Source binding not found')
-const targetIds = new Set<string>()
-for (const { binding } of Object.values(domains)) {
-	const targetId = targetSettings.d1_databases.find((db) => db.binding === binding)?.database_id
-	if (!targetId || sourceId === targetId || targetIds.has(targetId))
-		throw new Error(`Use a distinct, fresh database for ${binding}`)
-	targetIds.add(targetId)
-}
+const targetId = targetSettings.d1_databases.find((db) => db.binding === 'DB')?.database_id
+if (!targetId || targetSettings.d1_databases.length !== 1)
+	throw new Error('Target must contain exactly one DB binding')
+const sources = Object.entries(domains).map(([domain, { binding }]) => {
+	const source =
+		sourceSettings.d1_databases.find((db) => db.binding === binding) ??
+		sourceSettings.d1_databases.find((db) => db.binding === values['source-binding'])
+	if (!source || source.database_id === targetId)
+		throw new Error(`Use a fresh target database distinct from ${binding}`)
+	return { domain: domain as Domain, binding: source.binding }
+})
 const backup = resolve(values['backup-dir'])
 await mkdir(backup, { mode: 0o700 }) // Deliberately refuse an existing backup directory.
 const env = await setupEnv()
@@ -91,48 +91,57 @@ async function exportDb(binding: string, config: string, name: string) {
 	await chmod(path, 0o600)
 	return readDump(await readFile(path, 'utf8'))
 }
-const source = await exportDb(values['source-binding'] ?? 'DB', sourceConfig, 'source.sql')
+const snapshots = new Map<string, ReturnType<typeof readDump>>()
+function snapshot(binding: string) {
+	const source = snapshots.get(binding)
+	if (!source) throw new Error(`Missing source snapshot: ${binding}`)
+	return source
+}
 try {
+	// Export every source before changing the destination. Keep private backups for rollback.
+	for (const { binding } of sources) {
+		if (!snapshots.has(binding))
+			snapshots.set(binding, await exportDb(binding, sourceConfig, `${binding}-source.sql`))
+	}
 	const known = new Set(Object.values(domains).flatMap((domain) => [...domain.tables]) as string[])
-	for (const { name } of source
-		.prepare("SELECT name FROM sqlite_schema WHERE type='table'")
-		.all()) {
-		if (
-			typeof name !== 'string' ||
-			known.has(name) ||
-			name === 'd1_migrations' ||
-			name.startsWith('_cf_') ||
-			name.startsWith('sqlite_')
-		)
-			continue
-		throw new Error(`Source table has no domain mapping: ${name}`)
-	}
-	// Refuse before copying anything if any destination already contains application data.
-	for (const [domain, { binding, tables }] of Object.entries(domains)) {
-		run(['migrations', 'apply', binding, '--config', targetConfig, ...common])
-		const target = await exportDb(binding, targetConfig, `${domain}-before.sql`)
-		try {
-			if (tables.some((table) => rows(target, table).length))
-				throw new Error(`Destination is not empty: ${domain}`)
-		} finally {
-			target.close()
+	for (const source of snapshots.values()) {
+		for (const { name } of source
+			.prepare("SELECT name FROM sqlite_schema WHERE type='table'")
+			.all()) {
+			if (
+				typeof name === 'string' &&
+				!known.has(name) &&
+				name !== 'd1_migrations' &&
+				!name.startsWith('_cf_') &&
+				!name.startsWith('sqlite_')
+			)
+				throw new Error(`Source table has no mapping: ${name}`)
 		}
 	}
-	for (const [domain, { binding }] of Object.entries(domains)) {
-		const path = join(backup, `${domain}-data.sql`)
-		await writeFile(path, copySql(source, domain as Domain), { mode: 0o600 })
-		run(['execute', binding, '--config', targetConfig, ...common, '--file', path])
-		const target = await exportDb(binding, targetConfig, `${domain}-verified.sql`)
-		try {
-			verifyCopy(source, target, domain as Domain)
-		} finally {
-			target.close()
-		}
-		console.log(`${domain}: every record verified`)
+	run(['migrations', 'apply', 'DB', '--config', targetConfig, ...common])
+	const before = await exportDb('DB', targetConfig, 'target-before.sql')
+	try {
+		if ([...known].some((table) => rows(before, table).length))
+			throw new Error('Destination is not empty')
+	} finally {
+		before.close()
+	}
+	const path = join(backup, 'application-data.sql')
+	await writeFile(
+		path,
+		sources.map(({ domain, binding }) => copySql(snapshot(binding), domain)).join('\n'),
+		{ mode: 0o600 },
+	)
+	run(['execute', 'DB', '--config', targetConfig, ...common, '--file', path])
+	const target = await exportDb('DB', targetConfig, 'target-verified.sql')
+	try {
+		for (const { domain, binding } of sources) verifyCopy(snapshot(binding), target, domain)
+	} finally {
+		target.close()
 	}
 	console.log(
-		'Copy complete. Source unchanged. Deploy the target bindings before disabling maintenance.',
+		'Every record verified. Sources unchanged. Deploy the DB binding before disabling maintenance.',
 	)
 } finally {
-	source.close()
+	for (const source of snapshots.values()) source.close()
 }
