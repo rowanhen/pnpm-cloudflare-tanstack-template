@@ -38,14 +38,14 @@
 	},
 	"devDependencies": {
 		"@dotenvx/dotenvx": "^2.38.2",
-		"@types/node": "26.6.5",
-		"effect": "4.0.6",
-		"orval": "8.44.0",
-		"oxfmt": "^0.74.0",
-		"oxlint": "^1.89.0",
+		"@types/node": "26.6.6",
+		"effect": "4.1.1",
+		"orval": "8.46.0",
+		"oxfmt": "^0.75.0",
+		"oxlint": "^1.90.0",
 		"tsx": "4.23.15",
 		"typescript": "7.0.2",
-		"wrangler": "^4.152.0",
+		"wrangler": "^4.156.0",
 		"zod": "4.6.7"
 	},
 	"engines": {
