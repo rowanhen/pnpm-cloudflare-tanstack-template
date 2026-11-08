@@ -109,7 +109,7 @@ export const joinWaitlist = {
 export type JoinWaitlistInput = InputOf<typeof joinWaitlist>
 export type JoinWaitlistSuccess = SuccessOf<typeof joinWaitlist>
 export type JoinWaitlistFailure = FailureOf<typeof joinWaitlist>
-export type JoinWaitlistHandler<R = never> = Handler<typeof joinWaitlist, R>
+export type JoinWaitlistHandler<R = never, E = never> = Handler<typeof joinWaitlist, R, E>
 export const GetWaitlistStatus200Response = S.Struct({
 	joined: S.Boolean,
 	entry: S.NullOr(
@@ -178,4 +178,4 @@ export const getWaitlistStatus = {
 export type GetWaitlistStatusInput = InputOf<typeof getWaitlistStatus>
 export type GetWaitlistStatusSuccess = SuccessOf<typeof getWaitlistStatus>
 export type GetWaitlistStatusFailure = FailureOf<typeof getWaitlistStatus>
-export type GetWaitlistStatusHandler<R = never> = Handler<typeof getWaitlistStatus, R>
+export type GetWaitlistStatusHandler<R = never, E = never> = Handler<typeof getWaitlistStatus, R, E>

@@ -1,5 +1,5 @@
-import { useNavigate } from '@tanstack/react-router'
 import { Alert, Button, Skeleton, Input, Label, Stack } from '@workspace/shared'
+import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import {
@@ -83,8 +83,10 @@ function Form({
 }) {
 	const navigate = useNavigate()
 	const checkout = useCheckoutElements()
-	const [busy, setBusy] = useState(false)
-	const [error, setError] = useState('')
+	const [submission, setSubmission] = useState<
+		{ status: 'idle' | 'confirming' | 'redirecting' } | { status: 'error'; message: string }
+	>({ status: 'idle' })
+	const busy = submission.status === 'confirming' || submission.status === 'redirecting'
 	const [email, setEmail] = useState('')
 	const back = onBack && (
 		<Button type="button" variant="link" disabled={busy} onClick={onBack}>
@@ -112,21 +114,25 @@ function Form({
 			className="space-y-6"
 			onSubmit={async (event) => {
 				event.preventDefault()
-				setBusy(true)
-				setError('')
+				if (busy) return
+				setSubmission({ status: 'confirming' })
 				try {
 					const result = await checkout.checkout.confirm({
 						redirect: 'if_required',
 						...(collectEmail ? { email: email.trim() } : {}),
 					})
 					if (result.type === 'error') {
-						setError(result.error.message)
-						setBusy(false)
-					} else if (onComplete) await onComplete()
-					else await navigate({ to: '/checkout/success', search: { session_id: sessionId } })
+						setSubmission({ status: 'error', message: result.error.message })
+					} else {
+						setSubmission({ status: 'redirecting' })
+						if (onComplete) await onComplete()
+						else await navigate({ to: '/checkout/success', search: { session_id: sessionId } })
+					}
 				} catch {
-					setError('Payment could not be confirmed. Please try again.')
-					setBusy(false)
+					setSubmission({
+						status: 'error',
+						message: 'Payment could not be confirmed. Please try again.',
+					})
 				}
 			}}
 		>
@@ -146,7 +152,7 @@ function Form({
 				</Stack>
 			)}
 			<PaymentElement options={{ layout: 'tabs', wallets: { link: 'never' } }} />
-			{error && <Alert type="negative">{error}</Alert>}
+			{submission.status === 'error' && <Alert type="negative">{submission.message}</Alert>}
 			<Button className="w-full" size="lg" disabled={busy} type="submit">
 				{busy ? 'Confirming…' : (submitLabel ?? `Pay ${checkout.checkout.total.total.amount}`)}
 			</Button>

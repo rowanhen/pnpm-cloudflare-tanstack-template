@@ -1,14 +1,13 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { Cause, Effect, Exit, Layer } from 'effect'
+import { Cause, Effect, Exit } from 'effect'
 import type { Todo } from '@workspace/contracts'
-import { TodoLive } from '../../apps/api/src/features/todos/live.ts'
-import { InvalidTodo } from '../../apps/api/src/features/todos/domain.ts'
 import {
+	makeTodos,
+	InvalidTodo,
 	TodoNotFound,
-	TodoRepository,
-	TodoService,
-} from '../../apps/api/src/features/todos/service.ts'
+	type TodoRepository,
+} from '../../apps/api/src/features/todos/todos.ts'
 import { StorageError, storageEffect } from '../../apps/api/src/persistence.ts'
 import { preserveFatal } from '../../apps/api/src/effect-errors.ts'
 
@@ -18,9 +17,9 @@ const todo: Todo = {
 	completed: false,
 	created_at: '2026-10-29T10:00:00Z',
 }
-function fixture(overrides: Partial<typeof TodoRepository.Service> = {}) {
+function fixture(overrides: Partial<TodoRepository> = {}) {
 	const writes: unknown[] = []
-	const repository: typeof TodoRepository.Service = {
+	const repository: TodoRepository = {
 		list: Effect.succeed([todo]),
 		find: (id) => Effect.succeed(id === todo.id ? todo : undefined),
 		create: (title) =>
@@ -36,23 +35,17 @@ function fixture(overrides: Partial<typeof TodoRepository.Service> = {}) {
 		remove: (id) => Effect.succeed(id === todo.id),
 		...overrides,
 	}
-	const layer = TodoLive.pipe(Layer.provide(Layer.succeed(TodoRepository, repository)))
-	return { writes, layer }
+	return { writes, todos: makeTodos(repository) }
 }
-const withTodos = <A, E>(program: (service: typeof TodoService.Service) => Effect.Effect<A, E>) =>
-	Effect.flatMap(TodoService, program)
-
 test('production todo workflow runs with an injected repository and preserves valid partial changes', async () => {
-	const { writes, layer } = fixture()
+	const { writes, todos } = fixture()
 	const result = await Effect.runPromise(
-		withTodos((service) =>
-			Effect.gen(function* () {
-				const created = yield* service.create('  New task  ')
-				const updated = yield* service.update('one', { completed: false })
-				const renamed = yield* service.update('one', { title: '  Renamed  ', completed: true })
-				return { created, updated, renamed, listed: yield* service.list }
-			}),
-		).pipe(Effect.provide(layer)),
+		Effect.gen(function* () {
+			const created = yield* todos.create('  New task  ')
+			const updated = yield* todos.update('one', { completed: false })
+			const renamed = yield* todos.update('one', { title: '  Renamed  ', completed: true })
+			return { created, updated, renamed, listed: yield* todos.list }
+		}),
 	)
 	assert.equal(result.created.title, 'New task')
 	assert.equal(result.updated.title, 'Example')
@@ -68,40 +61,38 @@ test('production todo workflow runs with an injected repository and preserves va
 })
 
 test('internal callers cannot write invalid titles or empty/unknown changes', async () => {
-	const { writes, layer } = fixture()
+	const { writes, todos } = fixture()
 	const unexpected = { completed: true, user_id: 'another-user' }
 	const programs = [
-		withTodos((s) => s.create('   ')),
-		withTodos((s) => s.create('x'.repeat(201))),
-		withTodos((s) => s.update('one', {})),
-		withTodos((s) => s.update('one', { title: '   ' })),
-		withTodos((s) => s.update('one', unexpected)),
+		todos.create('   '),
+		todos.create('x'.repeat(201)),
+		todos.update('one', {}),
+		todos.update('one', { title: '   ' }),
+		todos.update('one', unexpected),
 	]
 	for (const program of programs) {
-		const result = await Effect.runPromise(program.pipe(Effect.provide(layer), Effect.flip))
+		const result = await Effect.runPromise(program.pipe(Effect.flip))
 		assert.ok(result instanceof InvalidTodo)
 	}
 	assert.deepEqual(writes, [])
 })
 
 test('missing todos stay typed domain errors for all owned-record operations', async () => {
-	const { layer } = fixture()
+	const { todos } = fixture()
 	for (const program of [
-		withTodos((s) => s.get('missing')),
-		withTodos((s) => s.update('missing', { completed: true })),
-		withTodos((s) => s.remove('missing')),
+		todos.get('missing'),
+		todos.update('missing', { completed: true }),
+		todos.remove('missing'),
 	]) {
-		const error = await Effect.runPromise(program.pipe(Effect.provide(layer), Effect.flip))
+		const error = await Effect.runPromise(program.pipe(Effect.flip))
 		assert.ok(error instanceof TodoNotFound)
 	}
 })
 
 test('storage failures retain their cause and are never mistaken for a missing record', async () => {
 	const failure = new StorageError({ cause: new Error('database unavailable') })
-	const { layer } = fixture({ find: () => Effect.fail(failure) })
-	const result = await Effect.runPromise(
-		withTodos((s) => s.get('one')).pipe(Effect.provide(layer), Effect.flip),
-	)
+	const { todos } = fixture({ find: () => Effect.fail(failure) })
+	const result = await Effect.runPromise(todos.get('one').pipe(Effect.flip))
 	assert.equal(result, failure)
 })
 

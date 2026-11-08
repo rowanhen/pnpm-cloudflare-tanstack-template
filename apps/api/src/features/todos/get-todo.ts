@@ -1,23 +1,16 @@
 import { Effect } from 'effect'
-import type { GetTodoHandler } from '@workspace/contracts/operations'
+import { getTodo as operation, type GetTodoHandler } from '@workspace/contracts/operations'
 import { ApiRequest } from '../../contract/context'
-import { preserveFatal } from '../../effect-errors'
-import { userTodoLayer } from '../../runtime/user-layers'
-import { TodoService } from './service'
-import { todoNotFoundResponse } from './http-errors'
+import { userTodos } from '../../runtime/user-resources'
+import { respond } from '../../contract/service'
+import { todoError } from './http-errors'
 
 export const getTodo: GetTodoHandler<ApiRequest> = ({ params }) =>
 	Effect.gen(function* () {
 		const { db, userId } = yield* ApiRequest
-		const program = Effect.gen(function* () {
-			const service = yield* TodoService
-			return yield* service.get(params.id)
-		})
-		const todo = yield* program.pipe(
-			Effect.provide(userTodoLayer(db, userId)),
-			preserveFatal,
-			Effect.catchTag('TodoNotFound', todoNotFoundResponse),
-			Effect.catchTag('StorageError', Effect.die),
+		const todo = yield* respond(
+			operation,
+			userTodos(db, userId).get(params.id).pipe(Effect.mapError(todoError)),
 		)
 		return { status: 200, body: { todo } }
 	})

@@ -5,8 +5,7 @@ import {
 } from '@workspace/contracts/operations'
 import { ApiKeyRequest } from '../../contract/context'
 import { respond } from '../../contract/service'
-import { SummaryService } from './service'
-import { summaryLayer } from '../../runtime/summary-layers'
+import { userSummary } from '../../runtime/summary-resources'
 import { chargedHeaders } from '../billing/http'
 
 export const createSummary: CreateSummaryHandler<ApiKeyRequest> = (input) =>
@@ -14,9 +13,11 @@ export const createSummary: CreateSummaryHandler<ApiKeyRequest> = (input) =>
 		const ctx = yield* ApiKeyRequest
 		const value = yield* respond(
 			operation,
-			Effect.flatMap(SummaryService, (s) =>
-				s.create(ctx.keyId, input.headers['idempotency-key'], input.body),
-			).pipe(Effect.provide(summaryLayer(ctx.env, ctx.userId))),
+			userSummary(ctx.env, ctx.userId).create(
+				ctx.keyId,
+				input.headers['idempotency-key'],
+				input.body,
+			),
 		)
 		return {
 			status: 200,

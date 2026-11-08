@@ -49,6 +49,17 @@ Signed-in users can select **Send me a test**, which posts `{ requestId: crypto.
 
 `email_deliveries` records each attempt before contacting the provider. A unique key prevents concurrent sends and retries from sending twice. An accepted retry returns the same message ID. Failed or interrupted attempts are not automatically retried: a timeout might mean the provider accepted the email. Inspect provider logs before deliberately using a new request ID. This is a small synchronous sending example, not a background queue with guaranteed delivery. `accepted` means provider acceptance, not inbox delivery; bounces and spam filtering remain possible.
 
+### Resolving an interrupted or ambiguous delivery
+
+`sending` means the reservation exists but no settlement was saved. It does **not** establish whether the provider accepted the message. A Worker termination, an indefinitely pending provider call, or a failed database settlement can leave it there. There is intentionally no age-based reclaim, automatic resend or deletion of the deduplication record. `failed` also forbids replay with the same request ID because a provider exception can be ambiguous.
+
+1. Identify the delivery by its saved ID and creation time, then check provider records for the intended recipient and template. Use restricted operational access; do not copy recipient data into public logs or tickets. Stop any still-active sender before making a manual resolution.
+2. If provider acceptance is confirmed, retain the dedupe record. Record the provider message ID and evidence in the incident record; an operator may reconcile the row from `sending` to `accepted` with that exact message ID, clearing `error_code`. Use a guarded update (`id` and current `status = sending`) and require exactly one changed row. Never label it accepted based solely on elapsed time.
+3. If the provider confirms non-acceptance, record the evidence and close the original `sending` row as `failed` with `message_id = null` and an operational error code such as `CONFIRMED_NOT_SENT`, again with a guarded update. A verified user can then explicitly request a new test email with a **new** request ID: reload the workspace before selecting **Send me a test**. Retrying in the same mounted page intentionally keeps the old request ID. Preserve the original attempt for audit.
+4. If the outcome cannot be established, leave the attempt unchanged and record it as unresolved. A deliberate replacement may duplicate an email; it requires an explicit operator/user decision. Duplicate waitlist signups intentionally do not resend: resolve them operationally, without deleting the signup or its consent history to trigger another confirmation.
+
+This is an at-most-one-send-attempt-per-key policy, not guaranteed delivery. No automated recovery command is supplied because provider acceptance is not transactional with D1 and the current adapter exposes sending, without a delivery lookup. If delivery guarantees become a requirement, introduce a queue and a provider-supported idempotency/reconciliation contract before adding retries.
+
 ### Local simulation
 
 Set `EMAIL_FROM=starter@example.test` in your ignored `apps/api/.dev.vars`, then run `pnpm dev`. The tracked `send_email` binding has no `remote: true`; Wrangler simulates sending and prints paths to the text/HTML files. Local API tests use that simulator, including injected failure tests. No real mail is sent by automated tests. See [Cloudflare's local email documentation](https://developers.cloudflare.com/email-service/local-development/sending/).

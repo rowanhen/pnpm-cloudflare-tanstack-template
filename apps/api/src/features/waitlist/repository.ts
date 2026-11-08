@@ -1,12 +1,12 @@
-import { Effect, Layer, Schema } from 'effect'
+import { Effect, Schema } from 'effect'
 import { database } from '@workspace/data/client'
 import { waitlist } from '@workspace/data/product'
 import { eq } from 'drizzle-orm'
 import { storageEffect, decodeStored } from '../../persistence'
-import { WaitlistRepository } from './service'
-export const waitlistRepositoryLayer = (binding: Parameters<typeof database>[0]) => {
+import type { WaitlistRepository } from './waitlist'
+export const waitlistRepository = (binding: Parameters<typeof database>[0]) => {
 	const db = database(binding)
-	return Layer.succeed(WaitlistRepository, {
+	return {
 		join: (entry) =>
 			storageEffect(() =>
 				db
@@ -18,7 +18,7 @@ export const waitlistRepositoryLayer = (binding: Parameters<typeof database>[0])
 			).pipe(
 				Effect.flatMap((row) =>
 					row === undefined
-						? Effect.succeed(undefined)
+						? Effect.undefined
 						: decodeStored(Schema.Struct({ id: Schema.String }), row).pipe(Effect.map((r) => r.id)),
 				),
 			),
@@ -32,9 +32,9 @@ export const waitlistRepositoryLayer = (binding: Parameters<typeof database>[0])
 			).pipe(
 				Effect.flatMap((row) =>
 					row === undefined
-						? Effect.succeed(undefined)
+						? Effect.undefined
 						: decodeStored(Schema.Struct({ created_at: Schema.String }), row),
 				),
 			),
-	})
+	} satisfies WaitlistRepository
 }

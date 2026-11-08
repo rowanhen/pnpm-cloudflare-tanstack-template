@@ -88,7 +88,7 @@ export const listTodos = {
 export type ListTodosInput = InputOf<typeof listTodos>
 export type ListTodosSuccess = SuccessOf<typeof listTodos>
 export type ListTodosFailure = FailureOf<typeof listTodos>
-export type ListTodosHandler<R = never> = Handler<typeof listTodos, R>
+export type ListTodosHandler<R = never, E = never> = Handler<typeof listTodos, R, E>
 export const createTodoBodyTitleMax = 200
 
 export const createTodoBodyTitleRegExp = new RegExp('\\S')
@@ -191,7 +191,7 @@ export const createTodo = {
 export type CreateTodoInput = InputOf<typeof createTodo>
 export type CreateTodoSuccess = SuccessOf<typeof createTodo>
 export type CreateTodoFailure = FailureOf<typeof createTodo>
-export type CreateTodoHandler<R = never> = Handler<typeof createTodo, R>
+export type CreateTodoHandler<R = never, E = never> = Handler<typeof createTodo, R, E>
 export const getTodoPathIdMax = 200
 
 export const GetTodoParams = S.Struct({
@@ -281,7 +281,7 @@ export const getTodo = {
 export type GetTodoInput = InputOf<typeof getTodo>
 export type GetTodoSuccess = SuccessOf<typeof getTodo>
 export type GetTodoFailure = FailureOf<typeof getTodo>
-export type GetTodoHandler<R = never> = Handler<typeof getTodo, R>
+export type GetTodoHandler<R = never, E = never> = Handler<typeof getTodo, R, E>
 export const updateTodoPathIdMax = 200
 
 export const UpdateTodoParams = S.Struct({
@@ -400,7 +400,7 @@ export const updateTodo = {
 export type UpdateTodoInput = InputOf<typeof updateTodo>
 export type UpdateTodoSuccess = SuccessOf<typeof updateTodo>
 export type UpdateTodoFailure = FailureOf<typeof updateTodo>
-export type UpdateTodoHandler<R = never> = Handler<typeof updateTodo, R>
+export type UpdateTodoHandler<R = never, E = never> = Handler<typeof updateTodo, R, E>
 export const deleteTodoPathIdMax = 200
 
 export const DeleteTodoParams = S.Struct({
@@ -473,4 +473,4 @@ export const deleteTodo = {
 export type DeleteTodoInput = InputOf<typeof deleteTodo>
 export type DeleteTodoSuccess = SuccessOf<typeof deleteTodo>
 export type DeleteTodoFailure = FailureOf<typeof deleteTodo>
-export type DeleteTodoHandler<R = never> = Handler<typeof deleteTodo, R>
+export type DeleteTodoHandler<R = never, E = never> = Handler<typeof deleteTodo, R, E>

@@ -1,5 +1,5 @@
-import { Button, Container, Typography, Stack, Section } from '@leitware/composables'
-import { Link } from '@tanstack/react-router'
+import { LinkButton } from './link-button'
+import { Container, Typography, Stack, Section } from '@leitware/composables'
 
 import type { ReactNode } from 'react'
 
@@ -20,13 +20,9 @@ export function AppShell({
 		<div className="min-h-svh">
 			<Container maxWidth="md">
 				<header className="flex flex-wrap items-center justify-between gap-4 border-b py-6">
-					<Button
-						variant="ghost"
-						{...{ nativeButton: false }}
-						render={<Link aria-label={APP_NAME} role="link" to="/" />}
-					>
+					<LinkButton variant="ghost" aria-label={APP_NAME} to="/">
 						{APP_NAME}
-					</Button>
+					</LinkButton>
 					{actions && (
 						<nav aria-label="Workspace navigation" className="flex items-center gap-3">
 							{actions}

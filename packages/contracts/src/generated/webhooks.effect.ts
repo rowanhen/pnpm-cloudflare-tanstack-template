@@ -91,4 +91,8 @@ export const receiveStripeWebhook = {
 export type ReceiveStripeWebhookInput = InputOf<typeof receiveStripeWebhook>
 export type ReceiveStripeWebhookSuccess = SuccessOf<typeof receiveStripeWebhook>
 export type ReceiveStripeWebhookFailure = FailureOf<typeof receiveStripeWebhook>
-export type ReceiveStripeWebhookHandler<R = never> = Handler<typeof receiveStripeWebhook, R>
+export type ReceiveStripeWebhookHandler<R = never, E = never> = Handler<
+	typeof receiveStripeWebhook,
+	R,
+	E
+>

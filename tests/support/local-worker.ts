@@ -14,7 +14,10 @@ import { waitForApi } from '../integration/api.ts'
 import { stripeFixture } from './stripe-fixture.ts'
 
 const root = fileURLToPath(new URL('../..', import.meta.url))
-export async function localWorker(port: string | number) {
+export async function localWorker(
+	port: string | number,
+	origins = { marketing: 'http://localhost:3000', dashboard: 'http://localhost:3001' },
+) {
 	const storage = await mkdtemp(join(tmpdir(), 'cloudflare-template-test-'))
 	const secret = randomBytes(32).toString('hex')
 	const fixture = fixtures(secret)
@@ -61,6 +64,10 @@ export async function localWorker(port: string | number) {
 				...common,
 				'--port',
 				String(port),
+				'--var',
+				`AUTH_URL:${origins.dashboard}`,
+				'--var',
+				`ALLOWED_ORIGINS:${origins.marketing},${origins.dashboard}`,
 				'--var',
 				`BETTER_AUTH_SECRET:${secret}`,
 				'--var',

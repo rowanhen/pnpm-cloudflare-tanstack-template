@@ -81,4 +81,4 @@ export const getBilling = {
 export type GetBillingInput = InputOf<typeof getBilling>
 export type GetBillingSuccess = SuccessOf<typeof getBilling>
 export type GetBillingFailure = FailureOf<typeof getBilling>
-export type GetBillingHandler<R = never> = Handler<typeof getBilling, R>
+export type GetBillingHandler<R = never, E = never> = Handler<typeof getBilling, R, E>

@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { LinkButton } from './link-button'
 import { Button, Stack } from '@leitware/composables'
 import { useEffect } from 'react'
 import { reportError } from '@workspace/observability/browser'
@@ -35,12 +35,9 @@ export function PageState({
 export function NotFoundPage() {
 	return (
 		<PageState kind="not-found" title="Page not found">
-			<Button
-				{...{ nativeButton: false }}
-				render={<Link aria-label="Back to home" role="link" to="/" />}
-			>
+			<LinkButton aria-label="Back to home" to="/">
 				Back to home
-			</Button>
+			</LinkButton>
 		</PageState>
 	)
 }
@@ -52,13 +49,9 @@ export function ErrorPage({ retry, error }: { retry?: () => void; error?: unknow
 	return (
 		<PageState kind="error" title="Couldn't load this page">
 			<Button onClick={retry ?? (() => window.location.reload())}>Try again</Button>
-			<Button
-				variant="outline"
-				{...{ nativeButton: false }}
-				render={<Link aria-label="Back to home" role="link" to="/" />}
-			>
+			<LinkButton variant="outline" aria-label="Back to home" to="/">
 				Back to home
-			</Button>
+			</LinkButton>
 		</PageState>
 	)
 }

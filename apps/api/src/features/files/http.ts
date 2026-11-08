@@ -1,4 +1,4 @@
-import type { StoredFile } from './service'
+import type { StoredFile } from './files'
 export function fileHeaders(file: StoredFile) {
 	const names = {
 		contentType: 'Content-Type',

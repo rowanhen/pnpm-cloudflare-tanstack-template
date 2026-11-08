@@ -1,6 +1,6 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { AnchorButton, LinkButton, PageState } from '@workspace/shared'
+import { createFileRoute } from '@tanstack/react-router'
 
-import { Button, PageState } from '@workspace/shared'
 import { site } from '../lib/seo'
 
 export const Route = createFileRoute('/waitlist/success')({
@@ -13,19 +13,12 @@ export const Route = createFileRoute('/waitlist/success')({
 	component: () => (
 		<div>
 			<PageState kind="success" title="You're on the list.">
-				<Button
-					{...{ nativeButton: false }}
-					render={<a role="link" aria-label="Open workspace" href={site.dashboard} />}
-				>
+				<AnchorButton aria-label="Open workspace" href={site.dashboard}>
 					Open workspace
-				</Button>
-				<Button
-					variant="outline"
-					{...{ nativeButton: false }}
-					render={<Link aria-label="Back to home" role="link" to="/" />}
-				>
+				</AnchorButton>
+				<LinkButton variant="outline" aria-label="Back to home" to="/">
 					Back to home
-				</Button>
+				</LinkButton>
 			</PageState>
 		</div>
 	),

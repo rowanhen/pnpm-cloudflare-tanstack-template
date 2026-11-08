@@ -95,7 +95,7 @@ export const listFiles = {
 export type ListFilesInput = InputOf<typeof listFiles>
 export type ListFilesSuccess = SuccessOf<typeof listFiles>
 export type ListFilesFailure = FailureOf<typeof listFiles>
-export type ListFilesHandler<R = never> = Handler<typeof listFiles, R>
+export type ListFilesHandler<R = never, E = never> = Handler<typeof listFiles, R, E>
 export const uploadFilePathKeyRegExp = new RegExp('^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$')
 
 export const UploadFileParams = S.Struct({
@@ -183,7 +183,7 @@ export const uploadFile = {
 export type UploadFileInput = InputOf<typeof uploadFile>
 export type UploadFileSuccess = SuccessOf<typeof uploadFile>
 export type UploadFileFailure = FailureOf<typeof uploadFile>
-export type UploadFileHandler<R = never> = Handler<typeof uploadFile, R>
+export type UploadFileHandler<R = never, E = never> = Handler<typeof uploadFile, R, E>
 export const downloadFilePathKeyRegExp = new RegExp('^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$')
 
 export const DownloadFileParams = S.Struct({
@@ -256,7 +256,7 @@ export const downloadFile = {
 export type DownloadFileInput = InputOf<typeof downloadFile>
 export type DownloadFileSuccess = SuccessOf<typeof downloadFile>
 export type DownloadFileFailure = FailureOf<typeof downloadFile>
-export type DownloadFileHandler<R = never> = Handler<typeof downloadFile, R>
+export type DownloadFileHandler<R = never, E = never> = Handler<typeof downloadFile, R, E>
 export const headFilePathKeyRegExp = new RegExp('^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$')
 
 export const HeadFileParams = S.Struct({
@@ -299,7 +299,7 @@ export const headFile = {
 export type HeadFileInput = InputOf<typeof headFile>
 export type HeadFileSuccess = SuccessOf<typeof headFile>
 export type HeadFileFailure = FailureOf<typeof headFile>
-export type HeadFileHandler<R = never> = Handler<typeof headFile, R>
+export type HeadFileHandler<R = never, E = never> = Handler<typeof headFile, R, E>
 export const deleteFilePathKeyRegExp = new RegExp('^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$')
 
 export const DeleteFileParams = S.Struct({
@@ -365,4 +365,4 @@ export const deleteFile = {
 export type DeleteFileInput = InputOf<typeof deleteFile>
 export type DeleteFileSuccess = SuccessOf<typeof deleteFile>
 export type DeleteFileFailure = FailureOf<typeof deleteFile>
-export type DeleteFileHandler<R = never> = Handler<typeof deleteFile, R>
+export type DeleteFileHandler<R = never, E = never> = Handler<typeof deleteFile, R, E>

@@ -1,6 +1,6 @@
 import { Effect, Schema } from 'effect'
 import { InvalidInput } from '../../errors'
-import type { PaymentSession } from '../payments/service'
+import type { PaymentSession } from '../payments/payments'
 const fields = {
 	id: Schema.String,
 	user_id: Schema.String,

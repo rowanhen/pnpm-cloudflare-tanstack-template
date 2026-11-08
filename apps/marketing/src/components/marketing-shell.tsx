@@ -1,5 +1,4 @@
-import { Button, Container, Stack } from '@workspace/shared'
-import { Link } from '@tanstack/react-router'
+import { AnchorButton, LinkButton, Container, Stack } from '@workspace/shared'
 
 import type { ReactNode } from 'react'
 
@@ -10,64 +9,49 @@ export function MarketingShell({ children }: { children: ReactNode }) {
 		<div className="min-h-svh">
 			<Container maxWidth="md">
 				<header className="flex items-center justify-between gap-4 border-b py-6">
-					<Button
-						variant="ghost"
-						{...{ nativeButton: false }}
-						render={<Link aria-label={site.name} role="link" to="/" />}
-					>
+					<LinkButton variant="ghost" aria-label={site.name} to="/">
 						{site.name}
-					</Button>
+					</LinkButton>
 					<nav aria-label="Main navigation" className="flex items-center gap-4">
-						<Button
+						<LinkButton
 							variant="ghost"
-							{...{ nativeButton: false }}
-							render={<Link aria-label="Setup" role="link" to="/" hash="setup" />}
+							aria-label="Setup"
+							to="/"
+							hash="setup"
 							className="hidden sm:inline-flex"
 						>
 							Setup
-						</Button>
-						<Button
+						</LinkButton>
+						<AnchorButton
 							variant="ghost"
-							{...{ nativeButton: false }}
-							render={<a role="link" aria-label="GitHub" href={repository} />}
+							aria-label="GitHub"
+							href={repository}
 							className="hidden sm:inline-flex"
 						>
 							GitHub ↗
-						</Button>
-						<Button
-							variant="ghost"
-							{...{ nativeButton: false }}
-							render={<a role="link" aria-label="Sign in" href={site.dashboard} />}
-						>
+						</AnchorButton>
+						<AnchorButton variant="ghost" aria-label="Sign in" href={site.dashboard}>
 							Sign in ↗
-						</Button>
+						</AnchorButton>
 					</nav>
 				</header>
 				<main>{children}</main>
 				<footer className="border-t py-8">
 					<Stack gap={4} direction="horizontal" justify="between" wrap>
-						<Button
+						<AnchorButton
 							variant="ghost"
-							{...{ nativeButton: false }}
-							render={<a role="link" aria-label="Built by Leitware" href="https://leitware.com" />}
+							aria-label="Built by Leitware"
+							href="https://leitware.com"
 						>
 							Built by Leitware ↗
-						</Button>
+						</AnchorButton>
 						<nav aria-label="Footer navigation" className="flex gap-5">
-							<Button
-								variant="ghost"
-								{...{ nativeButton: false }}
-								render={<Link aria-label="Privacy" role="link" to="/privacy" />}
-							>
+							<LinkButton variant="ghost" aria-label="Privacy" to="/privacy">
 								Privacy
-							</Button>
-							<Button
-								variant="ghost"
-								{...{ nativeButton: false }}
-								render={<a role="link" aria-label="Sign in" href={site.dashboard} />}
-							>
+							</LinkButton>
+							<AnchorButton variant="ghost" aria-label="Sign in" href={site.dashboard}>
 								Sign in
-							</Button>
+							</AnchorButton>
 						</nav>
 					</Stack>
 				</footer>

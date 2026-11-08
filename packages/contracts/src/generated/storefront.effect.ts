@@ -95,7 +95,7 @@ export const getStorefront = {
 export type GetStorefrontInput = InputOf<typeof getStorefront>
 export type GetStorefrontSuccess = SuccessOf<typeof getStorefront>
 export type GetStorefrontFailure = FailureOf<typeof getStorefront>
-export type GetStorefrontHandler<R = never> = Handler<typeof getStorefront, R>
+export type GetStorefrontHandler<R = never, E = never> = Handler<typeof getStorefront, R, E>
 export const CreateStorefrontCheckoutBody = S.Struct({
 	product: S.Literals(['purchase', 'subscription']),
 	requestId: S.String.check(
@@ -203,7 +203,11 @@ export const createStorefrontCheckout = {
 export type CreateStorefrontCheckoutInput = InputOf<typeof createStorefrontCheckout>
 export type CreateStorefrontCheckoutSuccess = SuccessOf<typeof createStorefrontCheckout>
 export type CreateStorefrontCheckoutFailure = FailureOf<typeof createStorefrontCheckout>
-export type CreateStorefrontCheckoutHandler<R = never> = Handler<typeof createStorefrontCheckout, R>
+export type CreateStorefrontCheckoutHandler<R = never, E = never> = Handler<
+	typeof createStorefrontCheckout,
+	R,
+	E
+>
 export const checkStorefrontCheckoutBodySessionIdMax = 250
 
 export const checkStorefrontCheckoutBodySessionIdRegExp = new RegExp('^cs_test_[A-Za-z0-9]+$')
@@ -312,4 +316,8 @@ export const checkStorefrontCheckout = {
 export type CheckStorefrontCheckoutInput = InputOf<typeof checkStorefrontCheckout>
 export type CheckStorefrontCheckoutSuccess = SuccessOf<typeof checkStorefrontCheckout>
 export type CheckStorefrontCheckoutFailure = FailureOf<typeof checkStorefrontCheckout>
-export type CheckStorefrontCheckoutHandler<R = never> = Handler<typeof checkStorefrontCheckout, R>
+export type CheckStorefrontCheckoutHandler<R = never, E = never> = Handler<
+	typeof checkStorefrontCheckout,
+	R,
+	E
+>

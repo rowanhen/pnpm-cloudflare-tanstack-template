@@ -1,5 +1,12 @@
-import { Link } from '@tanstack/react-router'
-import { Alert, Button, PageSection, Skeleton, Stack, Typography } from '@workspace/shared'
+import {
+	LinkButton,
+	Alert,
+	Button,
+	PageSection,
+	Skeleton,
+	Stack,
+	Typography,
+} from '@workspace/shared'
 
 import { useBilling } from '../hooks/use-billing'
 
@@ -25,12 +32,9 @@ export function Billing() {
 				)}
 				{billing.error && <Alert type="negative">{billing.error.message}</Alert>}
 				<Stack direction="horizontal" gap={3} wrap>
-					<Button
-						{...{ nativeButton: false }}
-						render={<Link aria-label="Add credits" role="link" to="/credits" />}
-					>
+					<LinkButton aria-label="Add credits" to="/credits">
 						Add credits
-					</Button>
+					</LinkButton>
 					<Button
 						variant="outline"
 						disabled={billing.isFetching}

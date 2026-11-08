@@ -5,8 +5,7 @@ import {
 } from '@workspace/contracts/operations'
 import { PublicApiRequest } from '../../contract/context'
 import { respond } from '../../contract/service'
-import { StorefrontService } from './service'
-import { storefrontLayer } from '../../runtime/storefront-layers'
+import { storefront } from '../../runtime/storefront-resources'
 
 export const createStorefrontCheckout: CreateStorefrontCheckoutHandler<PublicApiRequest> = (
 	input,
@@ -15,9 +14,10 @@ export const createStorefrontCheckout: CreateStorefrontCheckoutHandler<PublicApi
 		const ctx = yield* PublicApiRequest
 		const value = yield* respond(
 			operation,
-			Effect.flatMap(StorefrontService, (s) =>
-				s.create(ctx.request.headers.get('cf-connecting-ip') ?? 'local', input.body),
-			).pipe(Effect.provide(storefrontLayer(ctx.env))),
+			storefront(ctx.env).create(
+				ctx.request.headers.get('cf-connecting-ip') ?? 'local',
+				input.body,
+			),
 		)
 		return { status: 200, body: value }
 	})

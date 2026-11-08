@@ -77,4 +77,4 @@ export const getMe = {
 export type GetMeInput = InputOf<typeof getMe>
 export type GetMeSuccess = SuccessOf<typeof getMe>
 export type GetMeFailure = FailureOf<typeof getMe>
-export type GetMeHandler<R = never> = Handler<typeof getMe, R>
+export type GetMeHandler<R = never, E = never> = Handler<typeof getMe, R, E>

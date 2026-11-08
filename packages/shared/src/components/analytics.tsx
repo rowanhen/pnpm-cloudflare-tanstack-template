@@ -1,3 +1,4 @@
+import { AnchorButton } from './link-button'
 import { Container, Checkbox, Label, Button, Typography, Stack } from '@leitware/composables'
 import { useEffect, useState } from 'react'
 import {
@@ -159,13 +160,9 @@ export function Analytics({ config, pathname }: { config: BrowserConfig; pathnam
 										Manage
 									</Button>
 								)}
-								<Button
-									variant="ghost"
-									{...{ nativeButton: false }}
-									render={<a role="link" aria-label="Privacy" href={config.privacyUrl} />}
-								>
+								<AnchorButton variant="ghost" aria-label="Privacy" href={config.privacyUrl}>
 									Privacy
-								</Button>
+								</AnchorButton>
 							</Stack>
 						</section>
 					</Container>

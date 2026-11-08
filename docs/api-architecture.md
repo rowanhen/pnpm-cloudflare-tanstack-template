@@ -11,7 +11,7 @@ The authoritative spec lives in `packages/contracts/openapi/api.json`, shared by
 | Missing handler entry points, preserved after creation                    | Handler implementations using `Effect.gen` and request services |
 | Frontend HTTP functions, TanStack Query hooks, models and dashboard mocks | Pages and UI interactions consuming those hooks                 |
 
-A new endpoint starts with a spec change and `pnpm api:generate`, followed by implementing the scaffolded handler. OpenAPI describes the HTTP contract; it cannot infer business behaviour or database migrations. Effect schemas and handler types are generated; request service classes and application services are handwritten. This is the same generation foundation used by Astumi, whose internal-operation filtering and provider-specific boundaries are application extensions.
+A new endpoint starts with a spec change and `pnpm api:generate`, followed by implementing the scaffolded handler. OpenAPI describes the HTTP contract; it cannot infer business behaviour or database migrations. Effect schemas and handler types are generated; request service classes and application factories are handwritten. This is the same generation foundation used by Astumi, whose internal-operation filtering and provider-specific boundaries are application extensions.
 
 ```mermaid
 flowchart TD
@@ -26,7 +26,7 @@ flowchart TD
     Client <-->|HTTP| Routes
     Routes <--> Boundary["Authentication, validation and Effect execution"]
     Boundary <--> Handlers["Handwritten feature handlers"]
-    Handlers <--> Services["Feature services and injected capability contracts"]
+    Handlers <--> Services["Feature factories and explicit dependency contracts"]
     Services <--> Drizzle["Drizzle and provider adapters"]
     Drizzle <--> D1[("Cloudflare D1")]
 ```
@@ -85,7 +85,7 @@ The central `apps/api/src/generated/routes.ts`, `packages/contracts/src/generate
 
 Removing an operation removes its generated wiring and preserves the old implementation for review; remove obsolete implementation files when their generated types are no longer available.
 
-One operation gets one implementation file. Put shared queries and services beside those files when useful. Todos share an application service and an owned repository; see the application service recipe below.
+One operation gets one implementation file. Put shared queries and services beside those files when useful. Todos share a plain application factory and an owned repository; see the application service recipe below.
 
 ## Start with these files
 
@@ -108,9 +108,9 @@ One operation gets one implementation file. Put shared queries and services besi
 
 `GetTodoHandler<ApiRequest>` is generated as an operation returning `Effect<GetTodoSuccess, GetTodoFailure, ApiRequest>`. The failure union pairs each declared HTTP status with its corresponding body. A 404 carries the `todo_not_found` body; a forbidden body cannot accidentally be used for that status.
 
-Response interfaces and status/body unions are generated. Application services use tagged domain errors; HTTP handlers translate them into the declared failure union. Business logic decides when an error applies. Drizzle owns storage and migrations; queries explicitly select public fields and must satisfy the generated API types.
+Response interfaces and status/body unions are generated. Application functions and services use tagged domain errors; HTTP handlers translate them into the declared failure union. Business logic decides when an error applies. Drizzle owns storage and migrations; queries explicitly select public fields and must satisfy the generated API types.
 
-Expected failures become their declared HTTP response. Infrastructure failures and unexpected defects reach the existing reporting boundary and become a sanitized, contract-validated 500. The frontend validates the same schemas; generated query and mutation errors distinguish typed `ApiError<OperationResponseError>`, `TransportError`, and `ContractViolation`. `ApiError.response` retains the discriminated status/data pair.
+Expected failures become their declared HTTP response. Generated handler aliases accept an optional additional failure parameter, but the shared adapters only accept `StorageError` beyond the declared HTTP union. They convert it to a defect before response matching. Infrastructure failures and unexpected defects reach the existing reporting boundary and become a sanitized, contract-validated 500. The frontend validates the same schemas; generated query and mutation errors distinguish typed `ApiError<OperationResponseError>`, `TransportError`, and `ContractViolation`. `ApiError.response` retains the discriminated status/data pair.
 
 ## Generation and verification
 
@@ -121,6 +121,21 @@ All `src/generated/` directories are owned by generation. Orval cleans those spe
 Tests exercise a temporary second products feature, native shared references, router/type/client/mock generation, preserved implementations, TypeScript rejection of unfinished handlers, unsupported boundary rejection, and removal of stale generated outputs. Separate local contract tests and Worker integration tests cover response validation, authentication, CSRF, ownership, malformed requests, and real database behaviour. Mocks are development helpers rather than independent evidence of correct behaviour.
 
 `pnpm test:unit` also regenerates in a temporary workspace, compares every generated file against the checked-in output, and regenerates again to check byte-for-byte stability. This runs in CI and in `pnpm check`; stale, missing or extra generated files fail verification without rewriting the checkout. Run `pnpm api:generate` after changing the spec, generator or Orval version and include the resulting output.
+
+### Why retain the custom extension
+
+The current extension is 301 handwritten lines serving 30 operations. Native Orval already owns schemas, clients and the Hono route list. The extension supplies the correlation between each operation's typed input, success/failure pairs, authentication policy and shared Effect adapter. The existing temporary-products test adds a CRUD feature by changing its OpenAPI contract and implementation, without editing the generator; it also checks stale-output removal and rejects unsupported transports. These are the ordinary-change cases to preserve.
+
+A client-only generator plus handwritten server routes would remove the extension, but would require maintaining per-operation schema selection, security selection and error/body status correlations beside the OpenAPI source. The shared `effectHandler` is already the small server adapter. Replacing its generated descriptors with handwritten ones currently moves duplication rather than removing it, so retain generation and keep application policy out of the extension.
+
+Revisit this decision when a real required transport cannot be represented by the supported contract, or a routine endpoint requires a generator edit. First extend the temporary-feature test with that case; compare the manual adapter against the existing one for response decoding, raw webhook bodies, binary/HEAD responses, authentication and typed errors. Do not trade these guarantees for fewer generated lines.
+
+| Change                        | Handwritten owners                                                                                          |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Todo title rule               | Feature validation and tests; OpenAPI only if the public rule changes                                       |
+| Add a persisted Todo field    | OpenAPI, Drizzle schema/migration, repository projection, consuming UI and tests                            |
+| Add an ordinary API operation | Feature contract/root path reference, feature implementation, tests; generated outputs follow automatically |
+| Change payment polling        | `checkout-session.ts` polling policy and its tests; routes share the hook                                   |
 
 ## Supported transports and security
 
@@ -141,18 +156,19 @@ Orval's native Effect output does not generate application handler signatures, p
 
 ## Application services and boundaries
 
-Todos demonstrate the backend dependency direction without requiring a Worker in unit tests:
+Todos demonstrate the backend dependency direction without a service/Layer for each responsibility:
 
-- `features/todos/domain.ts` owns validated title construction and a nonempty change union. The generated OpenAPI value schemas are exposed through `@workspace/contracts/todos`; neither application policy nor persistence repeats title limits. Internal calls are validated too.
-- `features/todos/service.ts` declares TodoService, the user-scoped TodoRepository dependency and the missing-record error. Repository input types only permit validated titles and nonempty changes. There is no HTTP status or database client in either interface.
-- `features/todos/live.ts` supplies policy: normalisation, invalid-change rejection and missing-record handling. It depends on the repository contract, not Drizzle. The layer is the same in production and tests.
-- `features/todos/repository.ts` implements that contract with Drizzle. Every operation is scoped to the trusted owner, selects explicit public columns and decodes results. D1 failures and invalid stored data become StorageError; they cannot become a successful empty list or a missing-record error.
-- `runtime/user-layers.ts` composes the live layer with the concrete, request-scoped repository. Session and API-key entry handlers both use it, so ordering, limits and ownership have one implementation. No global runtime retains a previous request's user or bindings.
-- Operation handlers own generated response types and HTTP error translation. Shared error mappings stay in `http-errors.ts`. Storage failures reach the sanitized reporting boundary; mixed failure/defect/interruption causes cannot be recovered as ordinary responses.
+- `features/todos/todos.ts` owns title construction, the nonempty change union, tagged domain failures, the small `TodoRepository` interface and `makeTodos(repository)`. Its inferred methods return typed Effects. Internal callers are validated too, using the public value schemas from `@workspace/contracts/todos`.
+- `features/todos/repository.ts` returns a plain repository bound to the trusted owner. Every query preserves ownership, ordering, limits, explicit public columns and stored-data decoding. D1 failures and invalid stored data become `StorageError`, never a successful empty list or a missing-record error.
+- `runtime/user-resources.ts` shares the request-scoped `userTodos(db, userId)` composition between session and API-key handlers. It creates no service Layer or global runtime. A feature used by only one HTTP entry point may compose its own adapter there directly.
+- Operation handlers call the factory's methods, map feature-specific failures to shared application errors through `http-errors.ts`, then use `respond` for the generated status/body pair. `CreateTodoHandler<ApiRequest>` uses the shared responder; handlers that return storage failures directly may declare the optional `StorageError` parameter. Arbitrary unmapped domain failures remain type errors. `preserveFatal` must precede typed recovery so mixed defect/interruption causes cannot become ordinary responses.
+- Unit tests pass fake repositories to the same production factory. Checkout, billing, metering, emails, waitlist, keys and storefront now use the same explicit dependency pattern. Their domain states and adapter boundaries remain separate. Files and payments expose plain typed adapter capabilities without a forwarding application factory.
 
 Use Effect.gen for workflows, Effect.tryPromise for external promise adapters and Effect.runPromise only where the host executes an Effect. Use Effect Clock for workflow instants and forward interruption to cancellable providers. D1 statements cannot be aborted: `storageEffect` waits for their settlement before interruption cleanup. Do not claim a request cancellation rolled back a write.
 
 A new feature does not need every file. A direct status query can stay in its handler; introduce a service when there is shared policy or an implementation boundary. A service with five forwarding methods and no such role is not an architectural improvement. Keep related code together until its responsibilities justify a split.
+
+The public feature module (for example `keys/keys.ts` or `checkout/checkout.ts`) owns dependency contracts and the factory. Output types are inferred from the implementation and checked by generated HTTP handlers; there is no parallel service interface listing the same methods. `runtime/*-resources.ts` supplies Cloudflare adapters, configuration and authenticated identities without executing Effects. Waitlist and its email capability share the same request-scoped limiter. Stateless crypto contains only lazy Effects and never captures request bindings. Existing provider cancellation, non-abortable write settlement and transaction logic stay in their owning adapters/workflows.
 
 ### Feature ownership
 
@@ -166,7 +182,7 @@ A new feature does not need every file. A direct status query can stay in its ha
 | Files                | Owned key validation and storage capability                                                            | R2 adapter normalizes metadata/streams; one HTTP header encoder                        |
 | Rate limits          | Fixed-window policy and injected Effect Clock                                                          | Atomic identity D1 counter; quota headers only at HTTP boundaries                      |
 
-Runtime factories supply configuration, trusted identities, database bindings and concrete provider Layers per request. Application services import capability contracts, never another feature's repository/provider. Small direct capabilities such as FileStore need no forwarding service. System health/configuration and Better Auth remain host concerns. API-key authentication has a separate capability and lookup repository; it never constructs owner-bound key management with a placeholder identity.
+HTTP entry points and shared runtime factories supply configuration, trusted identities, database bindings and concrete dependencies per request. No feature requires a service Layer simply to assemble objects. Effect request contexts remain at HTTP entry points; introduce service Layers in future only for actual scoped acquisition or shared resource lifetimes. Application functions and services import public pure feature modules or capability contracts, never another feature's repository/provider. Small direct capabilities such as FileStore need no forwarding service. System health/configuration and Better Auth remain host concerns. API-key authentication has a separate capability and lookup repository; it never constructs owner-bound key management with a placeholder identity.
 
 PaymentGateway owns Stripe request translation, signature verification and response decoding. Checkout intents distinguish credit orders from guest purchases; stable idempotency keys retain their original formats. Calls forward Effect cancellation to fetch and disable automatic network retries. Canonical retrieval, amount/currency/owner checks and atomic immutable grants protect reconciliation. SDK/data decoding never substitutes a successful zero amount or currency when provider data is missing.
 
@@ -176,10 +192,12 @@ Public types and value schemas derive from OpenAPI through the contracts package
 
 ### Enforcement and verification
 
-Oxlint rejects explicit any, non-null assertions, unused backend bindings and unsafe application imports/APIs. The architecture check uses the pinned TypeScript 7 compiler API to inspect the dependency graph and actual D1 receiver types. It detects cycles, cross-feature private imports, transitive application-to-adapter dependencies, hidden node/effect subpath imports, unchecked assertions and suppression comments. Only the validated generic HTTP status/body correlation in contract/service.ts needs a type assertion. Direct D1 prepare/exec/batch and destructured equivalents are rejected; Drizzle batches and RegExp.exec are allowed.
+The official `@effect/tsgo` diagnostics run through `pnpm lint:effect`, with errors and warnings failing CI. The pinned tool supports the pinned TypeScript compiler and runs without patching node_modules. API tsconfig plugin options promote discarded Effects, missing errors/dependencies, unknown error/context types, nested Effects and Promise success values to errors. All default diagnostics, including suggestions, are displayed. Typed schema decoding, direct yielding of tagged errors, combined tag recovery and `Effect.undefined` are enforced as warnings, so regressions also fail CI. Typed decoders still perform runtime validation; truly unknown values retain the unknown-input decoders. A regression fixture verifies that discarded/nested Effects fail lint and composed Effects pass.
 
-HTTP entry points are discovered from generated wiring; other feature files default to application code. Infrastructure roles are explicit. Application code cannot use async functions, ambient time/I/O or nested Effect execution, even under an unfamiliar filename. Review any new infrastructure role or public export; static checks cannot prove that a module is cohesive or an abstraction is worthwhile.
+Oxlint rejects explicit any, non-null assertions, unused backend bindings and unsafe types. Role-specific dependency and I/O rules are owned once by the graph checker, not repeated in filename-based Oxlint overrides. The architecture check uses the pinned TypeScript 7 compiler API to inspect the dependency graph and actual D1 receiver types. It detects cycles, cross-feature private imports, transitive application-to-adapter dependencies, hidden node/effect subpath imports, unchecked assertions and suppression comments. Only the validated generic HTTP status/body correlation in contract/service.ts needs a type assertion. Direct D1 prepare/exec/batch and destructured equivalents are rejected; Drizzle batches and RegExp.exec are allowed.
 
-Unit tests provide fake dependency Layers to the production live layers, including an Effect test clock. They cover domain validation, state invariants, no resend on replay, optional-error classification, fatal causes, billing conflict/replay and validation before charging. Architecture fixtures test rejection and legitimate adapter cases. Real local Worker tests cover D1/R2 ownership, CSRF, rate limiting, debit/grant races, webhook authenticity/reordering, missing provider data, malformed stored data and sanitized reporting.
+HTTP entry points are discovered from generated wiring; other feature files default to application code. HTTP entry points may compose their own adapters directly. Cross-feature imports use service/domain contracts or a pure module named after its feature (such as todos/todos.ts); a private repository cannot be exposed through that module. Infrastructure roles are explicit: place new or consolidated adapters under a feature’s `adapters/` directory, where filenames are unrestricted. Existing repository/provider/stripe/r2 files remain supported. A cohesive adapter may include its small workflow; a separate pure service file is not mandatory. Pure application modules still cannot import those adapters. Application code cannot use async functions, ambient time/I/O or nested Effect execution, even under an unfamiliar filename. Review any new infrastructure role or public export; static checks cannot prove that a module is cohesive or an abstraction is worthwhile.
 
-Run pnpm check before committing. CI runs lint, unit/generation checks, types and builds; Worker integration tests remain local. When upgrading the pinned compiler, run the architecture fixtures alongside the full suite because its compiler API is version-specific. Better Auth and native SDK protocols remain deliberate integration boundaries, not alternative application service patterns.
+Unit tests inject plain repositories and providers into production feature factories. Time-dependent workflows still run under Effect TestClock. They cover domain validation, state invariants, no resend on replay, optional-error classification, fatal causes, billing conflict/replay and validation before charging. Architecture fixtures test rejection and legitimate adapter cases. Real local Worker tests cover D1/R2 ownership, CSRF, rate limiting, debit/grant races, webhook authenticity/reordering, missing provider data, malformed stored data and sanitized reporting.
+
+Run pnpm check before committing. CI runs lint, unit/generation checks, isolated Worker integration tests, types and builds. When upgrading the pinned compiler, run the architecture fixtures alongside the full suite because its compiler API is version-specific. Better Auth and native SDK protocols remain deliberate integration boundaries, not alternative application service patterns.

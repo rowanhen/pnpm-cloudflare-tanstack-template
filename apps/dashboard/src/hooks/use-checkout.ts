@@ -1,6 +1,7 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useRef } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { usePaymentStatus } from './use-payment-status'
 import { useHydrated } from '@workspace/shared'
 import { getConfig } from '../generated/system'
 import { getCheckoutConfig, createCheckout, getOrder } from '../generated/checkout'
@@ -38,17 +39,10 @@ export function useCheckoutSession() {
 	return { availability, config, create }
 }
 export function useOrderStatus(sessionId: string) {
-	const hydrated = useHydrated()
-	return useQuery({
-		queryKey: ['order', sessionId],
-		enabled: hydrated && Boolean(sessionId),
-		retry: false,
-		queryFn: async () => (await getOrder(sessionId)).data,
-		refetchInterval: (query) =>
-			query.state.data?.order.status === 'pending' &&
-			query.state.data.checkoutStatus === 'complete' &&
-			query.state.dataUpdateCount < 12
-				? 2500
-				: false,
-	})
+	return usePaymentStatus(
+		'order',
+		sessionId,
+		async () => (await getOrder(sessionId)).data,
+		(data) => data.order.status === 'pending' && data.checkoutStatus === 'complete',
+	)
 }

@@ -60,7 +60,7 @@ export function checkArchitecture(root: string): string[] {
 			)
 				return 'host'
 			if (
-				/^features\/[^/]+\/(repository|provider|stripe|r2)\.ts$/.test(name) ||
+				/^features\/[^/]+\/(?:(?:repository|provider|stripe|r2)\.ts$|adapters\/)/.test(name) ||
 				['persistence.ts', 'identity-crypto.ts'].includes(name)
 			)
 				return 'adapter'
@@ -127,16 +127,20 @@ export function checkArchitecture(root: string): string[] {
 						!(typeOnly && local(imported) === 'env.ts')
 					)
 						fail(node, 'infrastructure adapters must not depend on HTTP or runtime composition')
-					if (kind === 'http' && importedRole === 'adapter')
-						fail(node, 'HTTP handlers obtain adapters through runtime Layers')
+					// HTTP entry points may compose their own feature's adapters directly.
+					// Cross-feature infrastructure still goes through the runtime composition boundary.
 					if (
 						feature(path) &&
 						feature(imported) &&
 						feature(path) !== feature(imported) &&
 						!/\/(service|domain)\.ts$|\/domain\//.test(imported) &&
+						!imported.endsWith(`/${feature(imported)}.ts`) &&
 						!(kind === 'http' && importedRole === 'http')
 					)
-						fail(node, 'cross-feature imports must use service/domain contracts')
+						fail(
+							node,
+							'cross-feature imports must use public feature modules or service/domain contracts',
+						)
 				} else if (
 					kind === 'application' &&
 					![
