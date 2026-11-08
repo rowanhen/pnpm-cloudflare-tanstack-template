@@ -4,6 +4,8 @@ A TypeScript starter with a waitlist website, Google sign-in, a private dashboar
 
 [Live example](https://devtemplate.leitware.com) · [Beginner setup](docs/getting-started.md) · [Integration verification](docs/verification.md)
 
+The tracked root `.env.local` contains **dotenvx-encrypted settings**, not a plaintext environment file. Keep `.env.keys` private. See [configuration and precedence](docs/environment.md); CI and pre-commit reject plaintext settings.
+
 ## Run locally
 
 Install [Node.js 26.12.0](https://nodejs.org/en/download) and [Git](https://git-scm.com/downloads), then run:
@@ -43,12 +45,13 @@ For account credentials, local payments, Google callbacks and a repeatable new-p
 ## Test and deploy
 
 ```bash
+pnpm exec playwright install chromium # once, before the first browser test
 pnpm api:generate # after changing OpenAPI contracts
-pnpm check        # lint, formatting, migrations, unit/API tests, types and builds
+pnpm check        # lint, formatting, migrations, unit/API tests, types, builds and browser tests
 pnpm validate     # alias for pnpm check
 ```
 
-CI runs lint, unit tests, type checks and build. On main, a separate job deploys the verified build when Cloudflare Actions settings are configured. See the [Wrangler deployment guide](docs/manual-deployment.md#github-actions-deployment). Cloudflare resources, secrets and provider accounts use their native tools; this template does not maintain its own provisioning or teardown framework. Live provider checks are described in [verification](docs/verification.md).
+CI runs lint, unit and Worker integration tests, type checks, builds and browser regression tests. On main, a separate job deploys the verified build when Cloudflare Actions settings are configured. See the [Wrangler deployment guide](docs/manual-deployment.md#github-actions-deployment). Cloudflare resources, secrets and provider accounts use their native tools; this template does not maintain its own provisioning or teardown framework. Live provider checks are described in [verification](docs/verification.md).
 
 ## Guides
 

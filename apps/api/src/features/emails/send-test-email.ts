@@ -5,17 +5,11 @@ import {
 } from '@workspace/contracts/operations'
 import { ApiRequest } from '../../contract/context'
 import { respond } from '../../contract/service'
-import { EmailService } from './service'
-import { emailLayer } from '../../runtime/email-layers'
+import { emails } from '../../runtime/email-resources'
 
 export const sendTestEmail: SendTestEmailHandler<ApiRequest> = (input) =>
 	Effect.gen(function* () {
 		const ctx = yield* ApiRequest
-		const value = yield* respond(
-			operation,
-			Effect.flatMap(EmailService, (s) => s.test(ctx.user, input.body.requestId)).pipe(
-				Effect.provide(emailLayer(ctx.env)),
-			),
-		)
+		const value = yield* respond(operation, emails(ctx.env).test(ctx.user, input.body.requestId))
 		return { status: 202, body: { email: value } }
 	})

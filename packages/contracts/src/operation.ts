@@ -34,6 +34,6 @@ type SuccessResponse<R> = R extends { status: infer S extends number }
 	: never
 export type SuccessOf<O extends Operation> = SuccessResponse<ResponseOf<O>>
 export type FailureOf<O extends Operation> = Exclude<ResponseOf<O>, SuccessOf<O>>
-export type Handler<O extends Operation, R = never> = (
+export type Handler<O extends Operation, R = never, E = never> = (
 	input: InputOf<O>,
-) => Effect.Effect<SuccessOf<O>, FailureOf<O>, R>
+) => Effect.Effect<SuccessOf<O>, FailureOf<O> | E, R>

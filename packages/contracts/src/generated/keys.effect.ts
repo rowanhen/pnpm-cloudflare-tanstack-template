@@ -80,7 +80,7 @@ export const listKeys = {
 export type ListKeysInput = InputOf<typeof listKeys>
 export type ListKeysSuccess = SuccessOf<typeof listKeys>
 export type ListKeysFailure = FailureOf<typeof listKeys>
-export type ListKeysHandler<R = never> = Handler<typeof listKeys, R>
+export type ListKeysHandler<R = never, E = never> = Handler<typeof listKeys, R, E>
 export const createKeyBodyNameMax = 60
 
 export const createKeyBodyNameRegExp = new RegExp('.*\\S.*')
@@ -194,7 +194,7 @@ export const createKey = {
 export type CreateKeyInput = InputOf<typeof createKey>
 export type CreateKeySuccess = SuccessOf<typeof createKey>
 export type CreateKeyFailure = FailureOf<typeof createKey>
-export type CreateKeyHandler<R = never> = Handler<typeof createKey, R>
+export type CreateKeyHandler<R = never, E = never> = Handler<typeof createKey, R, E>
 export const DeleteKeyParams = S.Struct({
 	id: S.String,
 })
@@ -265,4 +265,4 @@ export const deleteKey = {
 export type DeleteKeyInput = InputOf<typeof deleteKey>
 export type DeleteKeySuccess = SuccessOf<typeof deleteKey>
 export type DeleteKeyFailure = FailureOf<typeof deleteKey>
-export type DeleteKeyHandler<R = never> = Handler<typeof deleteKey, R>
+export type DeleteKeyHandler<R = never, E = never> = Handler<typeof deleteKey, R, E>

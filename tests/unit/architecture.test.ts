@@ -9,59 +9,14 @@ import { checkArchitecture } from '../../scripts/check-architecture.ts'
 
 const root = fileURLToPath(new URL('../..', import.meta.url))
 
-test('backend lint rules reject boundary violations and allow adapters', async (t) => {
+test('backend syntax lint rejects unsafe types without enforcing feature filenames', async (t) => {
 	const directory = await mkdtemp(join(tmpdir(), 'backend-boundaries-'))
 	t.after(() => rm(directory, { recursive: true, force: true }))
 	await writeFile(join(directory, '.oxlintrc.json'), await readFile(join(root, '.oxlintrc.json')))
 	const cases = [
-		['service.ts', "import type { Context } from 'hono'; export type Request = Context", false],
-		['domain.ts', "export { database } from '@workspace/data/client'", false],
-		[
-			'live.ts',
-			"import { TodoRepository } from './repository'; export const repo = TodoRepository",
-			false,
-		],
-		[
-			'live.ts',
-			"import { ApiRequest } from '../../contract/context'; export const request = ApiRequest",
-			false,
-		],
-		['live.ts', "import { env } from 'node:process'; export const value = env.KEY", false],
-		['live.ts', "export { runPromise } from 'effect/Effect'", false],
-		['domain.ts', "export { getTodo } from '@workspace/contracts/operations'", false],
-		[
-			'live.ts',
-			"import { Effect } from 'effect'; export const value = Effect.tryPromise(() => Promise.resolve(1))",
-			false,
-		],
-		['live.ts', "import { Effect as Fx } from 'effect'; export const run = Fx.runPromise", false],
-		['live.ts', 'export const secret = process.env.API_KEY', false],
-		['live.ts', 'export const now = Date.now()', false],
-		['live.ts', "export const request = globalThis.fetch('/')", false],
 		['domain.ts', 'export const unsafe = (value: any) => value', false],
 		['domain.ts', 'export const unsafe = (value: string | undefined) => value!', false],
-		['live.ts', "export const request = fetch('/')", false],
-		[
-			'repository.ts',
-			"import { Effect } from 'effect'; export const query = Effect.tryPromise(() => Promise.resolve(1))",
-			true,
-		],
-		[
-			'get-example.ts',
-			"import { Effect } from 'effect'; export const run = Effect.runPromise",
-			true,
-		],
-		[
-			'service.ts',
-			"import { Context } from 'effect'; export class Example extends Context.Service<Example, { readonly value: string }>()('Example') {}",
-			true,
-		],
-		[
-			'live.ts',
-			"import { TodoService } from '../todos/service'; export const dependency = TodoService",
-			true,
-		],
-		['domain.ts', "export { TodoData } from '@workspace/contracts/todos'", true],
+		['repository.ts', 'export const value = 1', true],
 	] as const
 	for (const [index, [file, source, allowed]] of cases.entries()) {
 		await t.test(`${allowed ? 'allows' : 'rejects'} ${source}`, async () => {
@@ -91,7 +46,12 @@ test('architecture graph rejects hidden dependencies, cycles and direct D1 while
 			include: ['src/**/*.ts'],
 		}),
 		'apps/api/src/generated/routes.ts': "import '../features/sample/get-sample'",
-		'apps/api/src/features/sample/get-sample.ts': 'export const route = 1',
+		'apps/api/src/features/sample/get-sample.ts':
+			"import { bad } from './repository'; export const route = bad",
+		'apps/api/src/features/sample/sample.ts':
+			'export const makeSample = (value: number) => ({ value })',
+		'apps/api/src/features/other/workflow.ts':
+			"import { makeSample } from '../sample/sample'; export const example = makeSample(1)",
 		'apps/api/src/features/sample/service.ts': 'export const service = 1',
 		'apps/api/src/features/sample/repository.ts':
 			"interface D1Database { batch(items: string[]): Promise<void>; prepare(sql: string): void; exec(sql: string): void }; export const bad = (db: D1Database) => { const alias = db; alias.batch([]); db['prepare']('sql'); db.exec('sql'); const { batch: directBatch } = db; directBatch([]) }; export const mapped = (db: Readonly<D1Database>) => db.batch([]); export const picked = (db: Pick<D1Database, 'exec'>) => db.exec('sql'); export const parameter = ({ batch }: D1Database) => batch([])",
@@ -146,6 +106,47 @@ test('architecture graph rejects hidden dependencies, cycles and direct D1 while
 		join(directory, 'apps/api/src/features/other/provider.ts'),
 		'export const provider = 1',
 	)
+	await writeFile(
+		join(directory, 'apps/api/src/features/sample/get-sample.ts'),
+		"import { query } from './repository'; export const route = query",
+	)
 	errors = checkArchitecture(directory)
 	assert.deepEqual(errors, [])
+})
+
+test('feature boundaries survive renames and allow cohesive adapters without checker changes', async (t) => {
+	const directory = await mkdtemp(join(tmpdir(), 'architecture-roles-'))
+	t.after(() => rm(directory, { recursive: true, force: true }))
+	const files = {
+		'apps/api/tsconfig.json': JSON.stringify({
+			compilerOptions: { strict: true, target: 'es2022' },
+			include: ['src/**/*.ts'],
+		}),
+		'apps/api/src/generated/routes.ts': "import '../features/example/entry'",
+		'apps/api/src/features/example/entry.ts': "export { query } from './adapters/orders'",
+		'apps/api/src/features/example/adapters/orders.ts':
+			"import { Effect } from 'effect'; export const query = () => Effect.tryPromise(() => Promise.resolve(Date.now()))",
+		'apps/api/src/features/example/rules.ts': 'export const limit = 10',
+	}
+	for (const [path, source] of Object.entries(files)) {
+		await mkdir(dirname(join(directory, path)), { recursive: true })
+		await writeFile(join(directory, path), source)
+	}
+	assert.deepEqual(checkArchitecture(directory), [])
+	const violations = [
+		["export { query } from './adapters/orders'", 'application code'],
+		["export { database } from '@workspace/data/client'", 'pure public contract'],
+		["export { runPromise } from 'effect/Effect'", 'pure public contract'],
+		['export const now = Date.now()', 'ambient I/O'],
+		["export const request = fetch('/')", 'ambient I/O'],
+		["import { Effect } from 'effect'; export const run = Effect.runPromise", 'execute Effects'],
+		["import { Effect } from 'effect'; export const run = Effect.tryPromise", 'execute Effects'],
+	] as const
+	for (const [source, message] of violations) {
+		await writeFile(join(directory, 'apps/api/src/features/example/rules.ts'), source)
+		assert.ok(
+			checkArchitecture(directory).some((error) => error.includes(message)),
+			source,
+		)
+	}
 })

@@ -1,8 +1,8 @@
-import { Effect, Layer, Schema } from 'effect'
+import { Effect, Schema } from 'effect'
 import type { Env } from '../../env'
 import { ProviderFailure, Unavailable } from '../../errors'
 import type { Mail } from './domain'
-import { EmailProvider } from './service'
+import type { EmailProvider } from './emails'
 const templates = {
 	waitlist: {
 		subject: "You're on the list",
@@ -16,17 +16,13 @@ const templates = {
 	},
 } satisfies Record<Mail['template'], Pick<EmailMessageBuilder, 'subject' | 'text' | 'html'>>
 
-export const emailProviderLayer = (
-	binding: Env['EMAIL'],
-	from: string | undefined,
-	enabled: boolean,
-) =>
-	Layer.succeed(EmailProvider, {
+export const emailProvider = (binding: Env['EMAIL'], from: string | undefined, enabled: boolean) =>
+	({
 		enabled,
 		send: (to, template) =>
 			Effect.gen(function* () {
 				if (!enabled || !binding || !from)
-					return yield* Effect.fail(new Unavailable({ message: 'Email is not configured' }))
+					return yield* new Unavailable({ message: 'Email is not configured' })
 				const result = yield* Effect.tryPromise({
 					try: () => binding.send({ from, to, ...templates[template] }),
 					catch: (cause) =>
@@ -35,7 +31,7 @@ export const emailProviderLayer = (
 							cause,
 						}),
 				})
-				return yield* Schema.decodeUnknownEffect(
+				return yield* Schema.decodeEffect(
 					Schema.Struct({ messageId: Schema.String.check(Schema.isMinLength(1)) }),
 				)(result).pipe(
 					Effect.map((value) => value.messageId),
@@ -49,4 +45,4 @@ export const emailProviderLayer = (
 					),
 				)
 			}),
-	})
+	}) satisfies EmailProvider

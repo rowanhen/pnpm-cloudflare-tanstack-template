@@ -1,15 +1,15 @@
-import { Effect, Layer, Schema } from 'effect'
+import { Effect, Schema } from 'effect'
 import { now } from '@workspace/data/columns'
 import { database } from '@workspace/data/client'
 import { creditAccounts, creditGrants, paidRequests } from '@workspace/data/billing'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { BillingData } from '@workspace/contracts/values'
 import { decodeStored, storageEffect } from '../../persistence'
-import { BillingRepository } from './service'
+import type { BillingRepository } from './billing'
 import { Receipt, CREDIT_PACK, SUMMARY_COST } from './domain'
-export const billingRepositoryLayer = (binding: Parameters<typeof database>[0], userId: string) => {
+export const billingRepository = (binding: Parameters<typeof database>[0], userId: string) => {
 	const db = database(binding)
-	return Layer.succeed(BillingRepository, {
+	return {
 		reserve: (options) =>
 			Effect.gen(function* () {
 				const { keyId, idempotencyKey, operation, inputHash, cost, result } = options
@@ -122,5 +122,5 @@ export const billingRepositoryLayer = (binding: Parameters<typeof database>[0], 
 				activity: results[1],
 			})
 		}),
-	})
+	} satisfies BillingRepository
 }

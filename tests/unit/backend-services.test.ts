@@ -1,44 +1,25 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { Cause, Effect, Exit, Layer, Result, Schema } from 'effect'
+import { Cause, Effect, Exit, Result, Schema } from 'effect'
 import * as TestClock from 'effect/testing/TestClock'
-import { EmailLive } from '../../apps/api/src/features/emails/live.ts'
 import {
-	EmailProvider,
-	EmailRepository,
-	EmailService,
-} from '../../apps/api/src/features/emails/service.ts'
+	makeEmails,
+	type EmailRepository,
+	type EmailProvider,
+} from '../../apps/api/src/features/emails/emails.ts'
 import { DeliveryState } from '../../apps/api/src/features/emails/domain.ts'
 import {
-	RateLimiter,
-	RateLimitRepository,
-} from '../../apps/api/src/features/rate-limits/service.ts'
-import { RateLimiterLive } from '../../apps/api/src/features/rate-limits/live.ts'
-import { BillingLedger, BillingRepository } from '../../apps/api/src/features/billing/service.ts'
-import { BillingLive } from '../../apps/api/src/features/billing/live.ts'
-import { SummaryRepository, SummaryService } from '../../apps/api/src/features/metered/service.ts'
-import { SummaryLive } from '../../apps/api/src/features/metered/live.ts'
+	makeRateLimiter,
+	type RateLimiter,
+} from '../../apps/api/src/features/rate-limits/rate-limits.ts'
+import { makeBilling } from '../../apps/api/src/features/billing/billing.ts'
+import { makeSummary } from '../../apps/api/src/features/metered/metered.ts'
 import { SummaryResult } from '../../apps/api/src/features/metered/domain.ts'
-import { StorefrontLive } from '../../apps/api/src/features/storefront/live.ts'
-import {
-	StorefrontService,
-	StorefrontSettings,
-} from '../../apps/api/src/features/storefront/service.ts'
-import {
-	PaymentGateway,
-	type PaymentSession,
-} from '../../apps/api/src/features/payments/service.ts'
-import { WaitlistLive } from '../../apps/api/src/features/waitlist/live.ts'
-import {
-	WaitlistRepository,
-	WaitlistService,
-} from '../../apps/api/src/features/waitlist/service.ts'
-import { KeyAuthenticationLive } from '../../apps/api/src/features/keys/live.ts'
-import {
-	KeyAuthentication,
-	KeyAuthenticationRepository,
-} from '../../apps/api/src/features/keys/service.ts'
-import { IdentityCrypto } from '../../apps/api/src/identity.ts'
+import { makeStorefront } from '../../apps/api/src/features/storefront/storefront.ts'
+import type { PaymentSession } from '../../apps/api/src/features/payments/payments.ts'
+import { makeWaitlist } from '../../apps/api/src/features/waitlist/waitlist.ts'
+import { makeKeyAuthentication } from '../../apps/api/src/features/keys/keys.ts'
+import type { IdentityCrypto } from '../../apps/api/src/identity.ts'
 import {
 	ProviderFailure,
 	Conflict,
@@ -50,13 +31,13 @@ import {
 } from '../../apps/api/src/errors.ts'
 import { StorageError, decodeStored } from '../../apps/api/src/persistence.ts'
 
-const limiter = Layer.succeed(RateLimiter, {
+const limiter = {
 	check: (_key, limit) => Effect.succeed({ limit, remaining: limit - 1, reset: 120 }),
-})
-const identity = Layer.succeed(IdentityCrypto, {
+} satisfies RateLimiter
+const identity = {
 	hash: (value) => Effect.succeed(`hash:${value}`),
 	token: Effect.succeed('token'),
-})
+} satisfies IdentityCrypto
 const user = {
 	id: 'owner',
 	name: 'Owner',
@@ -67,11 +48,11 @@ const user = {
 const requestId = '00000000-0000-4000-8000-000000000001'
 
 function mailFixture(
-	overrides: Partial<typeof EmailRepository.Service> = {},
-	send: typeof EmailProvider.Service.send = () => Effect.succeed('message'),
+	overrides: Partial<EmailRepository> = {},
+	send: EmailProvider['send'] = () => Effect.succeed('message'),
 ) {
 	const settlements: unknown[] = []
-	const repository: typeof EmailRepository.Service = {
+	const repository: EmailRepository = {
 		reserve: () => Effect.succeed({ kind: 'fresh', id: 'claim' }),
 		settle: (_id, value) =>
 			Effect.sync(() => {
@@ -80,16 +61,8 @@ function mailFixture(
 		list: () => Effect.succeed([]),
 		...overrides,
 	}
-	const layer = EmailLive.pipe(
-		Layer.provide(
-			Layer.mergeAll(
-				limiter,
-				Layer.succeed(EmailRepository, repository),
-				Layer.succeed(EmailProvider, { enabled: true, send }),
-			),
-		),
-	)
-	return { layer, settlements }
+	const service = makeEmails({ limiter, repository, provider: { enabled: true, send } })
+	return { service, settlements }
 }
 
 test('email states reject contradictory persisted receipts', () => {
@@ -111,8 +84,9 @@ test('email replay never resends accepted or ambiguous attempts', async () => {
 	for (const state of [
 		{ id: 'claim', status: 'accepted', message_id: 'saved', error_code: null },
 		{ id: 'claim', status: 'sending', message_id: null, error_code: null },
+		{ id: 'claim', status: 'failed', message_id: null, error_code: 'SEND_FAILED' },
 	] as const) {
-		const { layer } = mailFixture(
+		const { service } = mailFixture(
 			{ reserve: () => Effect.succeed({ kind: 'existing', state }) },
 			() =>
 				Effect.sync(() => {
@@ -120,12 +94,7 @@ test('email replay never resends accepted or ambiguous attempts', async () => {
 					return 'new'
 				}),
 		)
-		const result = await Effect.runPromise(
-			Effect.flatMap(EmailService, (s) => s.test(user, requestId)).pipe(
-				Effect.provide(layer),
-				Effect.result,
-			),
-		)
+		const result = await Effect.runPromise(service.test(user, requestId).pipe(Effect.result))
 		if (state.status === 'accepted') {
 			assert.ok(Result.isSuccess(result))
 		} else {
@@ -142,27 +111,18 @@ test('optional confirmations recover delivery failures but propagate storage fai
 		cause: new Error('provider'),
 	})
 	const fixture = mailFixture({}, () => Effect.fail(providerFailure))
-	await Effect.runPromise(
-		Effect.flatMap(EmailService, (s) => s.confirm(user.email, 'entry')).pipe(
-			Effect.provide(fixture.layer),
-		),
-	)
+	await Effect.runPromise(fixture.service.confirm(user.email, 'entry'))
 	assert.deepEqual(fixture.settlements, [{ status: 'failed', code: 'SEND_FAILED' }])
 	const storage = new StorageError({ cause: new Error('database') })
 	for (const overrides of [
 		{ reserve: () => Effect.fail(storage) },
 		{ settle: () => Effect.fail(storage) },
 	]) {
-		const { layer } = mailFixture(overrides, () => Effect.fail(providerFailure))
-		const error = await Effect.runPromise(
-			Effect.flatMap(EmailService, (s) => s.confirm(user.email, 'entry')).pipe(
-				Effect.provide(layer),
-				Effect.flip,
-			),
-		)
+		const { service } = mailFixture(overrides, () => Effect.fail(providerFailure))
+		const error = await Effect.runPromise(service.confirm(user.email, 'entry').pipe(Effect.flip))
 		assert.equal(error, storage)
 	}
-	const { layer, settlements } = mailFixture({}, () =>
+	const { service, settlements } = mailFixture({}, () =>
 		Effect.failCause(
 			Cause.fromReasons([
 				Cause.makeFailReason(providerFailure),
@@ -170,34 +130,29 @@ test('optional confirmations recover delivery failures but propagate storage fai
 			]),
 		),
 	)
-	const exit = await Effect.runPromiseExit(
-		Effect.flatMap(EmailService, (s) => s.confirm(user.email, 'entry')).pipe(Effect.provide(layer)),
-	)
+	const exit = await Effect.runPromiseExit(service.confirm(user.email, 'entry'))
 	assert.ok(Exit.isFailure(exit) && Cause.hasDies(exit.cause))
 	assert.deepEqual(settlements, [])
 })
 
 test('rate limits use the supplied clock and keep fixed-window retry semantics', async () => {
 	const calls: unknown[] = []
-	const layer = RateLimiterLive.pipe(
-		Layer.provide(
-			Layer.succeed(RateLimitRepository, {
-				acquire: (key, limit, window) =>
-					Effect.sync(() => {
-						calls.push({ key, limit, window })
-						return calls.length === 1 ? 1 : undefined
-					}),
-			}),
-		),
-	)
+	const service = makeRateLimiter({
+		repository: {
+			acquire: (key, limit, window) =>
+				Effect.sync(() => {
+					calls.push({ key, limit, window })
+					return calls.length === 1 ? 1 : undefined
+				}),
+		},
+	})
 	const result = await Effect.runPromise(
 		Effect.gen(function* () {
 			yield* TestClock.setTime(61_000)
-			const service = yield* RateLimiter
 			const quota = yield* service.check('owner', 1)
 			const failure = yield* service.check('owner', 1).pipe(Effect.flip)
 			return { quota, failure }
-		}).pipe(Effect.provide(layer), Effect.provide(TestClock.layer())),
+		}).pipe(Effect.provide(TestClock.layer())),
 	)
 	assert.deepEqual(result.quota, { limit: 1, remaining: 0, reset: 120 })
 	assert.ok(result.failure instanceof RateLimited)
@@ -214,25 +169,23 @@ test('billing distinguishes insufficient funds, conflicting input and idempotent
 		{ id: 'saved', operation: 'other', input_hash: 'hash', credits: 1, response: '{}' },
 		{ id: 'saved', operation: 'summary', input_hash: 'hash', credits: 1, response: '{}' },
 	]) {
-		const layer = BillingLive.pipe(
-			Layer.provide(
-				Layer.succeed(BillingRepository, {
-					status: Effect.succeed({ balance: 3, activity: [], packCredits: 1000, summaryCost: 1 }),
-					reserve: () => Effect.succeed({ receipt, balance: 3, attemptId: 'new' }),
-				}),
-			),
-		)
+		const service = makeBilling({
+			repository: {
+				status: Effect.succeed({ balance: 3, activity: [], packCredits: 1000, summaryCost: 1 }),
+				reserve: () => Effect.succeed({ receipt, balance: 3, attemptId: 'new' }),
+			},
+		})
 		const result = await Effect.runPromise(
-			Effect.flatMap(BillingLedger, (s) =>
-				s.charge({
+			service
+				.charge({
 					keyId: 'key',
 					idempotencyKey: requestId,
 					operation: 'summary',
 					inputHash: 'hash',
 					cost: 1,
 					result: '{}',
-				}),
-			).pipe(Effect.provide(layer), Effect.result),
+				})
+				.pipe(Effect.result),
 		)
 		if (!receipt) {
 			assert.ok(Result.isFailure(result))
@@ -249,36 +202,27 @@ test('billing distinguishes insufficient funds, conflicting input and idempotent
 
 test('invalid summary snapshots never call the billing capability', async () => {
 	let charges = 0
-	const layer = SummaryLive.pipe(
-		Layer.provide(
-			Layer.mergeAll(
-				identity,
-				Layer.succeed(SummaryRepository, {
-					snapshot: () => Effect.succeed({ total: 1, completed: 2 }),
-					decodeReplay: () => Effect.die('must not replay'),
+	const service = makeSummary({
+		crypto: identity,
+		repository: {
+			snapshot: () => Effect.succeed({ total: 1, completed: 2 }),
+			decodeReplay: () => Effect.die('must not replay'),
+		},
+		billing: {
+			charge: () =>
+				Effect.sync(() => {
+					charges++
+					return {
+						response: '{}',
+						requestId: 'receipt',
+						charged: 1,
+						balance: 2,
+						replayed: false,
+					}
 				}),
-				Layer.succeed(BillingLedger, {
-					status: Effect.die('unused'),
-					charge: () =>
-						Effect.sync(() => {
-							charges++
-							return {
-								response: '{}',
-								requestId: 'receipt',
-								charged: 1,
-								balance: 2,
-								replayed: false,
-							}
-						}),
-				}),
-			),
-		),
-	)
-	const exit = await Effect.runPromiseExit(
-		Effect.flatMap(SummaryService, (s) => s.create('key', requestId, { status: 'all' })).pipe(
-			Effect.provide(layer),
-		),
-	)
+		},
+	})
+	const exit = await Effect.runPromiseExit(service.create('key', requestId, { status: 'all' }))
 	assert.ok(Exit.isFailure(exit))
 	assert.equal(charges, 0)
 	const corrupt = await Effect.runPromise(
@@ -303,86 +247,66 @@ test('storefront rejects missing provider amounts instead of inventing a paid am
 		currency: null,
 		metadata: { example: 'storefront', guest_token_hash: `hash:${requestId}` },
 	}
-	const layer = StorefrontLive.pipe(
-		Layer.provide(
-			Layer.mergeAll(
-				limiter,
-				identity,
-				Layer.succeed(StorefrontSettings, {
-					enabled: true,
-					purchasePrice: 'one',
-					subscriptionPrice: 'two',
-					publishableKey: 'pk_test',
-				}),
-				Layer.succeed(PaymentGateway, {
-					price: () => Effect.die('unused'),
-					create: () => Effect.die('unused'),
-					verify: () => Effect.die('unused'),
-					session: () => Effect.succeed(session),
-				}),
-			),
-		),
-	)
+	const service = makeStorefront({
+		limiter,
+		crypto: identity,
+		settings: {
+			enabled: true,
+			purchasePrice: 'one',
+			subscriptionPrice: 'two',
+			publishableKey: 'pk_test',
+		},
+		gateway: {
+			price: () => Effect.die('unused'),
+			create: () => Effect.die('unused'),
+			verify: () => Effect.die('unused'),
+			session: () => Effect.succeed(session),
+		},
+	})
 	const error = await Effect.runPromise(
-		Effect.flatMap(StorefrontService, (s) =>
-			s.check('ip', { sessionId: session.id, token: requestId }),
-		).pipe(Effect.provide(layer), Effect.flip),
+		service.check('ip', { sessionId: session.id, token: requestId }).pipe(Effect.flip),
 	)
 	assert.ok(error instanceof Unavailable)
 })
 
 test('waitlist preflight and verification avoid side effects and keep limits sequential', async () => {
 	const calls: string[] = []
-	const layer = WaitlistLive.pipe(
-		Layer.provide(
-			Layer.mergeAll(
-				identity,
-				Layer.succeed(WaitlistRepository, {
-					join: () =>
-						Effect.sync(() => {
-							calls.push('insert')
-							return 'entry'
-						}),
-					find: () =>
-						Effect.sync(() => {
-							calls.push('find')
-							return { created_at: 'now' }
-						}),
+	const service = makeWaitlist({
+		crypto: identity,
+		repository: {
+			join: () =>
+				Effect.sync(() => {
+					calls.push('insert')
+					return 'entry'
 				}),
-				Layer.succeed(EmailService, {
-					confirm: () =>
-						Effect.sync(() => {
-							calls.push('confirm')
-						}),
-					test: () => Effect.die('unused'),
-					status: () => Effect.die('unused'),
+			find: () =>
+				Effect.sync(() => {
+					calls.push('find')
+					return { created_at: 'now' }
 				}),
-				Layer.succeed(RateLimiter, {
-					check: (key, limit) =>
-						Effect.sync(() => {
-							calls.push(key)
-							return { limit, remaining: 1, reset: 1 }
-						}),
+		},
+		email: {
+			confirm: () =>
+				Effect.sync(() => {
+					calls.push('confirm')
 				}),
-			),
-		),
-	)
+		},
+		limiter: {
+			check: (key, limit) =>
+				Effect.sync(() => {
+					calls.push(key)
+					return { limit, remaining: 1, reset: 1 }
+				}),
+		},
+	})
 	await Effect.runPromise(
-		Effect.flatMap(WaitlistService, (s) =>
-			s.join({ email: 'a@example.test', name: '', consent: true, website: 'bot' }, 'ip'),
-		).pipe(Effect.provide(layer)),
+		service.join({ email: 'a@example.test', name: '', consent: true, website: 'bot' }, 'ip'),
 	)
 	assert.deepEqual(calls, [])
-	const status = await Effect.runPromise(
-		Effect.flatMap(WaitlistService, (s) => s.status({ ...user, emailVerified: false })).pipe(
-			Effect.provide(layer),
-		),
-	)
+	const status = await Effect.runPromise(service.status({ ...user, emailVerified: false }))
 	assert.deepEqual(status, { joined: false, entry: null })
 	await Effect.runPromise(
-		Effect.flatMap(WaitlistService, (s) =>
-			s.join({ email: 'A@example.test', name: '', consent: true, website: '' }, 'ip'),
-		).pipe(Effect.provide(layer)),
+		service.join({ email: 'A@example.test', name: '', consent: true, website: '' }, 'ip'),
 	)
 	assert.deepEqual(calls, [
 		'waitlist-ip:hash:ip',
@@ -395,30 +319,26 @@ test('waitlist preflight and verification avoid side effects and keep limits seq
 test('key authentication validates scope and records usage without an owner context', async () => {
 	let lookups = 0
 	const touches: unknown[] = []
-	const layer = KeyAuthenticationLive.pipe(
-		Layer.provide(
-			Layer.mergeAll(
-				identity,
-				limiter,
-				Layer.succeed(KeyAuthenticationRepository, {
-					find: () =>
-						Effect.sync(() => {
-							lookups++
-							return { id: 'key', userId: 'owner', scope: 'summary:read' as const }
-						}),
-					touch: (id, millis) =>
-						Effect.sync(() => {
-							touches.push({ id, millis })
-						}),
+	const service = makeKeyAuthentication({
+		crypto: identity,
+		limiter,
+		repository: {
+			find: () =>
+				Effect.sync(() => {
+					lookups++
+					return { id: 'key', userId: 'owner', scope: 'summary:read' as const }
 				}),
-			),
-		),
-	)
+			touch: (id, millis) =>
+				Effect.sync(() => {
+					touches.push({ id, millis })
+				}),
+		},
+	})
 	const token = `idea_${'a'.repeat(64)}`
 	await Effect.runPromise(
 		Effect.gen(function* () {
 			yield* TestClock.setTime(12_345)
-			const auth = yield* KeyAuthentication
+			const auth = service
 			assert.ok(
 				(yield* auth.authenticate('invalid', 'summary:read').pipe(Effect.flip)) instanceof
 					Unauthorized,
@@ -433,7 +353,42 @@ test('key authentication validates scope and records usage without an owner cont
 				keyId: 'key',
 				quota: { limit: 30, remaining: 29, reset: 120 },
 			})
-		}).pipe(Effect.provide(layer), Effect.provide(TestClock.layer())),
+		}).pipe(Effect.provide(TestClock.layer())),
 	)
 	assert.deepEqual(touches, [{ id: 'key', millis: 12_345 }])
+})
+
+test('a provider acceptance followed by a failed settlement remains ambiguous and is never resent', async () => {
+	let reserved = false
+	let sends = 0
+	const storage = new StorageError({ cause: 'settlement unavailable' })
+	const { service } = mailFixture(
+		{
+			reserve: () =>
+				Effect.sync(() => {
+					if (reserved)
+						return {
+							kind: 'existing' as const,
+							state: {
+								id: 'claim',
+								status: 'sending' as const,
+								message_id: null,
+								error_code: null,
+							},
+						}
+					reserved = true
+					return { kind: 'fresh' as const, id: 'claim' }
+				}),
+			settle: () => Effect.fail(storage),
+		},
+		() =>
+			Effect.sync(() => {
+				sends++
+				return 'accepted-by-provider'
+			}),
+	)
+	assert.equal(await Effect.runPromise(service.test(user, requestId).pipe(Effect.flip)), storage)
+	const retry = await Effect.runPromise(service.test(user, requestId).pipe(Effect.flip))
+	assert.ok(retry instanceof Conflict)
+	assert.equal(sends, 1)
 })

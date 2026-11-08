@@ -67,7 +67,7 @@ Delete obsolete resources through Wrangler or provider dashboards after checking
 
 ## GitHub Actions deployment
 
-The **Verify** job runs lint/formatting, unit tests, type checks and build, in that order. Pull requests stop there. On main, the separate **Deploy** job waits for Verify, downloads its build artifact, applies D1 migrations, then publishes the prebuilt Worker and both Pages apps. It does not rebuild. Production deployments are serialized.
+The **Verify** job runs lint/formatting, unit and Worker integration tests, type checks, builds and browser tests, in that order. Pull requests stop there. On main, the separate **Deploy** job waits for Verify, downloads its build artifact, applies D1 migrations, then publishes the prebuilt Worker and both Pages apps. It does not rebuild. Production deployments are serialized.
 
 Configure these repository Actions settings for each project:
 
@@ -84,6 +84,6 @@ Configure these repository Actions settings for each project:
 
 The deploy job writes `CLOUDFLARE_WORKER_CONFIG` to the ignored `apps/api/wrangler.ci.json`. Keep its `main` relative to that directory (`src/index.ts`) and the single `DB` binding’s `migrations_dir` as `migrations`. Use the real production database ID, resource names, `AUTH_URL` and allowed origins. Keep provider/auth secrets on the existing Worker and Pages projects; do not put secrets in this JSON or in `VITE_` variables. Complete the resource and proxy-secret setup above before enabling deployment.
 
-This repository's Actions variables target the maintained showcase and its custom domains. Clones do not inherit those GitHub settings. Configure the clone's own resources before setting its account ID. Unit tests run in CI; the full local `pnpm check` additionally runs schema and API integration checks. Browser E2E tooling is not included.
+This repository's Actions variables target the maintained showcase and its custom domains. Clones do not inherit those GitHub settings. Configure the clone's own resources before setting its account ID. CI and local `pnpm check` both include schema, unit, Worker integration and browser regression checks. Install Chromium locally before the first browser run; CI installs it automatically.
 
 For an existing single-database deployment, follow [database cutover](databases.md#existing-deployments) before updating the bindings. Fresh baselines are not in-place upgrades.

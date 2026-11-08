@@ -1,6 +1,7 @@
 import { trustedOrigins } from '../origins'
 import { Context, Effect, Exit, Schema } from 'effect'
 import { preserveFatal } from '../effect-errors'
+import { StorageError } from '../persistence'
 import type { Handler, Operation } from '@workspace/contracts/operation'
 import { contractError, contractResponse } from '@workspace/contracts/http'
 import { database } from '@workspace/data/client'
@@ -14,7 +15,10 @@ import { apiKeyUser } from './api-key'
 
 type ApiContext = HonoContext<{ Bindings: Env }>
 
-export const effectHandler = <O extends Operation>(operation: O, handler: Handler<O, ApiRequest>) =>
+export const effectHandler = <O extends Operation>(
+	operation: O,
+	handler: Handler<O, ApiRequest, StorageError>,
+) =>
 	boundary(operation, handler, async (c) => {
 		if (!c.env.BETTER_AUTH_SECRET) throw new HttpError(503, 'Authentication is not configured')
 		const session = await createAuth(c.env).api.getSession({ headers: c.req.raw.headers })
@@ -36,7 +40,7 @@ export const effectHandler = <O extends Operation>(operation: O, handler: Handle
 
 export const publicEffectHandler = <O extends Operation>(
 	operation: O,
-	handler: Handler<O, PublicApiRequest>,
+	handler: Handler<O, PublicApiRequest, StorageError>,
 ) =>
 	boundary(operation, handler, async (c) =>
 		Context.make(PublicApiRequest, { request: c.req.raw, env: c.env }),
@@ -44,7 +48,7 @@ export const publicEffectHandler = <O extends Operation>(
 
 export const apiKeyEffectHandler = <O extends Operation>(
 	operation: O,
-	handler: Handler<O, ApiKeyRequest>,
+	handler: Handler<O, ApiKeyRequest, StorageError>,
 ) =>
 	boundary(operation, handler, async (c) => {
 		if (!operation.scope) throw new Error('API-key operation is missing its scope')
@@ -80,7 +84,7 @@ function requestQuery(operation: Operation, url: string) {
 
 function boundary<O extends Operation, R>(
 	operation: O,
-	handler: Handler<O, R>,
+	handler: Handler<O, R, StorageError>,
 	context: (c: ApiContext) => Promise<Context.Context<R>>,
 ): HonoHandler<{ Bindings: Env }> {
 	return async (c) => {
@@ -117,13 +121,14 @@ function boundary<O extends Operation, R>(
 						}
 					: {}),
 			}
-			const parsed = Schema.decodeUnknownExit<O['input']>(operation.input, {
+			const parsed = Schema.decodeExit<O['input']>(operation.input, {
 				onExcessProperty: 'error',
 			})(raw)
 			if (Exit.isFailure(parsed)) throw new HttpError(400, 'Invalid request')
 			const program = handler(parsed.value).pipe(
 				Effect.provide(services),
 				preserveFatal,
+				Effect.catchIf((error): error is StorageError => error instanceof StorageError, Effect.die),
 				Effect.match({ onFailure: (failure) => failure, onSuccess: (success) => success }),
 			)
 			const response = await Effect.runPromise(program, { signal: c.req.raw.signal })

@@ -31,9 +31,9 @@ From the repository root, with the local API test port (8799 by default) free:
 pnpm check
 ```
 
-It runs lint, formatting, schema/migration checks, local unit/API integration tests, TypeScript and builds. `pnpm validate` is an alias. Tests create isolated local D1/R2, signed sessions and provider fixtures, then clean up. Fixtures never become a production login bypass. Analytics fixture events do not go to your real project.
+It runs lint, formatting, schema/migration checks, local unit/API integration tests, TypeScript, builds and browser regression tests. `pnpm validate` is an alias. The executable `.githooks/pre-commit` runs `pnpm precommit:check`, which runs this same full check, including `pnpm lint:effect` (strict diagnostics) through `pnpm lint`. Effect diagnostic errors and warnings block commits. `pnpm install` activates the hook through the prepare script. Tests create isolated local D1/R2, signed sessions and provider fixtures, then clean up. Fixtures never become a production login bypass. Analytics fixture events do not go to your real project.
 
-Individual local commands: `pnpm test`, `pnpm test:unit`. Browser E2E tests and their tooling have been removed; use the manual frontend checks below. CI runs lint/formatting, unit tests, TypeScript and builds, followed by deployment on main. API integration tests remain local.
+Individual local commands: `pnpm test`, `pnpm test:unit`, `pnpm lint:effect`, `pnpm test:browser`. Install Chromium once with `pnpm exec playwright install chromium`. Browser tests use dedicated ports 3100, 3101 and 8798, refuse to reuse existing servers, and shut down their own isolated resources. They cover checkout retries/confirmation/polling with a browser-only Stripe fixture, missing proof, sign-in return paths, all publishing blocks and waitlist submission. They do not verify real OAuth or card processing. CI runs lint/formatting (including Effect diagnostics), unit tests, isolated local Worker integration tests, TypeScript, builds and browser regression tests, followed by deployment on main.
 
 Generate API outputs with native Orval after contract changes and review the diff. Generation writes directly to generated directories.
 

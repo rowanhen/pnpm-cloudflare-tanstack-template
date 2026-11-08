@@ -1,10 +1,10 @@
-import { Effect, Layer, Schema } from 'effect'
+import { Effect, Schema } from 'effect'
 import type { database } from '@workspace/data/client'
 import { todos } from '@workspace/data/product'
 import { TodoData, TodoListData, TodoListLimit } from '@workspace/contracts/todos'
 import { and, desc, eq } from 'drizzle-orm'
 import { StorageError, storageEffect } from '../../persistence'
-import { TodoRepository } from './service'
+import type { TodoRepository } from './todos'
 
 const fields = {
 	id: todos.id,
@@ -14,13 +14,13 @@ const fields = {
 }
 const decodeTodo = Schema.decodeUnknownEffect(TodoData, { onExcessProperty: 'error' })
 const decodeOptionalTodo = (value: unknown) =>
-	value === undefined ? Effect.succeed(undefined) : decodeTodo(value)
+	value === undefined ? Effect.undefined : decodeTodo(value)
 const storageFailure = (cause: unknown) =>
 	cause instanceof StorageError ? cause : new StorageError({ cause })
 
-export const todoRepositoryLayer = (db: ReturnType<typeof database>, userId: string) => {
+export const todoRepository = (db: ReturnType<typeof database>, userId: string): TodoRepository => {
 	const owned = (id: string) => and(eq(todos.id, id), eq(todos.user_id, userId))
-	return Layer.succeed(TodoRepository, {
+	return {
 		list: storageEffect(() =>
 			db
 				.select(fields)
@@ -57,5 +57,5 @@ export const todoRepositoryLayer = (db: ReturnType<typeof database>, userId: str
 			storageEffect(() => db.delete(todos).where(owned(id)).run()).pipe(
 				Effect.map((result) => result.meta.changes > 0),
 			),
-	})
+	}
 }

@@ -36,3 +36,7 @@ dist-ssr
 
 # Runtime CI configuration comes from GitHub Actions variables.
 apps/api/wrangler.ci.json
+
+# Browser regression artifacts
+/test-results/
+/playwright-report/

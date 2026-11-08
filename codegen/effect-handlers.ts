@@ -188,7 +188,7 @@ export const ${id} = {
 export type ${name}Input = InputOf<typeof ${id}>
 export type ${name}Success = SuccessOf<typeof ${id}>
 export type ${name}Failure = FailureOf<typeof ${id}>
-export type ${name}Handler<R = never> = Handler<typeof ${id}, R>
+export type ${name}Handler<R = never, E = never> = Handler<typeof ${id}, R, E>
 `
 }
 

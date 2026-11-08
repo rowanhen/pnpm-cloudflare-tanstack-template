@@ -1,14 +1,14 @@
-import { Effect, Layer, Schema } from 'effect'
+import { Effect, Schema } from 'effect'
 import { database } from '@workspace/data/client'
 import { emailDeliveries } from '@workspace/data/product'
 import { and, desc, eq } from 'drizzle-orm'
 import { EmailStatusData } from '@workspace/contracts/values'
 import { storageEffect, decodeStored, StorageError } from '../../persistence'
 import { DeliveryState } from './domain'
-import { EmailRepository } from './service'
-export const emailRepositoryLayer = (binding: Parameters<typeof database>[0]) => {
+import type { EmailRepository } from './emails'
+export const emailRepository = (binding: Parameters<typeof database>[0]) => {
 	const db = database(binding)
-	return Layer.succeed(EmailRepository, {
+	return {
 		reserve: (mail) =>
 			Effect.gen(function* () {
 				const row = yield* storageEffect(() =>
@@ -59,7 +59,7 @@ export const emailRepositoryLayer = (binding: Parameters<typeof database>[0]) =>
 						.run(),
 				)
 				if (result.meta.changes !== 1)
-					return yield* Effect.fail(new StorageError({ cause: 'Delivery claim was not owned' }))
+					return yield* new StorageError({ cause: 'Delivery claim was not owned' })
 			}),
 		list: (userId) =>
 			storageEffect(() =>
@@ -74,5 +74,5 @@ export const emailRepositoryLayer = (binding: Parameters<typeof database>[0]) =>
 					.orderBy(desc(emailDeliveries.created_at))
 					.limit(10),
 			).pipe(Effect.flatMap((rows) => decodeStored(EmailStatusData, rows))),
-	})
+	} satisfies EmailRepository
 }

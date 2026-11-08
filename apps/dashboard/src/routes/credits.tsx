@@ -1,6 +1,5 @@
-import { Link, createFileRoute, redirect } from '@tanstack/react-router'
-
 import {
+	LinkButton,
 	AppShell,
 	appTitle,
 	Alert,
@@ -10,6 +9,8 @@ import {
 	Stack,
 	Typography,
 } from '@workspace/shared'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+
 import { lazy, Suspense } from 'react'
 import { getSession } from '../lib/session'
 import { signInPath } from '../lib/login'
@@ -29,14 +30,9 @@ function CheckoutPage() {
 	const { availability, config, create } = useCheckoutSession()
 	return (
 		<AppShell title="Checkout">
-			<Button
-				variant="ghost"
-				className="px-0"
-				{...{ nativeButton: false }}
-				render={<Link aria-label="← Back to workspace" role="link" to="/" />}
-			>
+			<LinkButton variant="ghost" className="px-0" aria-label="← Back to workspace" to="/">
 				← Back to workspace
-			</Button>
+			</LinkButton>
 			{availability.isPending || (availability.data?.checkoutEnabled && config.isPending) ? (
 				<Skeleton className="h-80 max-w-2xl" aria-label="Loading checkout" />
 			) : availability.isError || config.isError ? (

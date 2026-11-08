@@ -1,4 +1,4 @@
-import { Effect, Layer, Schema } from 'effect'
+import { Effect, Schema } from 'effect'
 import { now } from '@workspace/data/columns'
 import { database } from '@workspace/data/client'
 import { apiKeys } from '@workspace/data/identity'
@@ -6,7 +6,7 @@ import type { KeyScope } from '@workspace/contracts'
 import { KeysData } from '@workspace/contracts/values'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { decodeStored, storageEffect } from '../../persistence'
-import { KeyRepository, KeyAuthenticationRepository, MAX_KEYS } from './service'
+import { type KeyRepository, type KeyAuthenticationRepository, MAX_KEYS } from './keys'
 const fields = {
 	id: apiKeys.id,
 	name: apiKeys.name,
@@ -15,9 +15,9 @@ const fields = {
 	created_at: apiKeys.created_at,
 	last_used_at: apiKeys.last_used_at,
 }
-export const keyRepositoryLayer = (binding: Parameters<typeof database>[0], userId: string) => {
+export const keyRepository = (binding: Parameters<typeof database>[0], userId: string) => {
 	const db = database(binding)
-	return Layer.succeed(KeyRepository, {
+	return {
 		list: storageEffect(() =>
 			db
 				.select(fields)
@@ -59,12 +59,12 @@ export const keyRepositoryLayer = (binding: Parameters<typeof database>[0], user
 					.where(and(eq(apiKeys.id, id), eq(apiKeys.user_id, userId)))
 					.run(),
 			).pipe(Effect.map((r) => r.meta.changes > 0)),
-	})
+	} satisfies KeyRepository
 }
 
-export const keyAuthenticationRepositoryLayer = (binding: Parameters<typeof database>[0]) => {
+export const keyAuthenticationRepository = (binding: Parameters<typeof database>[0]) => {
 	const db = database(binding)
-	return Layer.succeed(KeyAuthenticationRepository, {
+	return {
 		find: (hash) =>
 			storageEffect(() =>
 				db
@@ -75,7 +75,7 @@ export const keyAuthenticationRepositoryLayer = (binding: Parameters<typeof data
 			).pipe(
 				Effect.flatMap((row) =>
 					row === undefined
-						? Effect.succeed(undefined)
+						? Effect.undefined
 						: decodeStored(
 								Schema.Struct({
 									id: Schema.String,
@@ -93,5 +93,5 @@ export const keyAuthenticationRepositoryLayer = (binding: Parameters<typeof data
 					.set({ last_used_at: new Date(millis).toISOString() })
 					.where(eq(apiKeys.id, id)),
 			).pipe(Effect.asVoid),
-	})
+	} satisfies KeyAuthenticationRepository
 }

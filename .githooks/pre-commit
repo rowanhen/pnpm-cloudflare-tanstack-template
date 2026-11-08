@@ -1,2 +1,3 @@
 #!/bin/sh
+# Full verification includes strict Effect diagnostics through pnpm lint.
 exec pnpm run precommit:check

@@ -11,7 +11,25 @@
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true,
-		"noUncheckedSideEffectImports": true
+		"noUncheckedSideEffectImports": true,
+		"plugins": [
+			{
+				"name": "@effect/language-service",
+				"diagnosticSeverity": {
+					"floatingEffect": "error",
+					"missingEffectError": "error",
+					"missingEffectContext": "error",
+					"missingLayerContext": "error",
+					"anyUnknownInErrorContext": "error",
+					"returnEffectInGen": "error",
+					"promiseInEffectSuccess": "error",
+					"unnecessaryFailYieldableError": "warning",
+					"effectSucceedWithUndefined": "warning",
+					"preferTypedSchemaDecoder": "warning",
+					"multipleCatchTag": "warning"
+				}
+			}
+		]
 	},
 	"include": ["src/**/*.ts"]
 }

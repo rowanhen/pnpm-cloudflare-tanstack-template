@@ -72,7 +72,7 @@ export const getHealth = {
 export type GetHealthInput = InputOf<typeof getHealth>
 export type GetHealthSuccess = SuccessOf<typeof getHealth>
 export type GetHealthFailure = FailureOf<typeof getHealth>
-export type GetHealthHandler<R = never> = Handler<typeof getHealth, R>
+export type GetHealthHandler<R = never, E = never> = Handler<typeof getHealth, R, E>
 export const GetConfig200Response = S.Struct({
 	googleEnabled: S.Boolean,
 	checkoutEnabled: S.Boolean,
@@ -138,4 +138,4 @@ export const getConfig = {
 export type GetConfigInput = InputOf<typeof getConfig>
 export type GetConfigSuccess = SuccessOf<typeof getConfig>
 export type GetConfigFailure = FailureOf<typeof getConfig>
-export type GetConfigHandler<R = never> = Handler<typeof getConfig, R>
+export type GetConfigHandler<R = never, E = never> = Handler<typeof getConfig, R, E>

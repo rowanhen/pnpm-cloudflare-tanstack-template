@@ -1,15 +1,15 @@
-import { Effect } from 'effect'
-import type { CreateTodoFailure, GetTodoFailure } from '@workspace/contracts/operations'
-import type { InvalidTodo } from './domain'
-import type { TodoNotFound } from './service'
+import { InvalidInput, MissingRecord } from '../../errors'
+import type { StorageError } from '../../persistence'
+import type { InvalidTodo, TodoNotFound } from './todos'
 
-export const invalidTodoResponse = (_error: InvalidTodo) =>
-	Effect.fail({
-		status: 400,
-		body: { code: 'bad_request', error: 'Invalid todo' },
-	} satisfies CreateTodoFailure)
-export const todoNotFoundResponse = (_error: TodoNotFound) =>
-	Effect.fail({
-		status: 404,
-		body: { code: 'todo_not_found', error: 'Todo not found' },
-	} satisfies GetTodoFailure)
+// Keep Todo failures independent of transport; the shared responder owns HTTP codes and bodies.
+export function todoError(error: InvalidTodo | TodoNotFound | StorageError) {
+	switch (error._tag) {
+		case 'InvalidTodo':
+			return new InvalidInput({ message: 'Invalid todo' })
+		case 'TodoNotFound':
+			return new MissingRecord({ message: 'Todo not found' })
+		case 'StorageError':
+			return error
+	}
+}

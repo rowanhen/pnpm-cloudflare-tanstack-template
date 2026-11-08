@@ -1,14 +1,11 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { Cause, Effect, Exit } from 'effect'
-import { stripeLayer } from '../../apps/api/src/features/payments/stripe.ts'
-import { PaymentGateway } from '../../apps/api/src/features/payments/service.ts'
+import { stripeGateway } from '../../apps/api/src/features/payments/stripe.ts'
 import { ProviderFailure } from '../../apps/api/src/errors.ts'
 
-const layer = stripeLayer({ secretKey: 'sk_test_fixture', origin: 'http://localhost' })
-const session = Effect.flatMap(PaymentGateway, (gateway) =>
-	gateway.session('cs_test_example'),
-).pipe(Effect.provide(layer))
+const gateway = stripeGateway({ secretKey: 'sk_test_fixture', origin: 'http://localhost' })
+const session = gateway.session('cs_test_example')
 
 test('Stripe network failures stay typed and are not automatically retried', async (t) => {
 	let attempts = 0

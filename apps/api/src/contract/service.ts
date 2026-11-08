@@ -68,7 +68,7 @@ export const respond = <O extends Operation, A, R>(
 			return Effect.fail({
 				status: response.status,
 				body,
-				headers: response.headers,
+				...(response.headers ? { headers: response.headers } : {}),
 			} as FailureOf<O>)
 		}),
 	)

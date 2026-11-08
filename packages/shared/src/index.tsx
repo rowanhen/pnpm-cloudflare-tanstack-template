@@ -33,3 +33,5 @@ export { useHydrated } from './hooks/use-hydrated'
 export { cn } from './lib/utils'
 
 export { AppShell, PageSection } from './components/app-shell'
+
+export { LinkButton, AnchorButton } from './components/link-button'

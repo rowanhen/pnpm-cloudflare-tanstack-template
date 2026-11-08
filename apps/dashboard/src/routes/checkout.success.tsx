@@ -1,9 +1,9 @@
-import { Link, createFileRoute, redirect } from '@tanstack/react-router'
-
-import { Button, PageState, appTitle } from '@workspace/shared'
+import { LinkButton, Button, PageState, appTitle } from '@workspace/shared'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 import { checkoutSessionId, signInPath } from '../lib/login'
 import { getSession } from '../lib/session'
+import { paymentView } from '../lib/payment-view'
 import { money, useOrderStatus } from '../hooks/use-checkout'
 export const Route = createFileRoute('/checkout/success')({
 	beforeLoad: async ({ location }) => {
@@ -23,66 +23,40 @@ function CheckoutSuccess() {
 		return (
 			<PageState kind="error" title="We couldn't find that order.">
 				{session_id && <Button onClick={() => void status.refetch()}>Check again</Button>}
-				<Button
-					variant="outline"
-					{...{ nativeButton: false }}
-					render={<Link aria-label="Back to checkout" role="link" to="/credits" />}
-				>
+				<LinkButton variant="outline" aria-label="Back to checkout" to="/credits">
 					Back to checkout
-				</Button>
+				</LinkButton>
 			</PageState>
 		)
-	if (status.isPending) return <PageState kind="loading" title="Checking your payment…" />
+	if (status.isPending) return <PageState {...paymentView('checking')} />
 	const order = status.data.order
 	if (order.status === 'paid')
 		return (
 			<PageState
-				kind="success"
-				title="Payment successful."
+				{...paymentView('paid')}
 				description={`${order.credits.toLocaleString('en-GB')} credits added · ${money(order.amount, order.currency)}.`}
 			>
-				<Button
-					{...{ nativeButton: false }}
-					render={<Link aria-label="Back to workspace" role="link" to="/" />}
-				>
+				<LinkButton aria-label="Back to workspace" to="/">
 					Back to workspace
-				</Button>
+				</LinkButton>
 			</PageState>
 		)
 	if (order.status === 'expired')
 		return (
-			<PageState
-				kind="error"
-				title="This checkout has expired."
-				description="No payment was confirmed."
-			>
-				<Button
-					{...{ nativeButton: false }}
-					render={<Link aria-label="Start a new checkout" role="link" to="/credits" />}
-				>
+			<PageState {...paymentView('expired')} description="No payment was confirmed.">
+				<LinkButton aria-label="Start a new checkout" to="/credits">
 					Start a new checkout
-				</Button>
+				</LinkButton>
 			</PageState>
 		)
 	return (
-		<PageState
-			kind="loading"
-			title={
-				status.data.checkoutStatus === 'open'
-					? 'Your checkout is incomplete.'
-					: 'Your payment is processing.'
-			}
-		>
+		<PageState {...paymentView(status.data.checkoutStatus === 'open' ? 'open' : 'pending')}>
 			<Button onClick={() => void status.refetch()} disabled={status.isFetching}>
 				Check payment status
 			</Button>
-			<Button
-				variant="outline"
-				{...{ nativeButton: false }}
-				render={<Link aria-label="Back to checkout" role="link" to="/credits" />}
-			>
+			<LinkButton variant="outline" aria-label="Back to checkout" to="/credits">
 				Back to checkout
-			</Button>
+			</LinkButton>
 		</PageState>
 	)
 }

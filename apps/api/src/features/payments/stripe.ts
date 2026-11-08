@@ -1,7 +1,7 @@
-import { Effect, Layer, Schema } from 'effect'
+import { Effect, Schema } from 'effect'
 import { Stripe } from 'stripe'
 import { InvalidInput, ProviderFailure, Unavailable } from '../../errors'
-import { PaymentGateway, PaymentSession, type CheckoutIntent } from './service'
+import { type PaymentGateway, PaymentSession, type CheckoutIntent } from './payments'
 
 const Price = Schema.Struct({
 	id: Schema.String,
@@ -37,7 +37,7 @@ const decodeEvent = <A>(schema: Schema.Codec<A, unknown>, value: unknown) =>
 		Effect.mapError(() => new InvalidInput({ message: 'Invalid webhook event' })),
 	)
 
-export const stripeLayer = (settings: {
+export const stripeGateway = (settings: {
 	secretKey?: string
 	webhookSecret?: string
 	origin: string
@@ -56,7 +56,7 @@ export const stripeLayer = (settings: {
 	const call = <A>(run: (stripe: Stripe) => Promise<A>) =>
 		Effect.gen(function* () {
 			if (!settings.secretKey?.match(/^(sk|rk)_test_/))
-				return yield* Effect.fail(new Unavailable({ message: 'Test checkout is not configured' }))
+				return yield* new Unavailable({ message: 'Test checkout is not configured' })
 			return yield* Effect.tryPromise({
 				try: (signal) => run(client(signal)),
 				catch: (cause) =>
@@ -87,7 +87,7 @@ export const stripeLayer = (settings: {
 					return_url: `${settings.origin}/checkout/complete?session_id={CHECKOUT_SESSION_ID}`,
 				}),
 	})
-	return Layer.succeed(PaymentGateway, {
+	return {
 		price: (id, kind) =>
 			Effect.gen(function* () {
 				const price = yield* decode(
@@ -103,9 +103,7 @@ export const stripeLayer = (settings: {
 					price.unit_amount < 1 ||
 					!product.active
 				)
-					return yield* Effect.fail(
-						new Unavailable({ message: 'Configure active test products and prices' }),
-					)
+					return yield* new Unavailable({ message: 'Configure active test products and prices' })
 				return {
 					priceId: price.id,
 					name: product.name,
@@ -131,9 +129,8 @@ export const stripeLayer = (settings: {
 		verify: (raw, signature) =>
 			Effect.gen(function* () {
 				if (!settings.webhookSecret)
-					return yield* Effect.fail(new Unavailable({ message: 'Webhook is not configured' }))
-				if (!signature)
-					return yield* Effect.fail(new InvalidInput({ message: 'Missing Stripe signature' }))
+					return yield* new Unavailable({ message: 'Webhook is not configured' })
+				if (!signature) return yield* new InvalidInput({ message: 'Missing Stripe signature' })
 				const event = yield* decodeEvent(
 					Event,
 					yield* call((stripe) =>
@@ -156,9 +153,7 @@ export const stripeLayer = (settings: {
 					),
 				)
 				if (event.livemode)
-					return yield* Effect.fail(
-						new InvalidInput({ message: 'This example accepts test events only' }),
-					)
+					return yield* new InvalidInput({ message: 'This example accepts test events only' })
 				if (
 					![
 						'checkout.session.completed',
@@ -171,5 +166,5 @@ export const stripeLayer = (settings: {
 				const session = yield* decodeEvent(SessionId, event.data.object)
 				return { kind: 'checkout' as const, eventId: event.id, sessionId: session.id }
 			}),
-	})
+	} satisfies PaymentGateway
 }

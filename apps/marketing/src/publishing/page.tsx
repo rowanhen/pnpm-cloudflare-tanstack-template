@@ -1,7 +1,7 @@
-/* oxlint-disable jsx-a11y/prefer-tag-over-role -- Composables renders anchors below; override Base UI's default button role. */
 import {
 	Badge,
-	Button,
+	LinkButton,
+	AnchorButton,
 	ClipboardText,
 	LayerCard,
 	Typography,
@@ -10,13 +10,13 @@ import {
 	Section,
 	Grid,
 } from '@workspace/shared'
-import { Link } from '@tanstack/react-router'
+import type { ComponentProps } from 'react'
 import { track } from '@workspace/observability/browser'
 import { MarketingShell } from '../components/marketing-shell'
 import { WaitlistForm } from '../components/waitlist-form'
 import { seo, site } from '../lib/seo'
 import { markdownPath } from './model'
-import type { ContentBlock, PublishedPage } from './model'
+import type { ContentBlock, ContentLink, PublishedPage } from './model'
 
 export function pageHead(page: PublishedPage) {
 	const head = seo(
@@ -34,6 +34,35 @@ export function pageHead(page: PublishedPage) {
 		],
 	}
 }
+function ContentButton({
+	link,
+	...props
+}: { link: ContentLink } & Pick<ComponentProps<typeof AnchorButton>, 'variant' | 'size'>) {
+	const common = {
+		...props,
+		onClick: () => {
+			if (link.event) track(link.event, {})
+		},
+	}
+	if (link.href.startsWith('#'))
+		return (
+			<LinkButton {...common} to="." hash={link.href.slice(1)}>
+				{link.label}
+			</LinkButton>
+		)
+	if (link.href.startsWith('/') && !link.href.startsWith('//'))
+		return (
+			<LinkButton {...common} to={link.href}>
+				{link.label}
+			</LinkButton>
+		)
+	return (
+		<AnchorButton {...common} href={link.href}>
+			{link.label}
+		</AnchorButton>
+	)
+}
+
 function Block({ block }: { block: ContentBlock }) {
 	const hydrated = useHydrated()
 	switch (block.kind) {
@@ -88,20 +117,7 @@ function Block({ block }: { block: ContentBlock }) {
 				<nav aria-label={block.label} className="grid gap-4">
 					{block.items.map((item) => (
 						<div key={item.href} className="space-y-1">
-							<Button
-								role="link"
-								{...{ nativeButton: false }}
-								variant="link"
-								render={
-									item.href.startsWith('/') && !item.href.startsWith('//') ? (
-										<Link to={item.href} />
-									) : (
-										<a href={item.href} aria-label={item.label} />
-									)
-								}
-							>
-								{item.label}
-							</Button>
+							<ContentButton link={item} variant="link" />
 							{item.detail && (
 								<Typography as="p" variant="body-100" className="text-content-secondary">
 									{item.detail}
@@ -174,27 +190,12 @@ export function ContentPage({ page }: { page: PublishedPage }) {
 						)}
 						<div className="flex flex-wrap gap-3">
 							{page.actions?.map((action, i) => (
-								<Button
-									role="link"
-									{...{ nativeButton: false }}
+								<ContentButton
 									key={action.href}
+									link={action}
 									size="lg"
 									variant={i === 0 ? 'default' : 'outline'}
-									render={
-										action.href.startsWith('#') ? (
-											<Link to="." hash={action.href.slice(1)} />
-										) : action.href.startsWith('/') && !action.href.startsWith('//') ? (
-											<Link to={action.href} />
-										) : (
-											<a href={action.href} aria-label={action.label} />
-										)
-									}
-									onClick={() => {
-										if (action.event) track(action.event, {})
-									}}
-								>
-									{action.label}
-								</Button>
+								/>
 							))}
 						</div>
 					</Stack>

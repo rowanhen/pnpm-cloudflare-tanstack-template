@@ -95,7 +95,7 @@ export const listApiTodos = {
 export type ListApiTodosInput = InputOf<typeof listApiTodos>
 export type ListApiTodosSuccess = SuccessOf<typeof listApiTodos>
 export type ListApiTodosFailure = FailureOf<typeof listApiTodos>
-export type ListApiTodosHandler<R = never> = Handler<typeof listApiTodos, R>
+export type ListApiTodosHandler<R = never, E = never> = Handler<typeof listApiTodos, R, E>
 export const CreateSummaryHeader = S.Struct({
 	'idempotency-key': S.String.check(
 		S.isPattern(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/),
@@ -213,4 +213,4 @@ export const createSummary = {
 export type CreateSummaryInput = InputOf<typeof createSummary>
 export type CreateSummarySuccess = SuccessOf<typeof createSummary>
 export type CreateSummaryFailure = FailureOf<typeof createSummary>
-export type CreateSummaryHandler<R = never> = Handler<typeof createSummary, R>
+export type CreateSummaryHandler<R = never, E = never> = Handler<typeof createSummary, R, E>

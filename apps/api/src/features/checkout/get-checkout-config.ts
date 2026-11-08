@@ -5,17 +5,11 @@ import {
 } from '@workspace/contracts/operations'
 import { ApiRequest } from '../../contract/context'
 import { respond } from '../../contract/service'
-import { CheckoutService } from './service'
-import { checkoutLayer } from '../../runtime/checkout-layers'
+import { userCheckout } from '../../runtime/checkout-resources'
 
 export const getCheckoutConfig: GetCheckoutConfigHandler<ApiRequest> = () =>
 	Effect.gen(function* () {
 		const ctx = yield* ApiRequest
-		const value = yield* respond(
-			operation,
-			Effect.flatMap(CheckoutService, (s) => s.config).pipe(
-				Effect.provide(checkoutLayer(ctx.env, ctx.user)),
-			),
-		)
+		const value = yield* respond(operation, userCheckout(ctx.env, ctx.user).config)
 		return { status: 200, body: value }
 	})

@@ -1,11 +1,11 @@
-import { Effect, Layer, Schema } from 'effect'
+import { Effect, Schema } from 'effect'
 import { now } from '@workspace/data/columns'
 import { database } from '@workspace/data/client'
 import { orders, creditAccounts, creditGrants, stripeEvents } from '@workspace/data/billing'
 import { and, eq, sql } from 'drizzle-orm'
 import { decodeStored, storageEffect } from '../../persistence'
 import { StoredOrder } from './domain'
-import { CheckoutRepository } from './service'
+import type { CheckoutRepository } from './checkout'
 const fields = {
 	id: orders.id,
 	user_id: orders.user_id,
@@ -17,7 +17,7 @@ const fields = {
 	status: orders.status,
 	stripe_session_id: orders.stripe_session_id,
 }
-export const checkoutRepositoryLayer = (
+export const checkoutRepository = (
 	binding: Parameters<typeof database>[0],
 	fallbackPrice: string,
 ) => {
@@ -27,11 +27,11 @@ export const checkoutRepositoryLayer = (
 		storageEffect(() => db.select(fields).from(orders).where(eq(orders.id, id)).get()).pipe(
 			Effect.flatMap((row) =>
 				row === undefined
-					? Effect.succeed(undefined)
+					? Effect.undefined
 					: decodeRow({ ...row, price_id: row.price_id ?? fallbackPrice }),
 			),
 		)
-	return Layer.succeed(CheckoutRepository, {
+	return {
 		find,
 		reserve: (userId, requestId, offer) =>
 			Effect.gen(function* () {
@@ -70,7 +70,7 @@ export const checkoutRepositoryLayer = (
 			).pipe(
 				Effect.flatMap((row) =>
 					row === undefined
-						? Effect.succeed(undefined)
+						? Effect.undefined
 						: decodeRow({ ...row, price_id: row.price_id ?? fallbackPrice }),
 				),
 			),
@@ -138,5 +138,5 @@ export const checkoutRepositoryLayer = (
 					])
 				else await db.batch([update, account, grant, balance])
 			}),
-	})
+	} satisfies CheckoutRepository
 }

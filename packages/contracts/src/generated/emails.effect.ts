@@ -78,7 +78,7 @@ export const getEmailStatus = {
 export type GetEmailStatusInput = InputOf<typeof getEmailStatus>
 export type GetEmailStatusSuccess = SuccessOf<typeof getEmailStatus>
 export type GetEmailStatusFailure = FailureOf<typeof getEmailStatus>
-export type GetEmailStatusHandler<R = never> = Handler<typeof getEmailStatus, R>
+export type GetEmailStatusHandler<R = never, E = never> = Handler<typeof getEmailStatus, R, E>
 export const SendTestEmailBody = S.Struct({
 	requestId: S.String.check(
 		S.isPattern(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/),
@@ -187,4 +187,4 @@ export const sendTestEmail = {
 export type SendTestEmailInput = InputOf<typeof sendTestEmail>
 export type SendTestEmailSuccess = SuccessOf<typeof sendTestEmail>
 export type SendTestEmailFailure = FailureOf<typeof sendTestEmail>
-export type SendTestEmailHandler<R = never> = Handler<typeof sendTestEmail, R>
+export type SendTestEmailHandler<R = never, E = never> = Handler<typeof sendTestEmail, R, E>

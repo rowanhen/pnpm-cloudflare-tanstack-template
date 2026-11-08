@@ -79,7 +79,7 @@ export const getCheckoutConfig = {
 export type GetCheckoutConfigInput = InputOf<typeof getCheckoutConfig>
 export type GetCheckoutConfigSuccess = SuccessOf<typeof getCheckoutConfig>
 export type GetCheckoutConfigFailure = FailureOf<typeof getCheckoutConfig>
-export type GetCheckoutConfigHandler<R = never> = Handler<typeof getCheckoutConfig, R>
+export type GetCheckoutConfigHandler<R = never, E = never> = Handler<typeof getCheckoutConfig, R, E>
 export const CreateCheckoutBody = S.Struct({
 	requestId: S.String.check(
 		S.isPattern(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/),
@@ -174,7 +174,7 @@ export const createCheckout = {
 export type CreateCheckoutInput = InputOf<typeof createCheckout>
 export type CreateCheckoutSuccess = SuccessOf<typeof createCheckout>
 export type CreateCheckoutFailure = FailureOf<typeof createCheckout>
-export type CreateCheckoutHandler<R = never> = Handler<typeof createCheckout, R>
+export type CreateCheckoutHandler<R = never, E = never> = Handler<typeof createCheckout, R, E>
 export const getOrderPathSessionIdRegExp = new RegExp('^cs_test_[A-Za-z0-9]+$')
 
 export const GetOrderParams = S.Struct({
@@ -267,4 +267,4 @@ export const getOrder = {
 export type GetOrderInput = InputOf<typeof getOrder>
 export type GetOrderSuccess = SuccessOf<typeof getOrder>
 export type GetOrderFailure = FailureOf<typeof getOrder>
-export type GetOrderHandler<R = never> = Handler<typeof getOrder, R>
+export type GetOrderHandler<R = never, E = never> = Handler<typeof getOrder, R, E>
