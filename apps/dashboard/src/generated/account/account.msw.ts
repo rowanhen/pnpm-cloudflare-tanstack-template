@@ -8,7 +8,7 @@
 import { faker } from '@faker-js/faker'
 
 import { HttpResponse, http } from 'msw'
-import type { RequestHandlerOptions } from 'msw'
+import type { HttpResponseResolver, RequestHandlerOptions } from 'msw'
 
 import type { GetMe200 } from '../api.schemas'
 
@@ -28,12 +28,12 @@ export const getGetMeResponseMock = (
 export const getGetMeMockHandler = (
 	overrideResponse?:
 		| GetMe200
-		| ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<GetMe200> | GetMe200),
+		| ((info: Parameters<HttpResponseResolver>[0]) => Promise<GetMe200> | GetMe200),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
 		'*/api/me',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'

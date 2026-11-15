@@ -8,7 +8,7 @@
 import { faker } from '@faker-js/faker'
 
 import { HttpResponse, http } from 'msw'
-import type { RequestHandlerOptions } from 'msw'
+import type { HttpResponseResolver, RequestHandlerOptions } from 'msw'
 
 import type { AppConfig, GetHealth200 } from '../api.schemas'
 
@@ -32,14 +32,12 @@ export const getGetConfigResponseMock = (
 export const getGetHealthMockHandler = (
 	overrideResponse?:
 		| GetHealth200
-		| ((
-				info: Parameters<Parameters<typeof http.get>[1]>[0],
-		  ) => Promise<GetHealth200> | GetHealth200),
+		| ((info: Parameters<HttpResponseResolver>[0]) => Promise<GetHealth200> | GetHealth200),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
 		'*/api/health',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -56,12 +54,12 @@ export const getGetHealthMockHandler = (
 export const getGetConfigMockHandler = (
 	overrideResponse?:
 		| AppConfig
-		| ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<AppConfig> | AppConfig),
+		| ((info: Parameters<HttpResponseResolver>[0]) => Promise<AppConfig> | AppConfig),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
 		'*/api/config',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'

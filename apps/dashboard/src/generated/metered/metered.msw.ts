@@ -8,9 +8,9 @@
 import { faker } from '@faker-js/faker'
 
 import { HttpResponse, http } from 'msw'
-import type { RequestHandlerOptions } from 'msw'
+import type { HttpResponseResolver, PathParams, RequestHandlerOptions } from 'msw'
 
-import type { SummaryResponse, TodosResponse } from '../api.schemas'
+import type { CreateSummaryBody, SummaryResponse, TodosResponse } from '../api.schemas'
 
 export const getListApiTodosResponseMock = (
 	overrideResponse: Partial<Extract<TodosResponse, object>> = {},
@@ -37,14 +37,12 @@ export const getCreateSummaryResponseMock = (
 export const getListApiTodosMockHandler = (
 	overrideResponse?:
 		| TodosResponse
-		| ((
-				info: Parameters<Parameters<typeof http.get>[1]>[0],
-		  ) => Promise<TodosResponse> | TodosResponse),
+		| ((info: Parameters<HttpResponseResolver>[0]) => Promise<TodosResponse> | TodosResponse),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
 		'*/api/v1/todos',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -62,13 +60,13 @@ export const getCreateSummaryMockHandler = (
 	overrideResponse?:
 		| SummaryResponse
 		| ((
-				info: Parameters<Parameters<typeof http.post>[1]>[0],
+				info: Parameters<HttpResponseResolver<PathParams, CreateSummaryBody>>[0],
 		  ) => Promise<SummaryResponse> | SummaryResponse),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.post(
+	return http.post<PathParams, CreateSummaryBody>(
 		'*/api/v1/summary',
-		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<PathParams, CreateSummaryBody>>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'

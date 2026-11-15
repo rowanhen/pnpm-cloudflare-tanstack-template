@@ -8,9 +8,9 @@
 import { faker } from '@faker-js/faker'
 
 import { HttpResponse, http } from 'msw'
-import type { RequestHandlerOptions } from 'msw'
+import type { HttpResponseResolver, PathParams, RequestHandlerOptions } from 'msw'
 
-import type { EmailStatus, SendTestEmail202 } from '../api.schemas'
+import type { EmailStatus, SendTestEmail202, SendTestEmailBody } from '../api.schemas'
 
 export const getGetEmailStatusResponseMock = (
 	overrideResponse: Partial<Extract<EmailStatus, object>> = {},
@@ -40,12 +40,12 @@ export const getSendTestEmailResponseMock = (
 export const getGetEmailStatusMockHandler = (
 	overrideResponse?:
 		| EmailStatus
-		| ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<EmailStatus> | EmailStatus),
+		| ((info: Parameters<HttpResponseResolver>[0]) => Promise<EmailStatus> | EmailStatus),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
 		'*/api/email',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -63,13 +63,13 @@ export const getSendTestEmailMockHandler = (
 	overrideResponse?:
 		| SendTestEmail202
 		| ((
-				info: Parameters<Parameters<typeof http.post>[1]>[0],
+				info: Parameters<HttpResponseResolver<PathParams, SendTestEmailBody>>[0],
 		  ) => Promise<SendTestEmail202> | SendTestEmail202),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.post(
+	return http.post<PathParams, SendTestEmailBody>(
 		'*/api/email',
-		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<PathParams, SendTestEmailBody>>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'

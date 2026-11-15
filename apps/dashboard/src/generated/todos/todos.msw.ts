@@ -8,9 +8,9 @@
 import { faker } from '@faker-js/faker'
 
 import { HttpResponse, http } from 'msw'
-import type { RequestHandlerOptions } from 'msw'
+import type { HttpResponseResolver, PathParams, RequestHandlerOptions } from 'msw'
 
-import type { TodoResponse, TodosResponse } from '../api.schemas'
+import type { CreateTodoInput, TodoResponse, TodosResponse, UpdateTodoInput } from '../api.schemas'
 
 export const getListTodosResponseMock = (
 	overrideResponse: Partial<Extract<TodosResponse, object>> = {},
@@ -65,14 +65,12 @@ export const getUpdateTodoResponseMock = (
 export const getListTodosMockHandler = (
 	overrideResponse?:
 		| TodosResponse
-		| ((
-				info: Parameters<Parameters<typeof http.get>[1]>[0],
-		  ) => Promise<TodosResponse> | TodosResponse),
+		| ((info: Parameters<HttpResponseResolver>[0]) => Promise<TodosResponse> | TodosResponse),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
 		'*/api/todos',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -90,13 +88,13 @@ export const getCreateTodoMockHandler = (
 	overrideResponse?:
 		| TodoResponse
 		| ((
-				info: Parameters<Parameters<typeof http.post>[1]>[0],
+				info: Parameters<HttpResponseResolver<PathParams, CreateTodoInput>>[0],
 		  ) => Promise<TodoResponse> | TodoResponse),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.post(
+	return http.post<PathParams, CreateTodoInput>(
 		'*/api/todos',
-		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<PathParams, CreateTodoInput>>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -114,13 +112,13 @@ export const getGetTodoMockHandler = (
 	overrideResponse?:
 		| TodoResponse
 		| ((
-				info: Parameters<Parameters<typeof http.get>[1]>[0],
+				info: Parameters<HttpResponseResolver<{ id: string }>>[0],
 		  ) => Promise<TodoResponse> | TodoResponse),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.get(
+	return http.get<{ id: string }>(
 		'*/api/todos/:id',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<{ id: string }>>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -138,13 +136,13 @@ export const getUpdateTodoMockHandler = (
 	overrideResponse?:
 		| TodoResponse
 		| ((
-				info: Parameters<Parameters<typeof http.patch>[1]>[0],
+				info: Parameters<HttpResponseResolver<{ id: string }, UpdateTodoInput>>[0],
 		  ) => Promise<TodoResponse> | TodoResponse),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.patch(
+	return http.patch<{ id: string }, UpdateTodoInput>(
 		'*/api/todos/:id',
-		async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<{ id: string }, UpdateTodoInput>>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -161,12 +159,12 @@ export const getUpdateTodoMockHandler = (
 export const getDeleteTodoMockHandler = (
 	overrideResponse?:
 		| void
-		| ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void),
+		| ((info: Parameters<HttpResponseResolver<{ id: string }>>[0]) => Promise<void> | void),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.delete(
+	return http.delete<{ id: string }>(
 		'*/api/todos/:id',
-		async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<{ id: string }>>[0]) => {
 			if (typeof overrideResponse === 'function') {
 				await overrideResponse(info)
 			}

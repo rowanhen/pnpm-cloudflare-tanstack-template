@@ -8,7 +8,7 @@
 import { faker } from '@faker-js/faker'
 
 import { HttpResponse, http } from 'msw'
-import type { RequestHandlerOptions } from 'msw'
+import type { HttpResponseResolver, RequestHandlerOptions } from 'msw'
 
 import type { ListFiles200, UploadFile201 } from '../api.schemas'
 
@@ -42,14 +42,12 @@ export const getDownloadFileResponseMock = (): Blob =>
 export const getListFilesMockHandler = (
 	overrideResponse?:
 		| ListFiles200
-		| ((
-				info: Parameters<Parameters<typeof http.get>[1]>[0],
-		  ) => Promise<ListFiles200> | ListFiles200),
+		| ((info: Parameters<HttpResponseResolver>[0]) => Promise<ListFiles200> | ListFiles200),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
 		'*/api/files',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -67,13 +65,13 @@ export const getUploadFileMockHandler = (
 	overrideResponse?:
 		| UploadFile201
 		| ((
-				info: Parameters<Parameters<typeof http.put>[1]>[0],
+				info: Parameters<HttpResponseResolver<{ key: string }, Blob>>[0],
 		  ) => Promise<UploadFile201> | UploadFile201),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.put(
+	return http.put<{ key: string }, Blob>(
 		'*/api/files/:key',
-		async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<{ key: string }, Blob>>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -90,12 +88,12 @@ export const getUploadFileMockHandler = (
 export const getDownloadFileMockHandler = (
 	overrideResponse?:
 		| Blob
-		| ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<Blob> | Blob),
+		| ((info: Parameters<HttpResponseResolver<{ key: string }>>[0]) => Promise<Blob> | Blob),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.get(
+	return http.get<{ key: string }>(
 		'*/api/files/:key',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<{ key: string }>>[0]) => {
 			const binaryBody =
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -114,12 +112,12 @@ export const getDownloadFileMockHandler = (
 export const getHeadFileMockHandler = (
 	overrideResponse?:
 		| void
-		| ((info: Parameters<Parameters<typeof http.head>[1]>[0]) => Promise<void> | void),
+		| ((info: Parameters<HttpResponseResolver<{ key: string }>>[0]) => Promise<void> | void),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.head(
+	return http.head<{ key: string }>(
 		'*/api/files/:key',
-		async (info: Parameters<Parameters<typeof http.head>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<{ key: string }>>[0]) => {
 			if (typeof overrideResponse === 'function') {
 				await overrideResponse(info)
 			}
@@ -133,12 +131,12 @@ export const getHeadFileMockHandler = (
 export const getDeleteFileMockHandler = (
 	overrideResponse?:
 		| void
-		| ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void),
+		| ((info: Parameters<HttpResponseResolver<{ key: string }>>[0]) => Promise<void> | void),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.delete(
+	return http.delete<{ key: string }>(
 		'*/api/files/:key',
-		async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<{ key: string }>>[0]) => {
 			if (typeof overrideResponse === 'function') {
 				await overrideResponse(info)
 			}

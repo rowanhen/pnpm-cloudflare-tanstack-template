@@ -189,7 +189,6 @@ export function useGetBilling<
 	},
 	queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-
 export function useGetBilling<
 	TData = Awaited<ReturnType<typeof getBilling>>,
 	TError = ErrorType<getBillingResponseError>,
