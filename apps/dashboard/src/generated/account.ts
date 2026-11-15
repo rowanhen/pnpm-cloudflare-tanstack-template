@@ -189,7 +189,6 @@ export function useGetMe<
 	},
 	queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-
 export function useGetMe<
 	TData = Awaited<ReturnType<typeof getMe>>,
 	TError = ErrorType<getMeResponseError>,

@@ -190,7 +190,6 @@ export function useGetHealth<
 	},
 	queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-
 export function useGetHealth<
 	TData = Awaited<ReturnType<typeof getHealth>>,
 	TError = ErrorType<getHealthResponseError>,
@@ -352,7 +351,6 @@ export function useGetConfig<
 	},
 	queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-
 export function useGetConfig<
 	TData = Awaited<ReturnType<typeof getConfig>>,
 	TError = ErrorType<getConfigResponseError>,

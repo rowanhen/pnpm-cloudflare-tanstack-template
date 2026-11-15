@@ -1,51 +1,28 @@
-# Repository guide
-
-Read [the one-page structure guide](docs/architecture.md) before changing application architecture or adding API features. Use [the detailed API walkthrough](docs/api-architecture.md) for implementation conventions and current limitations.
-
-## Codebase stewardship
-
-- Before editing, locate the behaviour's owner, callers, authoritative types and relevant tests. Read the nearest implementation and identify the invariants to preserve.
-- Organise by feature and responsibility. Keep application policy, domain types, validation and adapters with their feature. Do not add top-level controllers/services/repositories/models directories or generic utils/helpers/common dumping grounds.
-- Prefer straightforward code and small interfaces that hide meaningful implementation detail. Extract an abstraction for shared knowledge or a real boundary; avoid pass-through services, speculative configuration and files that must always be read together.
-- Give each fact one authoritative definition. Derive public types and boundary schemas from OpenAPI, persistence types from Drizzle. Share rules only when their meaning and reasons for changing match. Keep public and stored shapes distinct.
-- Decode external values from unknown at HTTP, database, queue and provider boundaries. Enforce domain invariants for internal callers too. Use discriminated unions, validated constructors and explicit results for state-dependent data; avoid interacting flags and optional fields that permit invalid combinations. Do not hide mismatches with any, unchecked assertions, non-null assertions or suppression comments.
-- Keep coherent changes local to their feature. Centralise shared policy and provider contracts; do not scatter provider switches, status mappings or business constants across consumers. Split modules by reasons to change, not arbitrary line counts.
-- Finish replacements: update callers and remove superseded exports, dependencies, fixtures and documentation. Check generated consumers, scripts and runtime references before deletion. Preserve migrations and operational assets.
-- Fix cleanup caused by the change in the same diff. Keep unrelated refactors separate and report concrete remaining debt. Preserve ownership, consent, rate limits, atomic ledger updates, idempotency, saved billing receipts and ambiguous-send safeguards; verify through public boundaries.
-- Keep documentation to commands, decisions, constraints and non-obvious reasons. Update the authoritative section instead of adding duplicate walkthroughs or task diaries.
-- Before finishing, review the whole diff for unnecessary layers, repeated knowledge, misleading names, dead files and stale references. Run pnpm check; add behaviour/regression tests rather than tests that mirror implementation. Never weaken checks to make a change pass.
-
-## Backend service pattern
-
-Read [application services and boundaries](docs/api-architecture.md#application-services-and-boundaries) before extending backend workflows. Todos are the smallest example: a plain factory takes an owned repository and returns typed Effects. Checkout, billing, metering, email, waitlist, credentials and storefront use the same explicit factory composition, retaining separate domain, repository and provider boundaries where they protect invariants. Files expose an owned storage capability directly.
-
-- Prefer ordinary functions or factories returning typed Effects. Keep their rules, tagged errors and small dependency interfaces together in a public feature module named after the feature (for example todos/todos.ts). Infer the implementation's return type instead of repeating its methods in a second service interface. Keep Effect request services at the HTTP boundary. Introduce Context.Service and Layer only when an actual shared resource lifetime or scoped acquisition requires them; do not require service.ts/live.ts/domain.ts for every feature.
-- Compose request-scoped dependencies at HTTP entry points or in apps/api/src/runtime/ when shared by multiple entry points. Pass repositories, providers, configuration and trusted actors explicitly to feature factories. Keep this composition pure: constructing a factory must not perform I/O. Bind repositories to the trusted user established at the session or API-key entry point. Request identity and Cloudflare bindings are request-scoped, never held in a process-global runtime. Tests pass fake repositories/providers to the production factories; Effect TestClock remains available for workflow time.
-- Compose workflows with Effect.gen. Keep tryPromise at D1/SDK/provider boundaries and runPromise at host boundaries (HTTP, queue/CLI entry points, SDK callbacks, scripts and tests). Application/domain modules must not import HTTP frameworks, request contexts, concrete persistence or provider adapters.
-- Use Effect Clock for workflow time, pass cancellation to network providers, and await non-abortable D1 writes before interruption cleanup. Preserve defects and interruption during typed recovery. Never blindly retry an ambiguous external send or payment.
-- Keep domain failures transport-independent. Map expected domain failures into generated status/body unions at HTTP entry handlers. Handlers may declare StorageError as an additional failure; the shared HTTP boundary converts it to a defect for sanitized reporting. Other unmapped domain failures must still fail typechecking. Reuse value schemas from contracts without making services depend on HTTP operations. Validate stored/provider data before it enters application logic.
-- Use Drizzle for application reads, writes and atomic batches. No direct D1 prepare/exec/batch calls or separate database clients. Use schema-backed query builders and parameterized Drizzle sql where needed. Raw SQL belongs in versioned migrations and infrastructure tooling/tests.
-- Follow the graph-checked dependency direction: generated operation entry points are HTTP adapters; runtime composes dependencies; feature adapters/ directories (and existing repository/provider/stripe/r2 files) implement infrastructure; other feature modules are application code by default. Cross-feature imports use public pure feature modules or service/domain contracts (HTTP adapters may share HTTP mapping helpers). HTTP entry points may construct their own feature adapters directly; cross-feature infrastructure composition stays in runtime/. Do not add cycles, dynamic module paths or suppressions. New shared infrastructure needs a concrete consumer and a clear responsibility.
-
-## Repository conventions
-
-- Keep operational commands in `scripts/` and tests/fixtures in the corresponding `tests/` folders.
-- Use the Node and pnpm versions pinned in `.nvmrc` and `package.json`.
-- Commit the root `.env.local` only with dotenvx-encrypted values; its public encryption key is safe to track. Keep `.env.keys`, private decryption keys and plaintext secrets out of Git.
-- Save every persistent application/provider credential in the encrypted root `.env.local` before configuring its GitHub Actions or Cloudflare copy. Generate and save auth/proxy secrets there first; runtime secret stores are deployment copies, not the only record. Keep development auth separate as `DEV_BETTER_AUTH_SECRET`. GitHub's automatically generated job token and local CLI login sessions are not persistent project credentials.
-- Build every new page and UI state with the public `@leitware/composables` components, imported through the direct exports in `@workspace/shared`. Apply this to marketing, dashboard, auth, checkout, privacy, success, loading, error and 404 pages.
-- Use `Typography` with the appropriate variant and semantic `as` for headings, paragraphs and inline text; do not add loose `<p>`, `<span>` or heading tags. Use the library's form controls, status components, `CodeBlock`, `Container`, `Section`, `Stack` and `Grid` wherever they fit. Use `Container maxWidth="md"` for page content and keep copy brief.
-- Use the public DropZone components for file selection/upload. Use `Button variant="destructive"` for deleting/revoking data and known file replacements.
-- Use the existing `Button variant="link"` for text links. For internal navigation, use `LinkButton` (TanStack `createLink` over the public Composables button); preserve each app's router registration so paths, search parameters and hashes use the typed routing API. Use typed `navigate` for imperative in-app navigation. Keep cross-origin links and authentication handoffs as document navigations.
-- Use the shared LinkButton for typed internal links and AnchorButton for document/external navigation; these narrowly adapt Composables anchor semantics. Do not add further button/link wrappers, variant aliases, replacement components or custom styling to reproduce an existing Composables component. Prefer public variants and layout props; only add necessary layout/responsive classes. Keep theme changes in the shared stylesheet and preserve its import order. Keep native document, form and list semantics when no library component fits. See `docs/reference.md` for rendered-link semantics and the installed package's `nativeButton` typing limitation.
-- Define new API operations in `packages/contracts/openapi/features/`; reuse schemas and errors from `openapi/shared/`. Register each path with a `$ref` in `openapi/api.json`.
-- Configure generation in `orval.config.ts`; keep custom generation in `codegen/` using Orval extension points.
-- Run `pnpm api:generate` after contract changes. Never hand-edit `src/generated/` files.
-- Implement behaviour in the scaffolded feature handlers. Preserve ownership checks and select public database columns explicitly.
-- Replace unresolved `TODO_IMPLEMENT_OPERATION` scaffold expressions with typed implementations; ordinary TypeScript checking rejects unfinished handlers.
-- Run `pnpm check` before committing. CI runs lint/formatting (including official Effect diagnostics), unit and isolated Worker integration tests, TypeScript, builds and browser regression tests, followed by a separate deployment job on main. The browser suite uses isolated local resources and provider fixtures; it does not verify live provider access. Review visual changes manually too.
-- Run Orval after contract changes and review generated output. Generation cleans only generated directories; never put handwritten code there.
-- Use Wrangler and provider tools for provisioning and deployment; see `docs/manual-deployment.md`.
-- Keep provider setup/deployment instructions in the existing docs. Route every application endpoint through the OpenAPI-generated Hono/Effect handlers and use generated frontend clients. Keep Better Auth’s OAuth/session protocol in its delegated Hono mount; see `docs/api-architecture.md` for raw webhook and binary/HEAD conventions.
-
-- Use one `DB` binding for all application tables and `database(env.DB)` from `@workspace/data/client`. Keep schemas organized in identity, billing and product files. Add migrations with `pnpm db:generate --name <change>` and commit SQL plus metadata. Keep billing batches atomic and preserve per-user ownership filters. See [database setup and migration](docs/databases.md).
+- Avoid dead files, unused exports, unused dependencies and stale references.
+- Avoid duplicate business rules, constants, schemas and sources of truth.
+- Avoid misleading names, magic values and undocumented assumptions.
+- Avoid functions and files with unrelated responsibilities.
+- Avoid excessive indirection, pass-through wrappers and speculative abstractions.
+- Avoid fragmented logic that requires coordinated edits across many files.
+- Avoid hidden dependencies, mutable globals and import-time side effects.
+- Avoid circular dependencies and reaching into another component's internals.
+- Avoid coupling business rules to transport, storage or presentation details.
+- Avoid unchecked external input, unsafe assertions and suppressed type errors.
+- Avoid contradictory states, ambiguous optional fields and unhandled variants.
+- Avoid duplicated state that can be derived from existing data.
+- Avoid swallowed errors, misleading success responses and lost diagnostic causes.
+- Avoid leaking secrets, personal data or internal details through logs and errors.
+- Avoid missing authorization, ownership checks or data isolation.
+- Avoid race conditions, partial writes and missing concurrency guards.
+- Avoid duplicate side effects and retries when the previous outcome is uncertain.
+- Avoid unbounded work, missing timeouts and ignored cancellation.
+- Avoid ambiguous time units and implicit timezone assumptions.
+- Avoid unnecessary data fetching, overbroad queries and accidental data exposure.
+- Avoid hand-editing generated files or leaving their sources out of sync.
+- Avoid incomplete replacements, obsolete callers and stale documentation.
+- Avoid removing files without checking runtime, tooling and operational references.
+- Avoid tests that mirror implementation details or miss observable regressions.
+- Avoid weakening checks, skipping failures or claiming unverified results.
+- Avoid unrelated changes and accidental inclusion of existing local work.
+- Avoid inaccessible controls, unclear navigation and unnecessary interface complexity.
+- Avoid comments that restate code instead of explaining constraints or decisions.

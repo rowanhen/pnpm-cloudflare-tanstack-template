@@ -8,9 +8,15 @@
 import { faker } from '@faker-js/faker'
 
 import { HttpResponse, http } from 'msw'
-import type { RequestHandlerOptions } from 'msw'
+import type { HttpResponseResolver, PathParams, RequestHandlerOptions } from 'msw'
 
-import type { Storefront, StorefrontCheckout, StorefrontStatus } from '../api.schemas'
+import type {
+	CheckStorefrontCheckout,
+	CreateStorefrontCheckout,
+	Storefront,
+	StorefrontCheckout,
+	StorefrontStatus,
+} from '../api.schemas'
 
 export const getGetStorefrontResponseMock = (
 	overrideResponse: Partial<Extract<Storefront, object>> = {},
@@ -53,12 +59,12 @@ export const getCheckStorefrontCheckoutResponseMock = (
 export const getGetStorefrontMockHandler = (
 	overrideResponse?:
 		| Storefront
-		| ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<Storefront> | Storefront),
+		| ((info: Parameters<HttpResponseResolver>[0]) => Promise<Storefront> | Storefront),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
 		'*/api/storefront',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -76,13 +82,13 @@ export const getCreateStorefrontCheckoutMockHandler = (
 	overrideResponse?:
 		| StorefrontCheckout
 		| ((
-				info: Parameters<Parameters<typeof http.post>[1]>[0],
+				info: Parameters<HttpResponseResolver<PathParams, CreateStorefrontCheckout>>[0],
 		  ) => Promise<StorefrontCheckout> | StorefrontCheckout),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.post(
+	return http.post<PathParams, CreateStorefrontCheckout>(
 		'*/api/storefront/checkouts',
-		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<PathParams, CreateStorefrontCheckout>>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -100,13 +106,13 @@ export const getCheckStorefrontCheckoutMockHandler = (
 	overrideResponse?:
 		| StorefrontStatus
 		| ((
-				info: Parameters<Parameters<typeof http.post>[1]>[0],
+				info: Parameters<HttpResponseResolver<PathParams, CheckStorefrontCheckout>>[0],
 		  ) => Promise<StorefrontStatus> | StorefrontStatus),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.post(
+	return http.post<PathParams, CheckStorefrontCheckout>(
 		'*/api/storefront/status',
-		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<PathParams, CheckStorefrontCheckout>>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'

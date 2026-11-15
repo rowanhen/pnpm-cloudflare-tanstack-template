@@ -8,7 +8,7 @@
 import { faker } from '@faker-js/faker'
 
 import { HttpResponse, http } from 'msw'
-import type { RequestHandlerOptions } from 'msw'
+import type { HttpResponseResolver, RequestHandlerOptions } from 'msw'
 
 import type { BillingStatus } from '../api.schemas'
 
@@ -32,14 +32,12 @@ export const getGetBillingResponseMock = (
 export const getGetBillingMockHandler = (
 	overrideResponse?:
 		| BillingStatus
-		| ((
-				info: Parameters<Parameters<typeof http.get>[1]>[0],
-		  ) => Promise<BillingStatus> | BillingStatus),
+		| ((info: Parameters<HttpResponseResolver>[0]) => Promise<BillingStatus> | BillingStatus),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
 		'*/api/billing',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'

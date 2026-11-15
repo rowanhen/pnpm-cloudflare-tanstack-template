@@ -8,9 +8,14 @@
 import { faker } from '@faker-js/faker'
 
 import { HttpResponse, http } from 'msw'
-import type { RequestHandlerOptions } from 'msw'
+import type { HttpResponseResolver, PathParams, RequestHandlerOptions } from 'msw'
 
-import type { CheckoutConfig, CheckoutSession, OrderStatus } from '../api.schemas'
+import type {
+	CheckoutConfig,
+	CheckoutSession,
+	CreateCheckoutBody,
+	OrderStatus,
+} from '../api.schemas'
 
 export const getGetCheckoutConfigResponseMock = (
 	overrideResponse: Partial<Extract<CheckoutConfig, object>> = {},
@@ -65,14 +70,12 @@ export const getGetOrderResponseMock = (
 export const getGetCheckoutConfigMockHandler = (
 	overrideResponse?:
 		| CheckoutConfig
-		| ((
-				info: Parameters<Parameters<typeof http.get>[1]>[0],
-		  ) => Promise<CheckoutConfig> | CheckoutConfig),
+		| ((info: Parameters<HttpResponseResolver>[0]) => Promise<CheckoutConfig> | CheckoutConfig),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
 		'*/api/checkout/config',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -90,13 +93,13 @@ export const getCreateCheckoutMockHandler = (
 	overrideResponse?:
 		| CheckoutSession
 		| ((
-				info: Parameters<Parameters<typeof http.post>[1]>[0],
+				info: Parameters<HttpResponseResolver<PathParams, CreateCheckoutBody>>[0],
 		  ) => Promise<CheckoutSession> | CheckoutSession),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.post(
+	return http.post<PathParams, CreateCheckoutBody>(
 		'*/api/checkout/sessions',
-		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<PathParams, CreateCheckoutBody>>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -113,12 +116,14 @@ export const getCreateCheckoutMockHandler = (
 export const getGetOrderMockHandler = (
 	overrideResponse?:
 		| OrderStatus
-		| ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<OrderStatus> | OrderStatus),
+		| ((
+				info: Parameters<HttpResponseResolver<{ sessionId: string }>>[0],
+		  ) => Promise<OrderStatus> | OrderStatus),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.get(
+	return http.get<{ sessionId: string }>(
 		'*/api/checkout/sessions/:sessionId',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<{ sessionId: string }>>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'

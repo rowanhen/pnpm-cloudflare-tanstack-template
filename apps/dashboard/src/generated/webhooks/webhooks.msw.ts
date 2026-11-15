@@ -8,9 +8,9 @@
 import { faker } from '@faker-js/faker'
 
 import { HttpResponse, http } from 'msw'
-import type { RequestHandlerOptions } from 'msw'
+import type { HttpResponseResolver, PathParams, RequestHandlerOptions } from 'msw'
 
-import type { ReceiveStripeWebhook200 } from '../api.schemas'
+import type { ReceiveStripeWebhook200, ReceiveStripeWebhookBody } from '../api.schemas'
 
 export const getReceiveStripeWebhookResponseMock = (
 	overrideResponse: Partial<Extract<ReceiveStripeWebhook200, object>> = {},
@@ -20,13 +20,13 @@ export const getReceiveStripeWebhookMockHandler = (
 	overrideResponse?:
 		| ReceiveStripeWebhook200
 		| ((
-				info: Parameters<Parameters<typeof http.post>[1]>[0],
+				info: Parameters<HttpResponseResolver<PathParams, ReceiveStripeWebhookBody>>[0],
 		  ) => Promise<ReceiveStripeWebhook200> | ReceiveStripeWebhook200),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.post(
+	return http.post<PathParams, ReceiveStripeWebhookBody>(
 		'*/api/stripe/webhook',
-		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<PathParams, ReceiveStripeWebhookBody>>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'

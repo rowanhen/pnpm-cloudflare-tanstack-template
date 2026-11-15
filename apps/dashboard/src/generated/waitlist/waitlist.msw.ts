@@ -8,9 +8,9 @@
 import { faker } from '@faker-js/faker'
 
 import { HttpResponse, http } from 'msw'
-import type { RequestHandlerOptions } from 'msw'
+import type { HttpResponseResolver, PathParams, RequestHandlerOptions } from 'msw'
 
-import type { GetWaitlistStatus200, JoinWaitlist202 } from '../api.schemas'
+import type { GetWaitlistStatus200, JoinWaitlist202, WaitlistInput } from '../api.schemas'
 
 export const getJoinWaitlistResponseMock = (
 	overrideResponse: Partial<Extract<JoinWaitlist202, object>> = {},
@@ -34,13 +34,13 @@ export const getJoinWaitlistMockHandler = (
 	overrideResponse?:
 		| JoinWaitlist202
 		| ((
-				info: Parameters<Parameters<typeof http.post>[1]>[0],
+				info: Parameters<HttpResponseResolver<PathParams, WaitlistInput>>[0],
 		  ) => Promise<JoinWaitlist202> | JoinWaitlist202),
 	options?: RequestHandlerOptions,
 ) => {
-	return http.post(
+	return http.post<PathParams, WaitlistInput>(
 		'*/api/waitlist',
-		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver<PathParams, WaitlistInput>>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
@@ -58,13 +58,13 @@ export const getGetWaitlistStatusMockHandler = (
 	overrideResponse?:
 		| GetWaitlistStatus200
 		| ((
-				info: Parameters<Parameters<typeof http.get>[1]>[0],
+				info: Parameters<HttpResponseResolver>[0],
 		  ) => Promise<GetWaitlistStatus200> | GetWaitlistStatus200),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
 		'*/api/waitlist/me',
-		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+		async (info: Parameters<HttpResponseResolver>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
