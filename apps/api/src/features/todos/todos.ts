@@ -1,9 +1,8 @@
-import { Data, Effect, Schema } from 'effect'
+import { Effect, Schema } from 'effect'
 import { CreateTodoData, UpdateTodoData } from '@workspace/contracts/todos'
 import type { Todo } from '@workspace/contracts'
 import type { StorageError } from '../../persistence'
-
-export class InvalidTodo extends Data.TaggedError('InvalidTodo')<{}> {}
+import { InvalidInput, MissingRecord } from '../../errors'
 
 // Reuse the contract's title rule for internally constructed values too.
 const Title = CreateTodoData.fields.title.pipe(Schema.brand('TodoTitle'))
@@ -15,24 +14,22 @@ export type TodoChange =
 export const todoTitle = (value: string) =>
 	Schema.decodeEffect(Title)(value).pipe(
 		Effect.flatMap((title) => Schema.decodeEffect(Title)(title.trim())),
-		Effect.mapError(() => new InvalidTodo()),
+		Effect.mapError(() => new InvalidInput({ message: 'Invalid todo' })),
 	)
 
 export const todoChange = (value: typeof UpdateTodoData.Type) =>
 	Effect.gen(function* () {
 		const input = yield* Schema.decodeEffect(UpdateTodoData, {
 			onExcessProperty: 'error',
-		})(value).pipe(Effect.mapError(() => new InvalidTodo()))
+		})(value).pipe(Effect.mapError(() => new InvalidInput({ message: 'Invalid todo' })))
 		if (input.title !== undefined)
 			return {
 				title: yield* todoTitle(input.title),
 				completed: input.completed,
 			} satisfies TodoChange
 		if (input.completed !== undefined) return { completed: input.completed } satisfies TodoChange
-		return yield* new InvalidTodo()
+		return yield* new InvalidInput({ message: 'Invalid todo' })
 	})
-
-export class TodoNotFound extends Data.TaggedError('TodoNotFound')<{}> {}
 
 // The repository is already bound to a trusted owner; operations cannot select another user.
 export interface TodoRepository {
@@ -44,7 +41,9 @@ export interface TodoRepository {
 }
 
 const found = <A>(value: A | undefined) =>
-	value === undefined ? Effect.fail(new TodoNotFound()) : Effect.succeed(value)
+	value === undefined
+		? Effect.fail(new MissingRecord({ message: 'Todo not found' }))
+		: Effect.succeed(value)
 
 export const makeTodos = (repository: TodoRepository) => ({
 	list: repository.list,
@@ -57,6 +56,7 @@ export const makeTodos = (repository: TodoRepository) => ({
 		}),
 	remove: (id: string) =>
 		Effect.gen(function* () {
-			if (!(yield* repository.remove(id))) return yield* new TodoNotFound()
+			if (!(yield* repository.remove(id)))
+				return yield* new MissingRecord({ message: 'Todo not found' })
 		}),
 })

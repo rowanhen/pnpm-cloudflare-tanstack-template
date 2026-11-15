@@ -18,8 +18,6 @@ globalThis.fetch = (input, init) => {
 export default {
 	fetch(request: Request, env: TestEnv, ctx: ExecutionContext) {
 		fixtureOrigin = env.STRIPE_FIXTURE_URL
-		if (request.headers.get('x-test-maintenance') === 'true')
-			env = { ...env, DATABASE_MAINTENANCE: 'true' }
 		if (request.headers.has('x-test-observability')) {
 			env = {
 				...env,

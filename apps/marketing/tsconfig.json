@@ -1,7 +1,7 @@
 {
 	"extends": "../../tsconfig.json",
 	"include": ["**/*.ts", "**/*.tsx"],
-	"exclude": ["node_modules", ".output"],
+	"exclude": ["node_modules", ".output", "**/*.test.ts", "**/*.test.tsx"],
 	"compilerOptions": {
 		"paths": {
 			"@workspace/shared": ["../../packages/shared/src/index.tsx"],

@@ -14,7 +14,6 @@ jobs:
     name: Verify
     runs-on: ubuntu-latest
     env:
-      VITE_API_URL: ${{ vars.VITE_API_URL || 'http://localhost:8787' }}
       VITE_SITE_URL: ${{ vars.VITE_SITE_URL || 'http://localhost:3000' }}
       VITE_DASHBOARD_URL: ${{ vars.VITE_DASHBOARD_URL || 'http://localhost:3001' }}
       VITE_SITE_NAME: ${{ vars.VITE_SITE_NAME || 'Cloudflare Starter' }}
@@ -22,6 +21,7 @@ jobs:
       VITE_APP_ENV: ${{ vars.VITE_APP_ENV || 'production' }}
       VITE_POSTHOG_KEY: ${{ vars.VITE_POSTHOG_KEY }}
       VITE_POSTHOG_HOST: ${{ vars.VITE_POSTHOG_HOST }}
+      WORKER_CONFIG: ${{ vars.CLOUDFLARE_WORKER_CONFIG }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -46,6 +46,12 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+      - name: Set Pages service target
+        if: env.WORKER_CONFIG != ''
+        run: |
+          printf '%s\n' "$WORKER_CONFIG" > apps/api/wrangler.ci.json
+          pnpm exec tsx scripts/configure-deployment.ts
 
       - name: Build
         run: pnpm build
@@ -93,7 +99,6 @@ jobs:
       CLOUDFLARE_MARKETING_PROJECT: ${{ vars.CLOUDFLARE_MARKETING_PROJECT }}
       CLOUDFLARE_DASHBOARD_PROJECT: ${{ vars.CLOUDFLARE_DASHBOARD_PROJECT }}
       WORKER_CONFIG: ${{ vars.CLOUDFLARE_WORKER_CONFIG }}
-      VITE_API_URL: ${{ vars.VITE_API_URL }}
       VITE_SITE_URL: ${{ vars.VITE_SITE_URL }}
       VITE_DASHBOARD_URL: ${{ vars.VITE_DASHBOARD_URL }}
     steps:
@@ -120,13 +125,14 @@ jobs:
 
       - name: Configure deployment
         run: |
-          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_MARKETING_PROJECT CLOUDFLARE_DASHBOARD_PROJECT WORKER_CONFIG VITE_API_URL VITE_SITE_URL VITE_DASHBOARD_URL; do
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_MARKETING_PROJECT CLOUDFLARE_DASHBOARD_PROJECT WORKER_CONFIG VITE_SITE_URL VITE_DASHBOARD_URL; do
             if [ -z "${!name}" ]; then
               echo "::error::Configure $name in GitHub Actions settings before deploying."
               exit 1
             fi
           done
           printf '%s\n' "$WORKER_CONFIG" > apps/api/wrangler.ci.json
+          pnpm exec tsx scripts/configure-deployment.ts
 
       - name: Apply migrations
         run: pnpm db:migrate:remote --config wrangler.ci.json

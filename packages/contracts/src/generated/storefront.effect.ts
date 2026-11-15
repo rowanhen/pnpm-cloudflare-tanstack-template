@@ -15,6 +15,7 @@ export const GetStorefront200Response = S.Struct({
 		S.Struct({
 			id: S.Literals(['purchase', 'subscription']),
 			name: S.String,
+			description: S.NullOr(S.String),
 			amount: S.Number.check(S.isGreaterThanOrEqualTo(1)),
 			currency: S.String,
 			interval: S.NullOr(S.String),

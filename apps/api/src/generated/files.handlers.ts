@@ -3,11 +3,13 @@
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
 import { effectHandler, headAware } from '../contract/handler'
-import { listFiles } from '../features/files/list-files'
-import { uploadFile } from '../features/files/upload-file'
-import { downloadFile } from '../features/files/download-file'
-import { headFile } from '../features/files/head-file'
-import { deleteFile } from '../features/files/delete-file'
+import {
+	listFiles,
+	uploadFile,
+	downloadFile,
+	headFile,
+	deleteFile,
+} from '../features/files/handlers'
 const factory = createFactory()
 export const listFilesHandlers = factory.createHandlers(
 	effectHandler(operations.listFiles, listFiles),

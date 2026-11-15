@@ -5,7 +5,7 @@ import { keyAuthentication } from '../runtime/key-resources'
 import { preserveFatal } from '../effect-errors'
 import { HttpError } from '../http'
 import type { Env } from '../env'
-import { failureResponse } from './service'
+import { failureResponse } from './errors'
 export async function apiKeyUser(request: Request, env: Env, scope: KeyScope) {
 	const token = request.headers.get('authorization')?.match(/^Bearer (.+)$/)?.[1] ?? ''
 	const identity = await Effect.runPromise(

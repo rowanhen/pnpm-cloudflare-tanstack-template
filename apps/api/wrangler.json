@@ -6,7 +6,8 @@
 	"workers_dev": true,
 	"vars": {
 		"ALLOWED_ORIGINS": "http://localhost:3000,http://localhost:3001",
-		"AUTH_URL": "http://localhost:3001"
+		"AUTH_URL": "http://localhost:3001",
+		"SITE_URL": "http://localhost:3000"
 	},
 	"d1_databases": [
 		{

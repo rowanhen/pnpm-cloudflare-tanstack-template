@@ -15,9 +15,6 @@
 									"properties": {
 										"ok": {
 											"type": "boolean"
-										},
-										"maintenance": {
-											"type": "boolean"
 										}
 									},
 									"required": ["ok"]

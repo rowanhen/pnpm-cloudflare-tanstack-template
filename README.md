@@ -4,7 +4,7 @@ A TypeScript starter with a waitlist website, Google sign-in, a private dashboar
 
 [Live example](https://devtemplate.leitware.com) · [Beginner setup](docs/getting-started.md) · [Integration verification](docs/verification.md)
 
-The tracked root `.env.local` contains **dotenvx-encrypted settings**, not a plaintext environment file. Keep `.env.keys` private. See [configuration and precedence](docs/environment.md); CI and pre-commit reject plaintext settings.
+The tracked root `.env.store` contains **dotenvx-encrypted settings** for local, test, and production environments. Keep `.env.keys` private. `pnpm setup:local` decrypts local settings into the ignored `apps/api/.dev.vars` file used by Wrangler; CI and pre-commit reject plaintext tracked settings.
 
 ## Run locally
 
@@ -24,7 +24,7 @@ The repository pins Node 26.12.0 in `.nvmrc` and pnpm 10.34.7 in `package.json`.
 
 | App       | Local address                    | What works first                                    |
 | --------- | -------------------------------- | --------------------------------------------------- |
-| Marketing | http://localhost:3000            | Waitlist, privacy, success/error pages and SEO      |
+| Marketing | http://localhost:3000            | Waitlist, guest test checkout, public pages and SEO |
 | Dashboard | http://localhost:3001            | Sign-in page; Google setup unlocks private examples |
 | API       | http://localhost:8787/api/health | Worker REST API and local D1/R2 storage             |
 
@@ -34,7 +34,7 @@ Local D1 and R2 need no Cloudflare account. `pnpm dev` creates local secrets and
 
 - Google login, D1 users/sessions and a protected dashboard.
 - Private todos, file uploads/downloads, scoped API keys and rate limits.
-- Stripe **test** checkout → prepaid credits → one-credit API requests, with safe retries.
+- Public Stripe **test** products and guest checkout on marketing; authenticated credit checkout and one-credit API requests in the dashboard.
 - Optional Cloudflare email and consent-based PostHog analytics, masked replay and error reporting.
 - Waitlist success, verified checkout status, custom 404/error pages and marketing SEO.
 
@@ -51,7 +51,9 @@ pnpm check        # lint, formatting, migrations, unit/API tests, types, builds 
 pnpm validate     # alias for pnpm check
 ```
 
-CI runs lint, unit and Worker integration tests, type checks, builds and browser regression tests. On main, a separate job deploys the verified build when Cloudflare Actions settings are configured. See the [Wrangler deployment guide](docs/manual-deployment.md#github-actions-deployment). Cloudflare resources, secrets and provider accounts use their native tools; this template does not maintain its own provisioning or teardown framework. Live provider checks are described in [verification](docs/verification.md).
+Project-wide lint rules live in [`lint/rules`](lint/rules). `prevent-markdown-docs` runs alongside Oxlint from `pnpm lint`, since Oxlint scans JavaScript and TypeScript rather than Markdown files.
+
+CI runs lint, Vitest unit and Worker integration tests, type checks, builds and Playwright browser regression tests. The Worker tests include Cloudflare's Vitest plugin for runtime and binding checks, plus HTTP integration tests against an isolated local Worker. On main, a separate job deploys the verified build when Cloudflare Actions settings are configured. See the [Wrangler deployment guide](docs/manual-deployment.md#github-actions-deployment). Cloudflare resources, secrets and provider accounts use their native tools; this template does not maintain its own provisioning or teardown framework. Live provider checks are described in [verification](docs/verification.md).
 
 ## Guides
 

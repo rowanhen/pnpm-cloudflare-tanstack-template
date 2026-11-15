@@ -5,6 +5,22 @@
  * OpenAPI-first contracts with generated Hono routes, Effect handlers, and frontend clients.
  * OpenAPI spec version: 1.0.0
  */
+import { useMutation, useQuery } from '@tanstack/react-query'
+import type {
+	DataTag,
+	DefinedInitialDataOptions,
+	DefinedUseQueryResult,
+	MutationFunction,
+	QueryClient,
+	QueryFunction,
+	QueryKey,
+	UndefinedInitialDataOptions,
+	UseMutationOptions,
+	UseMutationResult,
+	UseQueryOptions,
+	UseQueryResult,
+} from '@tanstack/react-query'
+
 import type {
 	BadRequest,
 	Forbidden,
@@ -20,6 +36,9 @@ import type {
 } from './api.schemas.ts'
 
 import { contractFetch } from '../lib/contract-fetch.ts'
+import type { ErrorType } from '../lib/contract-fetch.ts'
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1]
 
 const getHeaders = (
 	...sources: (RequestInit['headers'] | Record<string, string | undefined>)[]
@@ -48,6 +67,21 @@ const getHeaders = (
 		RequestInit['headers'],
 		Record<string, unknown>
 	>
+}
+
+const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
+	const result = { queryKey } as T & { queryKey: K }
+	for (const key of Object.keys(query)) {
+		// The explicit queryKey always wins, matching the previous
+		// `{ ...query, queryKey }` spread where it was set last.
+		if (key === 'queryKey') continue
+		Object.defineProperty(result, key, {
+			enumerable: true,
+			configurable: true,
+			get: () => (query as Record<string, unknown>)[key],
+		})
+	}
+	return result
 }
 
 export type joinWaitlistResponse202 = {
@@ -142,6 +176,68 @@ export const joinWaitlist = async (
 	)
 }
 
+export const getJoinWaitlistMutationKey = () => ['joinWaitlist'] as const
+
+export const getJoinWaitlistMutationOptions = <
+	TError = ErrorType<joinWaitlistResponseError>,
+	TContext = unknown,
+>(options?: {
+	mutation?: UseMutationOptions<
+		Awaited<ReturnType<typeof joinWaitlist>>,
+		TError,
+		JoinWaitlistMutationVariables,
+		TContext
+	>
+	request?: SecondParameter<typeof contractFetch>
+}): UseMutationOptions<
+	Awaited<ReturnType<typeof joinWaitlist>>,
+	TError,
+	JoinWaitlistMutationVariables,
+	TContext
+> => {
+	const mutationKey = getJoinWaitlistMutationKey()
+	const { mutation: mutationOptions, request: requestOptions } = options
+		? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, request: undefined }
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof joinWaitlist>>,
+		JoinWaitlistMutationVariables
+	> = (props) => {
+		const { data } = props ?? {}
+
+		return joinWaitlist(data, requestOptions)
+	}
+
+	return { mutationFn, ...mutationOptions }
+}
+
+export type JoinWaitlistMutationResult = NonNullable<Awaited<ReturnType<typeof joinWaitlist>>>
+export type JoinWaitlistMutationBody = WaitlistInput
+export type JoinWaitlistMutationError = ErrorType<joinWaitlistResponseError>
+export type JoinWaitlistMutationVariables = { data: WaitlistInput }
+
+export const useJoinWaitlist = <TError = ErrorType<joinWaitlistResponseError>, TContext = unknown>(
+	options?: {
+		mutation?: UseMutationOptions<
+			Awaited<ReturnType<typeof joinWaitlist>>,
+			TError,
+			JoinWaitlistMutationVariables,
+			TContext
+		>
+		request?: SecondParameter<typeof contractFetch>
+	},
+	queryClient?: QueryClient,
+): UseMutationResult<
+	Awaited<ReturnType<typeof joinWaitlist>>,
+	TError,
+	JoinWaitlistMutationVariables,
+	TContext
+> => {
+	return useMutation(getJoinWaitlistMutationOptions(options), queryClient)
+}
 export type getWaitlistStatusResponse200 = {
 	data: GetWaitlistStatus200
 	status: 200
@@ -208,4 +304,99 @@ export const getWaitlistStatus = async (
 			],
 		},
 	)
+}
+
+export const getGetWaitlistStatusQueryKey = () => {
+	return [`/api/waitlist/me`] as const
+}
+
+export const getGetWaitlistStatusQueryOptions = <
+	TData = Awaited<ReturnType<typeof getWaitlistStatus>>,
+	TError = ErrorType<getWaitlistStatusResponseError>,
+>(options?: {
+	query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getWaitlistStatus>>, TError, TData>>
+	request?: SecondParameter<typeof contractFetch>
+}) => {
+	const { query: queryOptions, request: requestOptions } = options ?? {}
+
+	const queryKey = queryOptions?.queryKey ?? getGetWaitlistStatusQueryKey()
+
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof getWaitlistStatus>>> = ({ signal }) =>
+		getWaitlistStatus({ signal, ...requestOptions })
+
+	return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+		Awaited<ReturnType<typeof getWaitlistStatus>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetWaitlistStatusQueryResult = NonNullable<
+	Awaited<ReturnType<typeof getWaitlistStatus>>
+>
+export type GetWaitlistStatusQueryError = ErrorType<getWaitlistStatusResponseError>
+
+export function useGetWaitlistStatus<
+	TData = Awaited<ReturnType<typeof getWaitlistStatus>>,
+	TError = ErrorType<getWaitlistStatusResponseError>,
+>(
+	options: {
+		query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getWaitlistStatus>>, TError, TData>> &
+			Pick<
+				DefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getWaitlistStatus>>,
+					TError,
+					Awaited<ReturnType<typeof getWaitlistStatus>>
+				>,
+				'initialData'
+			>
+		request?: SecondParameter<typeof contractFetch>
+	},
+	queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWaitlistStatus<
+	TData = Awaited<ReturnType<typeof getWaitlistStatus>>,
+	TError = ErrorType<getWaitlistStatusResponseError>,
+>(
+	options?: {
+		query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getWaitlistStatus>>, TError, TData>> &
+			Pick<
+				UndefinedInitialDataOptions<
+					Awaited<ReturnType<typeof getWaitlistStatus>>,
+					TError,
+					Awaited<ReturnType<typeof getWaitlistStatus>>
+				>,
+				'initialData'
+			>
+		request?: SecondParameter<typeof contractFetch>
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWaitlistStatus<
+	TData = Awaited<ReturnType<typeof getWaitlistStatus>>,
+	TError = ErrorType<getWaitlistStatusResponseError>,
+>(
+	options?: {
+		query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getWaitlistStatus>>, TError, TData>>
+		request?: SecondParameter<typeof contractFetch>
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWaitlistStatus<
+	TData = Awaited<ReturnType<typeof getWaitlistStatus>>,
+	TError = ErrorType<getWaitlistStatusResponseError>,
+>(
+	options?: {
+		query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getWaitlistStatus>>, TError, TData>>
+		request?: SecondParameter<typeof contractFetch>
+	},
+	queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+	const queryOptions = getGetWaitlistStatusQueryOptions(options)
+
+	const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>
+	}
+
+	return withQueryKey(query, queryOptions.queryKey)
 }

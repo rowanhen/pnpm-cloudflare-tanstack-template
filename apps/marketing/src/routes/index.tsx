@@ -1,13 +1,8 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
-import { getPage } from '../publishing/catalog'
-import { ContentPage, pageHead } from '../publishing/page'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { defaultLocale } from '../lib/locale'
 
 export const Route = createFileRoute('/')({
-	loader: async () => {
-		const page = await getPage({ data: '/' })
-		if (!page) throw notFound()
-		return page
+	beforeLoad: () => {
+		throw redirect({ to: '/$locale', params: { locale: defaultLocale }, statusCode: 308 })
 	},
-	head: ({ loaderData }) => (loaderData ? pageHead(loaderData) : {}),
-	component: () => <ContentPage page={Route.useLoaderData()} />,
 })

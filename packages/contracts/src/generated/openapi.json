@@ -777,9 +777,6 @@
 									"properties": {
 										"ok": {
 											"type": "boolean"
-										},
-										"maintenance": {
-											"type": "boolean"
 										}
 									},
 									"required": ["ok"]
@@ -3240,6 +3237,9 @@
 					"name": {
 						"type": "string"
 					},
+					"description": {
+						"type": ["string", "null"]
+					},
 					"amount": {
 						"type": "integer",
 						"minimum": 1
@@ -3251,7 +3251,7 @@
 						"type": ["string", "null"]
 					}
 				},
-				"required": ["id", "name", "amount", "currency", "interval"]
+				"required": ["id", "name", "description", "amount", "currency", "interval"]
 			},
 			"Storefront": {
 				"type": "object",

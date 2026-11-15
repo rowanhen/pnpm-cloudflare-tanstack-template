@@ -28,9 +28,7 @@ await writeFile(readmePath, readme.replace(/^# .+$/m, `# ${projectName}`))
 const projectConfig = await readFile(projectConfigPath, 'utf8')
 await writeFile(
 	projectConfigPath,
-	projectConfig
-		.replace(/PROJECT_NAME = '.*'/, `PROJECT_NAME = '${projectName}'`)
-		.replace(/APP_NAME = '.*'/, `APP_NAME = '${projectName}'`),
+	projectConfig.replace(/APP_NAME = '.*'/, `APP_NAME = '${projectName}'`),
 )
 
 const workerPath = new URL('../apps/api/wrangler.json', import.meta.url)
@@ -46,6 +44,7 @@ for (const [app, initialConfig] of [
 	const path = new URL(`../apps/${app}/wrangler.json`, import.meta.url)
 	const config = structuredClone(initialConfig)
 	config.name = `${projectName}-${app}`
+	config.services[0].service = worker.name
 	await writeFile(path, `${JSON.stringify(config, null, '\t')}\n`)
 }
 

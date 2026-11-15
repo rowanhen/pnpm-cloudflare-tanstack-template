@@ -3,9 +3,11 @@
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
 import { publicEffectHandler } from '../contract/handler'
-import { getStorefront } from '../features/storefront/get-storefront'
-import { createStorefrontCheckout } from '../features/storefront/create-storefront-checkout'
-import { checkStorefrontCheckout } from '../features/storefront/check-storefront-checkout'
+import {
+	getStorefront,
+	createStorefrontCheckout,
+	checkStorefrontCheckout,
+} from '../features/storefront/handlers'
 const factory = createFactory()
 export const getStorefrontHandlers = factory.createHandlers(
 	publicEffectHandler(operations.getStorefront, getStorefront),

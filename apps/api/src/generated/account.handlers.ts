@@ -3,6 +3,6 @@
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
 import { effectHandler } from '../contract/handler'
-import { getMe } from '../features/account/get-me'
+import { getMe } from '../features/account/handlers'
 const factory = createFactory()
 export const getMeHandlers = factory.createHandlers(effectHandler(operations.getMe, getMe))

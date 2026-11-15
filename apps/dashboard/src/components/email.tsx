@@ -1,4 +1,5 @@
-import { Alert, Button, PageSection, Stack, Typography } from '@workspace/shared'
+import { Alert, Button, Stack, Typography } from '@leitware/composables'
+import { PageSection } from '@workspace/shared'
 
 import { useEmail } from '../hooks/use-email'
 

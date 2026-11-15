@@ -77,7 +77,11 @@ export async function stripeFixture() {
 						: url.pathname.endsWith('price_demo_fixture')
 							? 'Example product'
 							: 'Example subscription',
-					description: null,
+					description: url.pathname.endsWith('price_fixture')
+						? 'Prepaid API credits for a private workspace.'
+						: url.pathname.endsWith('price_demo_fixture')
+							? 'A guest purchase using Stripe test mode.'
+							: 'A guest subscription using Stripe test mode.',
 				},
 			})
 		if (url.pathname === '/v1/checkout/sessions' && request.method === 'POST') {
@@ -96,7 +100,7 @@ export async function stripeFixture() {
 				(guest &&
 					!fields
 						.get('return_url')
-						?.endsWith('/checkout/complete?session_id={CHECKOUT_SESSION_ID}')) ||
+						?.endsWith('/en/checkout/complete?session_id={CHECKOUT_SESSION_ID}')) ||
 				fields.has('success_url') ||
 				fields.has('cancel_url') ||
 				(!subscription && fields.get('mode') !== 'payment') ||

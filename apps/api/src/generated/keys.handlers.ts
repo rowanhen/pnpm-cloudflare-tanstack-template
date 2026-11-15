@@ -3,9 +3,7 @@
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
 import { effectHandler } from '../contract/handler'
-import { listKeys } from '../features/keys/list-keys'
-import { createKey } from '../features/keys/create-key'
-import { deleteKey } from '../features/keys/delete-key'
+import { listKeys, createKey, deleteKey } from '../features/keys/handlers'
 const factory = createFactory()
 export const listKeysHandlers = factory.createHandlers(effectHandler(operations.listKeys, listKeys))
 export const createKeyHandlers = factory.createHandlers(

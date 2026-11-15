@@ -5,7 +5,6 @@ export async function testTodoStorage(worker: LocalWorker) {
 	// Valid SQLite storage can still violate an application invariant.
 	worker.query(
 		"INSERT INTO todos(id,user_id,title) VALUES ('invalid-stored-todo','e2e-alice','   ')",
-		'product',
 	)
 	try {
 		for (const path of ['/api/todos/invalid-stored-todo', '/api/todos']) {
@@ -22,7 +21,7 @@ export async function testTodoStorage(worker: LocalWorker) {
 		assert.equal(otherUser.status, 200)
 		assert.deepEqual(await otherUser.json(), { todos: [] })
 	} finally {
-		worker.query("DELETE FROM todos WHERE id='invalid-stored-todo'", 'product')
+		worker.query("DELETE FROM todos WHERE id='invalid-stored-todo'")
 	}
 	console.log(
 		'PASS todo storage: invalid persisted values produce sanitized errors without crossing ownership boundaries',

@@ -26,7 +26,7 @@ export default defineConfig({
 		{ command: 'pnpm exec tsx tests/browser/worker.ts', url: 'http://localhost:8798/api/health' },
 		{
 			command: 'pnpm --filter dashboard exec vite dev --port 3101 --strictPort',
-			url: 'http://localhost:3101/checkout',
+			url: 'http://localhost:3101/credits',
 		},
 		{
 			command: 'pnpm --filter marketing exec vite dev --port 3100 --strictPort',

@@ -2,6 +2,10 @@ import { Context } from 'effect'
 import { database } from '@workspace/data/client'
 import type { Env } from '../env'
 import type { User } from '@workspace/contracts'
+import type { ApplicationError } from '../errors'
+import type { StorageError } from '../persistence'
+
+export type ApiFailure = ApplicationError | StorageError
 
 export class PublicApiRequest extends Context.Service<
 	PublicApiRequest,

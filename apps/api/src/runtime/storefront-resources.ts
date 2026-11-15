@@ -9,5 +9,5 @@ export const storefront = (env: Env) =>
 		settings: storefrontSettings(env),
 		crypto: identityCrypto,
 		limiter: rateLimiter(env),
-		gateway: stripeGateway({ secretKey: env.STRIPE_SECRET_KEY, origin: env.AUTH_URL }),
+		gateway: stripeGateway({ secretKey: env.STRIPE_SECRET_KEY, origin: env.SITE_URL }),
 	})

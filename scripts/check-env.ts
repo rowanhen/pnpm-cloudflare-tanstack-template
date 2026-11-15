@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -12,23 +13,23 @@ export function encryptedEnvErrors(source: string): string[] {
 		if (!line.trim() || line.trimStart().startsWith('#')) continue
 		const match = /^(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=\s*(.*)$/.exec(line.trim())
 		if (!match) {
-			errors.push(`.env.local:${index + 1}: expected a single-line assignment`)
+			errors.push(`.env.store:${index + 1}: expected a single-line assignment`)
 			continue
 		}
 		const [, name] = match
-		if (names.has(name)) errors.push(`.env.local: duplicate ${name}`)
+		if (names.has(name)) errors.push(`.env.store: duplicate ${name}`)
 		names.add(name)
 		const value = parseEnv(line)[name] ?? ''
 		if (name === 'DOTENV_PUBLIC_KEY_LOCAL') {
-			if (!/^[a-f\d]{66}$/i.test(value)) errors.push(`.env.local: invalid public encryption key`)
+			if (!/^[a-f\d]{66}$/i.test(value)) errors.push(`.env.store: invalid public encryption key`)
 		} else if (name.startsWith('DOTENV_PRIVATE_KEY')) {
-			errors.push(`.env.local: private decryption keys must never be committed`)
+			errors.push(`.env.store: private decryption keys must never be committed`)
 		} else if (!/^encrypted:[A-Za-z\d+/]{100,}={0,2}$/.test(value)) {
-			errors.push(`.env.local: ${name} must be dotenvx ciphertext`)
+			errors.push(`.env.store: ${name} must be dotenvx ciphertext`)
 		}
 	}
 	if (!names.has('DOTENV_PUBLIC_KEY_LOCAL'))
-		errors.push('.env.local: missing public encryption key')
+		errors.push('.env.store: missing public encryption key')
 	return errors
 }
 
@@ -36,7 +37,7 @@ export function privateEnvFiles(paths: string[]): string[] {
 	return paths.filter(
 		(path) =>
 			/(^|\/)\.env\.keys(?:\.|$)|(^|\/)\.dev\.vars(?:$|\.(?!example$))/.test(path) ||
-			(path !== '.env.local' &&
+			(path !== '.env.store' &&
 				/(^|\/)\.env(?:\.[^/]+)?$/.test(path) &&
 				!path.endsWith('.example')),
 	)
@@ -50,9 +51,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
 	const errors = privateEnvFiles(tracked).map(
 		(path) => `${path}: local/private environment files must not be tracked`,
 	)
-	if (tracked.includes('.env.local')) {
-		errors.push(...encryptedEnvErrors(await readFile(resolve(root, '.env.local'), 'utf8')))
-		const staged = execFileSync('git', ['show', ':.env.local'], { cwd: root, encoding: 'utf8' })
+	if (existsSync(resolve(root, '.env.store'))) {
+		errors.push(...encryptedEnvErrors(await readFile(resolve(root, '.env.store'), 'utf8')))
+	}
+	if (tracked.includes('.env.store')) {
+		const staged = execFileSync('git', ['show', ':.env.store'], { cwd: root, encoding: 'utf8' })
 		errors.push(...encryptedEnvErrors(staged).map((error) => `Git index: ${error}`))
 	}
 	if (errors.length) {

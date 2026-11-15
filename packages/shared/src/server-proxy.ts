@@ -1,10 +1,28 @@
-import { signProxyIp } from './proxy-signature'
-
+type ApiBinding = { fetch(request: Request): Promise<Response> }
 type RuntimeRequest = Request & {
-	runtime?: { cloudflare?: { env?: { API_PROXY_SECRET?: string } } }
+	runtime?: { cloudflare?: { env?: { API?: ApiBinding; API_PROXY_SECRET?: string } } }
 }
 
-export async function backendHeaders(request: Request, base: string) {
+export type ApiTarget = { dev: boolean; localUrl: string }
+
+// Only trusted app servers can forward a client IP across Cloudflare zones.
+async function signProxyIp(secret: string, ip: string, timestamp: string) {
+	const key = await crypto.subtle.importKey(
+		'raw',
+		new TextEncoder().encode(secret),
+		{ name: 'HMAC', hash: 'SHA-256' },
+		false,
+		['sign'],
+	)
+	const signature = await crypto.subtle.sign(
+		'HMAC',
+		key,
+		new TextEncoder().encode(`${timestamp}\n${ip}`),
+	)
+	return [...new Uint8Array(signature)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+async function backendHeaders(request: Request, requireSignature: boolean) {
 	const headers = new Headers(request.headers)
 	for (const header of [
 		'host',
@@ -14,9 +32,8 @@ export async function backendHeaders(request: Request, base: string) {
 		'x-starter-signature',
 	])
 		headers.delete(header)
-	// Nitro exposes runtime bindings on the request, never in the public Vite bundle.
 	const secret = (request as RuntimeRequest).runtime?.cloudflare?.env?.API_PROXY_SECRET
-	if (!secret && new URL(base).protocol === 'https:')
+	if (requireSignature && !secret)
 		throw new Error('Set API_PROXY_SECRET on this Pages project and the API Worker')
 	if (secret) {
 		const ip = request.headers.get('cf-connecting-ip') ?? '127.0.0.1'
@@ -28,22 +45,39 @@ export async function backendHeaders(request: Request, base: string) {
 	return headers
 }
 
-export async function proxyApi(request: Request, base: string) {
-	const url = new URL(request.url)
-	const init: RequestInit & { duplex: 'half' } = {
-		duplex: 'half', // Required by Node's fetch for streamed request bodies during Vite development.
-		method: request.method,
-		headers: await backendHeaders(request, base),
-		body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
-		// Auth is forwarded explicitly in headers. Disable Node's automatic 401
-		// credential retry, which cannot replay this streamed body (undici #4940).
-		credentials: 'omit',
+export async function fetchApi(
+	request: Request,
+	path: string,
+	init: RequestInit,
+	target: ApiTarget,
+) {
+	const binding = (request as RuntimeRequest).runtime?.cloudflare?.env?.API
+	if (!target.dev && !binding) throw new Error('Set the API service binding on this Pages project')
+	const url = binding ? new URL(path, request.url) : new URL(path, target.localUrl)
+	const outbound = new Request(url, {
+		...init,
+		headers: await backendHeaders(request, !target.dev),
 		redirect: 'manual',
 		signal: AbortSignal.timeout(15000),
-	}
-	const response = await fetch(`${base}${url.pathname}${url.search}`, init)
+		duplex: 'half', // Node needs this for streamed request bodies in Vite development.
+	} as RequestInit & { duplex: 'half' })
+	return binding ? binding.fetch(outbound) : fetch(outbound)
+}
+
+export async function proxyApi(request: Request, target: ApiTarget) {
+	const url = new URL(request.url)
+	const response = await fetchApi(
+		request,
+		`${url.pathname}${url.search}`,
+		{
+			method: request.method,
+			body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+			credentials: 'omit',
+		},
+		target,
+	)
 	const result = new Response(response.body, response)
-	// fetch decodes upstream compression; stale encoding/length headers break Node/Vite responses.
+	// Node fetch decodes upstream compression; its old encoding headers would break Vite responses.
 	if (result.headers.has('Content-Encoding')) {
 		result.headers.delete('Content-Encoding')
 		result.headers.delete('Content-Length')

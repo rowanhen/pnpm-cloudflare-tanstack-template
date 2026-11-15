@@ -3,11 +3,7 @@
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
 import { effectHandler } from '../contract/handler'
-import { listTodos } from '../features/todos/list-todos'
-import { createTodo } from '../features/todos/create-todo'
-import { getTodo } from '../features/todos/get-todo'
-import { updateTodo } from '../features/todos/update-todo'
-import { deleteTodo } from '../features/todos/delete-todo'
+import { listTodos, createTodo, getTodo, updateTodo, deleteTodo } from '../features/todos/handlers'
 const factory = createFactory()
 export const listTodosHandlers = factory.createHandlers(
 	effectHandler(operations.listTodos, listTodos),

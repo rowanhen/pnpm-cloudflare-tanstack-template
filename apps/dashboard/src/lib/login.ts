@@ -1,16 +1,12 @@
-// Keep return destinations explicit: never redirect to a URL supplied by a visitor.
-export function checkoutSessionId(value: unknown) {
-	return typeof value === 'string' && /^cs_test_[A-Za-z0-9]{1,240}$/.test(value) ? value : ''
-}
+import { checkoutSessionId } from '@workspace/shared/lib/checkout-session-id'
 
 export function loginSearch(search: Record<string, unknown>): {
-	next?: 'checkout' | 'checkout-success'
+	next?: 'credits' | 'checkout-success'
 	session_id?: string
 	error?: 'cancelled' | 'failed'
 } {
 	return {
-		next:
-			search.next === 'checkout' || search.next === 'checkout-success' ? search.next : undefined,
+		next: search.next === 'credits' || search.next === 'checkout-success' ? search.next : undefined,
 		session_id:
 			search.next === 'checkout-success' ? checkoutSessionId(search.session_id) : undefined,
 		error:
@@ -25,7 +21,7 @@ export function loginSearch(search: Record<string, unknown>): {
 export function loginReturnPath(search: ReturnType<typeof loginSearch>) {
 	if (search.next === 'checkout-success' && search.session_id)
 		return `/checkout/success?session_id=${encodeURIComponent(search.session_id)}`
-	return search.next ? '/checkout' : '/'
+	return search.next === 'credits' ? '/credits' : '/'
 }
 
 export function signInPath(pathname: string, search: Record<string, unknown>) {
@@ -33,8 +29,8 @@ export function signInPath(pathname: string, search: Record<string, unknown>) {
 	if (pathname === '/checkout/success' && checkoutSessionId(search.session_id)) {
 		params.set('next', 'checkout-success')
 		params.set('session_id', checkoutSessionId(search.session_id))
-	} else if (pathname === '/checkout' || pathname.startsWith('/checkout/')) {
-		params.set('next', 'checkout')
+	} else if (pathname === '/credits') {
+		params.set('next', 'credits')
 	}
 	return `/login${params.size ? `?${params}` : ''}`
 }

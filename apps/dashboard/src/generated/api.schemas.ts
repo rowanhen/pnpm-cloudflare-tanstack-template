@@ -19,33 +19,9 @@ export interface Todo {
 	created_at: string
 }
 
-export interface TodoResponse {
-	todo: Todo
-}
-
 export interface TodosResponse {
 	/** @maxItems 100 */
 	todos: Todo[]
-}
-
-export interface CreateTodoInput {
-	title: TodoTitle
-}
-
-export interface UpdateTodoInput {
-	title?: TodoTitle
-	completed?: boolean
-}
-
-export type TodoNotFoundCode = (typeof TodoNotFoundCode)[keyof typeof TodoNotFoundCode]
-
-export const TodoNotFoundCode = {
-	todo_not_found: 'todo_not_found',
-} as const
-
-export interface TodoNotFound {
-	code: TodoNotFoundCode
-	error: string
 }
 
 export type BadRequestCode = (typeof BadRequestCode)[keyof typeof BadRequestCode]
@@ -81,6 +57,32 @@ export interface Forbidden {
 	error: string
 }
 
+export type InternalErrorCode = (typeof InternalErrorCode)[keyof typeof InternalErrorCode]
+
+export const InternalErrorCode = {
+	internal_error: 'internal_error',
+} as const
+
+export interface InternalError {
+	code: InternalErrorCode
+	error: string
+}
+
+export type UnavailableCode = (typeof UnavailableCode)[keyof typeof UnavailableCode]
+
+export const UnavailableCode = {
+	unavailable: 'unavailable',
+} as const
+
+export interface Unavailable {
+	code: UnavailableCode
+	error: string
+}
+
+export interface TodoResponse {
+	todo: Todo
+}
+
 export type PayloadTooLargeCode = (typeof PayloadTooLargeCode)[keyof typeof PayloadTooLargeCode]
 
 export const PayloadTooLargeCode = {
@@ -104,158 +106,24 @@ export interface UnsupportedMediaType {
 	error: string
 }
 
-export type InternalErrorCode = (typeof InternalErrorCode)[keyof typeof InternalErrorCode]
+export interface CreateTodoInput {
+	title: TodoTitle
+}
 
-export const InternalErrorCode = {
-	internal_error: 'internal_error',
+export type TodoNotFoundCode = (typeof TodoNotFoundCode)[keyof typeof TodoNotFoundCode]
+
+export const TodoNotFoundCode = {
+	todo_not_found: 'todo_not_found',
 } as const
 
-export interface InternalError {
-	code: InternalErrorCode
+export interface TodoNotFound {
+	code: TodoNotFoundCode
 	error: string
 }
 
-export type UnavailableCode = (typeof UnavailableCode)[keyof typeof UnavailableCode]
-
-export const UnavailableCode = {
-	unavailable: 'unavailable',
-} as const
-
-export interface Unavailable {
-	code: UnavailableCode
-	error: string
-}
-
-export type NotFoundCode = (typeof NotFoundCode)[keyof typeof NotFoundCode]
-
-export const NotFoundCode = {
-	not_found: 'not_found',
-} as const
-
-export interface NotFound {
-	code: NotFoundCode
-	error: string
-}
-
-export type TooManyRequestsCode = (typeof TooManyRequestsCode)[keyof typeof TooManyRequestsCode]
-
-export const TooManyRequestsCode = {
-	too_many_requests: 'too_many_requests',
-} as const
-
-export interface TooManyRequests {
-	code: TooManyRequestsCode
-	error: string
-}
-
-export type ConflictCode = (typeof ConflictCode)[keyof typeof ConflictCode]
-
-export const ConflictCode = {
-	conflict: 'conflict',
-} as const
-
-export interface Conflict {
-	code: ConflictCode
-	error: string
-}
-
-export type PaymentRequiredCode = (typeof PaymentRequiredCode)[keyof typeof PaymentRequiredCode]
-
-export const PaymentRequiredCode = {
-	payment_required: 'payment_required',
-} as const
-
-export interface PaymentRequired {
-	code: PaymentRequiredCode
-	error: string
-}
-
-export type BadGatewayCode = (typeof BadGatewayCode)[keyof typeof BadGatewayCode]
-
-export const BadGatewayCode = {
-	bad_gateway: 'bad_gateway',
-} as const
-
-export interface BadGateway {
-	code: BadGatewayCode
-	error: string
-}
-
-export type StorefrontProductId = (typeof StorefrontProductId)[keyof typeof StorefrontProductId]
-
-export const StorefrontProductId = {
-	purchase: 'purchase',
-	subscription: 'subscription',
-} as const
-
-export interface StorefrontProduct {
-	id: StorefrontProductId
-	name: string
-	/** @minimum 1 */
-	amount: number
-	currency: string
-	/** @nullable */
-	interval: string | null
-}
-
-export interface Storefront {
-	enabled: boolean
-	products: StorefrontProduct[]
-}
-
-export type CreateStorefrontCheckoutProduct =
-	(typeof CreateStorefrontCheckoutProduct)[keyof typeof CreateStorefrontCheckoutProduct]
-
-export const CreateStorefrontCheckoutProduct = {
-	purchase: 'purchase',
-	subscription: 'subscription',
-} as const
-
-export interface CreateStorefrontCheckout {
-	product: CreateStorefrontCheckoutProduct
-	requestId: string
-	token: string
-}
-
-export interface StorefrontCheckout {
-	sessionId: string
-	/** @minLength 1 */
-	clientSecret: string
-	/** @pattern ^pk_test_ */
-	publishableKey: string
-}
-
-export interface CheckStorefrontCheckout {
-	/**
-	 * @maxLength 250
-	 * @pattern ^cs_test_[A-Za-z0-9]+$
-	 */
-	sessionId: string
-	token: string
-}
-
-export type StorefrontStatusStatus =
-	(typeof StorefrontStatusStatus)[keyof typeof StorefrontStatusStatus]
-
-export const StorefrontStatusStatus = {
-	open: 'open',
-	pending: 'pending',
-	paid: 'paid',
-	expired: 'expired',
-} as const
-
-export type StorefrontStatusMode = (typeof StorefrontStatusMode)[keyof typeof StorefrontStatusMode]
-
-export const StorefrontStatusMode = {
-	payment: 'payment',
-	subscription: 'subscription',
-} as const
-
-export interface StorefrontStatus {
-	status: StorefrontStatusStatus
-	mode: StorefrontStatusMode
-	amount: number
-	currency: string
+export interface UpdateTodoInput {
+	title?: TodoTitle
+	completed?: boolean
 }
 
 export interface AppConfig {
@@ -290,6 +158,28 @@ export interface Key {
 	last_used_at: string | null
 }
 
+export type ConflictCode = (typeof ConflictCode)[keyof typeof ConflictCode]
+
+export const ConflictCode = {
+	conflict: 'conflict',
+} as const
+
+export interface Conflict {
+	code: ConflictCode
+	error: string
+}
+
+export type TooManyRequestsCode = (typeof TooManyRequestsCode)[keyof typeof TooManyRequestsCode]
+
+export const TooManyRequestsCode = {
+	too_many_requests: 'too_many_requests',
+} as const
+
+export interface TooManyRequests {
+	code: TooManyRequestsCode
+	error: string
+}
+
 export interface CreateKeyBody {
 	/**
 	 * @minLength 1
@@ -298,6 +188,17 @@ export interface CreateKeyBody {
 	 */
 	name: string
 	scope?: KeyScope
+}
+
+export type NotFoundCode = (typeof NotFoundCode)[keyof typeof NotFoundCode]
+
+export const NotFoundCode = {
+	not_found: 'not_found',
+} as const
+
+export interface NotFound {
+	code: NotFoundCode
+	error: string
 }
 
 export type BillingStatusActivityItem = {
@@ -407,6 +308,17 @@ export interface EmailStatus {
 	emails: EmailStatusEmailsItem[]
 }
 
+export type BadGatewayCode = (typeof BadGatewayCode)[keyof typeof BadGatewayCode]
+
+export const BadGatewayCode = {
+	bad_gateway: 'bad_gateway',
+} as const
+
+export interface BadGateway {
+	code: BadGatewayCode
+	error: string
+}
+
 export interface WaitlistInput {
 	/** @maxLength 254 */
 	email: string
@@ -436,6 +348,17 @@ export interface SummaryResponse {
 	status: SummaryResponseStatus
 }
 
+export type PaymentRequiredCode = (typeof PaymentRequiredCode)[keyof typeof PaymentRequiredCode]
+
+export const PaymentRequiredCode = {
+	payment_required: 'payment_required',
+} as const
+
+export interface PaymentRequired {
+	code: PaymentRequiredCode
+	error: string
+}
+
 export interface StoredFile {
 	key: string
 	size: number
@@ -445,7 +368,6 @@ export interface StoredFile {
 
 export type GetHealth200 = {
 	ok: boolean
-	maintenance?: boolean
 }
 
 export type GetMe200 = {

@@ -10,7 +10,6 @@ import { Schema as S } from 'effect'
 import type { Handler, InputOf, SuccessOf, FailureOf } from '../operation'
 export const GetHealth200Response = S.Struct({
 	ok: S.Boolean,
-	maintenance: S.optional(S.Boolean),
 })
 
 export const GetHealth400Response = S.Struct({

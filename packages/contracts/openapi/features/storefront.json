@@ -166,6 +166,10 @@
 					"name": {
 						"type": "string"
 					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
 					"amount": {
 						"type": "integer",
 						"minimum": 1
@@ -178,7 +182,7 @@
 						"nullable": true
 					}
 				},
-				"required": ["id", "name", "amount", "currency", "interval"]
+				"required": ["id", "name", "description", "amount", "currency", "interval"]
 			},
 			"Storefront": {
 				"type": "object",

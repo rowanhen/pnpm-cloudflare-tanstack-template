@@ -1,12 +1,5 @@
-import {
-	LinkButton,
-	Alert,
-	Button,
-	PageSection,
-	Skeleton,
-	Stack,
-	Typography,
-} from '@workspace/shared'
+import { Alert, Button, Skeleton, Stack, Typography } from '@leitware/composables'
+import { LinkButton, PageSection } from '@workspace/shared'
 
 import { useBilling } from '../hooks/use-billing'
 

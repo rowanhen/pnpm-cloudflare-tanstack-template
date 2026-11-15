@@ -14,18 +14,14 @@ export async function testMeteredValidation(worker: LocalWorker) {
 	})
 	assert.equal(response.status, 201)
 	const { key } = await response.json()
-	const before = worker.query(
-		"SELECT balance FROM credit_accounts WHERE user_id='e2e-bob'",
-		'billing',
-	)[0].balance
+	const before = worker.query("SELECT balance FROM credit_accounts WHERE user_id='e2e-bob'")[0]
+		.balance
 	const count = worker.query(
 		"SELECT COUNT(*) AS count FROM paid_requests WHERE user_id='e2e-bob'",
-		'billing',
 	)[0].count
 	// Simulate a malformed historical row; do not relax application constraints or migrations.
 	worker.query(
 		"PRAGMA ignore_check_constraints=ON; INSERT INTO todos(id,user_id,title,completed) VALUES ('invalid-summary','e2e-bob','Invalid old value',2); PRAGMA ignore_check_constraints=OFF;",
-		'product',
 	)
 	try {
 		const result = await fetch(worker.base + '/api/v1/summary', {
@@ -43,19 +39,15 @@ export async function testMeteredValidation(worker: LocalWorker) {
 			error: 'Internal server error',
 		})
 		assert.equal(
-			worker.query("SELECT balance FROM credit_accounts WHERE user_id='e2e-bob'", 'billing')[0]
-				.balance,
+			worker.query("SELECT balance FROM credit_accounts WHERE user_id='e2e-bob'")[0].balance,
 			before,
 		)
 		assert.equal(
-			worker.query(
-				"SELECT COUNT(*) AS count FROM paid_requests WHERE user_id='e2e-bob'",
-				'billing',
-			)[0].count,
+			worker.query("SELECT COUNT(*) AS count FROM paid_requests WHERE user_id='e2e-bob'")[0].count,
 			count,
 		)
 	} finally {
-		worker.query("DELETE FROM todos WHERE id='invalid-summary'", 'product')
+		worker.query("DELETE FROM todos WHERE id='invalid-summary'")
 		await fetch(`${worker.base}/api/keys/${key.id}`, {
 			method: 'DELETE',
 			headers: { Cookie: worker.fixture.cookies[1], Origin: 'http://localhost:3001' },

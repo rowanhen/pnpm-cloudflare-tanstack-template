@@ -1,8 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ErrorPage } from '@workspace/shared'
+import { ErrorScreen } from './-components/error'
+
 export const Route = createFileRoute('/error')({
 	head: () => ({
 		meta: [{ title: 'Something went wrong' }, { name: 'robots', content: 'noindex, nofollow' }],
 	}),
-	component: ErrorPage,
+	component: ErrorScreen,
 })

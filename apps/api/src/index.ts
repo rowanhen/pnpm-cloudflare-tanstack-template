@@ -1,34 +1,11 @@
 import { trustedOrigins } from './origins'
 import { reportRequest } from '@workspace/observability/server'
 import { safeError, safePath } from '@workspace/observability/privacy'
-import generatedApi from './generated/routes'
-import { allowedMethods, contractError, findOperation } from '@workspace/contracts/http'
+import { contractError, findOperation } from '@workspace/contracts/http'
 import type { Env } from './env'
 import { trustedProxyRequest } from './proxy'
-import { createAuth } from './auth'
-import { HttpError, json, methodNotAllowed } from './http'
-import { Hono } from 'hono'
-
-// Better Auth owns its OAuth/cookie protocol; all application routes are generated.
-const app = new Hono<{ Bindings: Env }>()
-app.on(['GET', 'POST'], '/api/auth/*', (c) => {
-	if (!c.env.BETTER_AUTH_SECRET) throw new HttpError(503, 'Authentication is not configured')
-	return createAuth(c.env).handler(c.req.raw)
-})
-app.route('/', generatedApi)
-app.onError((error) => {
-	throw error
-})
-app.notFound((c) => {
-	const methods = allowedMethods(c.req.path)
-	return methods.length ? methodNotAllowed(methods.join(', ')) : json({ error: 'Not found' }, 404)
-})
-
-async function route(request: Request, env: Env): Promise<Response> {
-	if (env.DATABASE_MAINTENANCE === 'true' && new URL(request.url).pathname !== '/api/health')
-		throw new HttpError(503, 'Temporarily unavailable', { 'Retry-After': '60' })
-	return app.fetch(request, env)
-}
+import { HttpError, json } from './http'
+import app from './routes/route'
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -44,7 +21,7 @@ export default {
 			response =
 				request.method === 'OPTIONS'
 					? new Response(null, { status: 204 })
-					: await route(request, env)
+					: await app.fetch(request, env)
 		} catch (error) {
 			if (!(error instanceof HttpError)) unexpectedError = error
 			const status = error instanceof HttpError ? error.status : 500

@@ -52,6 +52,7 @@ export function checkArchitecture(root: string): string[] {
 		type Role = 'application' | 'adapter' | 'http' | 'runtime' | 'host'
 		const role = (path: string): Role => {
 			const name = local(path)
+			if (name.startsWith('routes/')) return 'host'
 			if (name.startsWith('runtime/')) return 'runtime'
 			if (entries.has(path) || /\/http(?:-errors)?\.ts$/.test(name)) return 'http'
 			if (
@@ -83,7 +84,7 @@ export function checkArchitecture(root: string): string[] {
 		for (const entry of readdirSync(directory, { withFileTypes: true }))
 			if (
 				entry.isDirectory() &&
-				!['features', 'runtime', 'contract', 'generated'].includes(entry.name)
+				!['features', 'runtime', 'contract', 'generated', 'routes'].includes(entry.name)
 			)
 				errors.push(
 					`${entry.name}/: keep capabilities in features/, not top-level technical folders`,
@@ -198,7 +199,7 @@ export function checkArchitecture(root: string): string[] {
 				if (
 					(ts.isAsExpression(node) || ts.isTypeAssertion(node)) &&
 					node.type.getText(source) !== 'const' &&
-					!(local(path) === 'contract/service.ts' && node.type.getText(source) === 'FailureOf<O>')
+					!(local(path) === 'contract/handler.ts' && node.type.getText(source) === 'FailureOf<O>')
 				)
 					fail(node, 'decode or narrow values instead of asserting their type')
 				if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {

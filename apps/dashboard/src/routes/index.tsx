@@ -1,7 +1,5 @@
 import {
-	AppShell,
 	Button,
-	PageSection,
 	Stack,
 	Input,
 	DropZone,
@@ -14,9 +12,9 @@ import {
 	Checkbox,
 	Alert,
 	Skeleton,
-	useHydrated,
 	Typography,
-} from '@workspace/shared'
+} from '@leitware/composables'
+import { AppShell, PageSection, useHydrated } from '@workspace/shared'
 import { useAnalyticsIdentity } from '@workspace/shared/components/analytics'
 import { Email } from '../components/email'
 import { useState } from 'react'
