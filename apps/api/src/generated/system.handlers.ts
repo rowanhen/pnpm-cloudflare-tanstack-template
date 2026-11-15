@@ -3,8 +3,7 @@
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
 import { publicEffectHandler } from '../contract/handler'
-import { getHealth } from '../features/system/get-health'
-import { getConfig } from '../features/system/get-config'
+import { getHealth, getConfig } from '../features/system/handlers'
 const factory = createFactory()
 export const getHealthHandlers = factory.createHandlers(
 	publicEffectHandler(operations.getHealth, getHealth),

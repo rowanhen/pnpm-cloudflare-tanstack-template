@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 
 export async function testEmail(worker: LocalWorker) {
 	const { base, fixture } = worker
-	const query = (statement: string) => worker.query(statement, 'product')
+	const query = (statement: string) => worker.query(statement)
 	const call = (body: unknown, { user = 0, headers = {}, method = 'POST' } = {}) =>
 		fetch(`${base}/api/email`, {
 			method,
@@ -27,11 +27,11 @@ export async function testEmail(worker: LocalWorker) {
 		(await call({ requestId: id }, { headers: { 'x-test-email-disabled': 'true' } })).status,
 		503,
 	)
-	worker.query("UPDATE users SET emailVerified=0 WHERE id='e2e-bob'", 'identity')
+	worker.query("UPDATE users SET emailVerified=0 WHERE id='e2e-bob'")
 	try {
 		assert.equal((await call({ requestId: id }, { user: 1 })).status, 403)
 	} finally {
-		worker.query("UPDATE users SET emailVerified=1 WHERE id='e2e-bob'", 'identity')
+		worker.query("UPDATE users SET emailVerified=1 WHERE id='e2e-bob'")
 	}
 	const attempts = await Promise.all([call({ requestId: id }), call({ requestId: id })])
 	assert.ok(attempts.some((r) => r.status === 202))

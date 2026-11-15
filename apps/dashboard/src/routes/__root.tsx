@@ -2,6 +2,7 @@ import { Analytics } from '@workspace/shared/components/analytics'
 import type { ReactNode } from 'react'
 import { appMetaDescription, appTitle, ErrorPage, NotFoundPage } from '@workspace/shared'
 import styles from '@workspace/shared/styles.css?url'
+import { defaultLocale } from '@workspace/shared/lib/i18n'
 import {
 	HeadContent,
 	Outlet,
@@ -38,7 +39,7 @@ const analyticsConfig = {
 	host: import.meta.env.VITE_POSTHOG_HOST,
 	app: 'dashboard' as const,
 	environment: import.meta.env.VITE_APP_ENV ?? 'development',
-	privacyUrl: `${import.meta.env.VITE_SITE_URL ?? 'http://localhost:3000'}/privacy`,
+	privacyUrl: `${import.meta.env.VITE_SITE_URL ?? 'http://localhost:3000'}/${defaultLocale}/privacy`,
 }
 function RootComponent({ children }: { children: ReactNode }) {
 	const pathname = useRouterState({ select: (state) => state.location.pathname })

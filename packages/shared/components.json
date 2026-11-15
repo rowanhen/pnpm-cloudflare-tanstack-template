@@ -12,7 +12,7 @@
 	"iconLibrary": "lucide",
 	"aliases": {
 		"components": "@workspace/shared/components",
-		"utils": "@workspace/shared/lib/utils",
+		"utils": "@leitware/composables",
 		"ui": "@workspace/shared/components/ui",
 		"lib": "@workspace/shared/lib",
 		"hooks": "@workspace/shared/hooks"

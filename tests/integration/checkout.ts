@@ -76,7 +76,7 @@ export async function testCheckout(worker: LocalWorker) {
 		name: 'API credits',
 		credits: 1000,
 		priceId: 'price_fixture',
-		description: null,
+		description: 'Prepaid API credits for a private workspace.',
 		amount: 1200,
 		currency: 'gbp',
 	})

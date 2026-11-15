@@ -1,16 +1,12 @@
 import { useNavigate } from '@tanstack/react-router'
 import { useRef } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { usePaymentStatus } from './use-payment-status'
+import { usePaymentStatus } from '@workspace/shared/hooks/use-payment-status'
 import { useHydrated } from '@workspace/shared'
 import { getConfig } from '../generated/system'
 import { getCheckoutConfig, createCheckout, getOrder } from '../generated/checkout'
 
 export type { CheckoutConfig, CheckoutSession, OrderStatus } from '@workspace/contracts'
-export function money(amount: number, currency: string) {
-	const format = new Intl.NumberFormat('en-GB', { style: 'currency', currency })
-	return format.format(amount / 10 ** (format.resolvedOptions().maximumFractionDigits ?? 2))
-}
 export function useCheckoutSession() {
 	const navigate = useNavigate()
 	const hydrated = useHydrated()

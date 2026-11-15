@@ -3,7 +3,7 @@
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
 import { effectHandler } from '../contract/handler'
-import { getBilling } from '../features/billing/get-billing'
+import { getBilling } from '../features/billing/handlers'
 const factory = createFactory()
 export const getBillingHandlers = factory.createHandlers(
 	effectHandler(operations.getBilling, getBilling),

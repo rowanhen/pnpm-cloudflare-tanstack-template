@@ -5,6 +5,30 @@
  * OpenAPI-first contracts with generated Hono routes, Effect handlers, and frontend clients.
  * OpenAPI spec version: 1.0.0
  */
+export type StorefrontProductId = (typeof StorefrontProductId)[keyof typeof StorefrontProductId]
+
+export const StorefrontProductId = {
+	purchase: 'purchase',
+	subscription: 'subscription',
+} as const
+
+export interface StorefrontProduct {
+	id: StorefrontProductId
+	name: string
+	/** @nullable */
+	description: string | null
+	/** @minimum 1 */
+	amount: number
+	currency: string
+	/** @nullable */
+	interval: string | null
+}
+
+export interface Storefront {
+	enabled: boolean
+	products: StorefrontProduct[]
+}
+
 export type BadRequestCode = (typeof BadRequestCode)[keyof typeof BadRequestCode]
 
 export const BadRequestCode = {
@@ -38,26 +62,14 @@ export interface Forbidden {
 	error: string
 }
 
-export type PayloadTooLargeCode = (typeof PayloadTooLargeCode)[keyof typeof PayloadTooLargeCode]
+export type NotFoundCode = (typeof NotFoundCode)[keyof typeof NotFoundCode]
 
-export const PayloadTooLargeCode = {
-	payload_too_large: 'payload_too_large',
+export const NotFoundCode = {
+	not_found: 'not_found',
 } as const
 
-export interface PayloadTooLarge {
-	code: PayloadTooLargeCode
-	error: string
-}
-
-export type UnsupportedMediaTypeCode =
-	(typeof UnsupportedMediaTypeCode)[keyof typeof UnsupportedMediaTypeCode]
-
-export const UnsupportedMediaTypeCode = {
-	unsupported_media_type: 'unsupported_media_type',
-} as const
-
-export interface UnsupportedMediaType {
-	code: UnsupportedMediaTypeCode
+export interface NotFound {
+	code: NotFoundCode
 	error: string
 }
 
@@ -92,6 +104,84 @@ export const UnavailableCode = {
 export interface Unavailable {
 	code: UnavailableCode
 	error: string
+}
+
+export interface StorefrontCheckout {
+	sessionId: string
+	/** @minLength 1 */
+	clientSecret: string
+	/** @pattern ^pk_test_ */
+	publishableKey: string
+}
+
+export type PayloadTooLargeCode = (typeof PayloadTooLargeCode)[keyof typeof PayloadTooLargeCode]
+
+export const PayloadTooLargeCode = {
+	payload_too_large: 'payload_too_large',
+} as const
+
+export interface PayloadTooLarge {
+	code: PayloadTooLargeCode
+	error: string
+}
+
+export type UnsupportedMediaTypeCode =
+	(typeof UnsupportedMediaTypeCode)[keyof typeof UnsupportedMediaTypeCode]
+
+export const UnsupportedMediaTypeCode = {
+	unsupported_media_type: 'unsupported_media_type',
+} as const
+
+export interface UnsupportedMediaType {
+	code: UnsupportedMediaTypeCode
+	error: string
+}
+
+export type CreateStorefrontCheckoutProduct =
+	(typeof CreateStorefrontCheckoutProduct)[keyof typeof CreateStorefrontCheckoutProduct]
+
+export const CreateStorefrontCheckoutProduct = {
+	purchase: 'purchase',
+	subscription: 'subscription',
+} as const
+
+export interface CreateStorefrontCheckout {
+	product: CreateStorefrontCheckoutProduct
+	requestId: string
+	token: string
+}
+
+export type StorefrontStatusStatus =
+	(typeof StorefrontStatusStatus)[keyof typeof StorefrontStatusStatus]
+
+export const StorefrontStatusStatus = {
+	open: 'open',
+	pending: 'pending',
+	paid: 'paid',
+	expired: 'expired',
+} as const
+
+export type StorefrontStatusMode = (typeof StorefrontStatusMode)[keyof typeof StorefrontStatusMode]
+
+export const StorefrontStatusMode = {
+	payment: 'payment',
+	subscription: 'subscription',
+} as const
+
+export interface StorefrontStatus {
+	status: StorefrontStatusStatus
+	mode: StorefrontStatusMode
+	amount: number
+	currency: string
+}
+
+export interface CheckStorefrontCheckout {
+	/**
+	 * @maxLength 250
+	 * @pattern ^cs_test_[A-Za-z0-9]+$
+	 */
+	sessionId: string
+	token: string
 }
 
 export interface WaitlistInput {

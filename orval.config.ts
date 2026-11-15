@@ -1,5 +1,20 @@
 import { defineConfig } from 'orval'
+import { readFile, writeFile } from 'node:fs/promises'
 import { effectHandlers, effectHono, removeUnusedEffectModels } from './codegen/effect-handlers.ts'
+
+async function fixSchemaFactoryImports(paths: unknown) {
+	if (!Array.isArray(paths)) throw new Error('Orval must supply generated paths to the hook')
+	for (const path of paths) {
+		if (typeof path !== 'string' || !path.endsWith('schemas.faker.ts')) continue
+		const source = await readFile(path, 'utf8')
+		if (source.includes("from './api.ts'")) {
+			// Orval 8.48 resolves schema factories against api.ts in tags mode, which emits api.schemas.ts.
+			await writeFile(path, source.replaceAll("from './api.ts'", "from './api.schemas.ts'"))
+		} else if (!source.includes("from './api.schemas.ts'")) {
+			throw new Error(`Unexpected schema factory type import in ${path}`)
+		}
+	}
+}
 
 const input = {
 	target: './packages/contracts/openapi/api.json',
@@ -46,7 +61,8 @@ export default defineConfig({
 		},
 	},
 	client: {
-		input,
+		input: { ...input, filters: { tags: ['storefront'], mode: 'exclude' } },
+		hooks: { afterAllFilesWrite: fixSchemaFactoryImports },
 		output: {
 			client: 'react-query',
 			clean: ['./apps/dashboard/src/generated'],
@@ -56,7 +72,11 @@ export default defineConfig({
 			urlEncodeParameters: true,
 			mode: 'tags',
 			target: './apps/dashboard/src/generated/api.ts',
-			mock: { generators: [{ type: 'msw' }] },
+			mock: {
+				indexMockFiles: true,
+				fixtures: true,
+				generators: [{ type: 'msw' }, { type: 'faker', schemas: true }],
+			},
 			override: {
 				query: { version: 5 },
 				fetch: {
@@ -69,9 +89,10 @@ export default defineConfig({
 		},
 	},
 	marketing: {
-		input: { ...input, filters: { tags: ['waitlist'], mode: 'include' } },
+		input: { ...input, filters: { tags: ['waitlist', 'storefront'], mode: 'include' } },
+		hooks: { afterAllFilesWrite: fixSchemaFactoryImports },
 		output: {
-			client: 'fetch',
+			client: 'react-query',
 			httpClient: 'fetch',
 			headers: true,
 			urlEncodeParameters: true,
@@ -79,7 +100,13 @@ export default defineConfig({
 			target: './apps/marketing/src/generated/api.ts',
 			clean: ['./apps/marketing/src/generated'],
 			formatter: 'oxfmt',
+			mock: {
+				indexMockFiles: true,
+				fixtures: true,
+				generators: [{ type: 'faker', schemas: true }],
+			},
 			override: {
+				query: { version: 5 },
 				fetch: {
 					includeHttpResponseReturnType: true,
 					forceSuccessResponse: true,

@@ -1,16 +1,15 @@
 import {
 	Button,
-	PageSection,
 	Stack,
 	Label,
 	Input,
 	Alert,
 	NativeSelect,
-	useHydrated,
 	Grid,
 	Typography,
 	CodeBlock,
-} from '@workspace/shared'
+} from '@leitware/composables'
+import { PageSection, useHydrated } from '@workspace/shared'
 
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'

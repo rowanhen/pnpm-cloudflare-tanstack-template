@@ -1,0 +1,154 @@
+import { Alert, Button, Skeleton, Input, Label, Stack } from '@leitware/composables'
+import { useState } from 'react'
+import { loadStripe } from '@stripe/stripe-js'
+import {
+	CheckoutElementsProvider,
+	PaymentElement,
+	useCheckoutElements,
+} from '@stripe/react-stripe-js/checkout'
+
+const clients = new Map<string, ReturnType<typeof loadStripe>>()
+function stripeClient(key: string) {
+	const existing = clients.get(key)
+	if (existing) return existing
+	const client = loadStripe(key)
+	clients.set(key, client)
+	return client
+}
+export default function PaymentForm({
+	publishableKey,
+	clientSecret,
+	collectEmail = false,
+	submitLabel,
+	onComplete,
+	onBack,
+}: {
+	publishableKey: string
+	clientSecret: string
+	collectEmail?: boolean
+	submitLabel?: string
+	onComplete: () => void | Promise<void>
+	onBack?: () => void
+}) {
+	const [appearance] = useState(() => {
+		if (typeof document === 'undefined') return undefined
+		const theme = getComputedStyle(document.documentElement)
+		return {
+			colorPrimary: theme.getPropertyValue('--bg-fill-primary').trim(),
+			colorText: theme.getPropertyValue('--text-default').trim(),
+			colorBackground: theme.getPropertyValue('--bg-surface-default').trim(),
+			fontFamily: theme.fontFamily,
+			borderRadius: theme.getPropertyValue('--radius').trim(),
+		}
+	})
+
+	return (
+		<CheckoutElementsProvider
+			stripe={stripeClient(publishableKey)}
+			options={{
+				clientSecret,
+				elementsOptions: {
+					appearance: {
+						theme: 'stripe',
+						variables: appearance,
+					},
+				},
+			}}
+		>
+			<Form
+				collectEmail={collectEmail}
+				submitLabel={submitLabel}
+				onComplete={onComplete}
+				onBack={onBack}
+			/>
+		</CheckoutElementsProvider>
+	)
+}
+function Form({
+	collectEmail,
+	submitLabel,
+	onComplete,
+	onBack,
+}: {
+	collectEmail: boolean
+	submitLabel?: string
+	onComplete: () => void | Promise<void>
+	onBack?: () => void
+}) {
+	const checkout = useCheckoutElements()
+	const [submission, setSubmission] = useState<
+		{ status: 'idle' | 'confirming' | 'redirecting' } | { status: 'error'; message: string }
+	>({ status: 'idle' })
+	const busy = submission.status === 'confirming' || submission.status === 'redirecting'
+	const [email, setEmail] = useState('')
+	const back = onBack && (
+		<Button type="button" variant="link" disabled={busy} onClick={onBack}>
+			Back to products
+		</Button>
+	)
+	if (checkout.type === 'loading')
+		return (
+			<Stack gap={5}>
+				<Skeleton className="h-60" aria-label="Loading payment form" />
+				{back}
+			</Stack>
+		)
+	if (checkout.type === 'error')
+		return (
+			<Stack gap={5}>
+				<Alert type="negative">
+					Unable to load the payment form. Please refresh and try again.
+				</Alert>
+				{back}
+			</Stack>
+		)
+	return (
+		<form
+			className="space-y-6"
+			onSubmit={async (event) => {
+				event.preventDefault()
+				if (busy) return
+				setSubmission({ status: 'confirming' })
+				try {
+					const result = await checkout.checkout.confirm({
+						redirect: 'if_required',
+						...(collectEmail ? { email: email.trim() } : {}),
+					})
+					if (result.type === 'error') {
+						setSubmission({ status: 'error', message: result.error.message })
+					} else {
+						setSubmission({ status: 'redirecting' })
+						await onComplete()
+					}
+				} catch {
+					setSubmission({
+						status: 'error',
+						message: 'Payment could not be confirmed. Please try again.',
+					})
+				}
+			}}
+		>
+			{collectEmail && (
+				<Stack gap={2}>
+					<Label htmlFor="checkout-email">Email</Label>
+					<Input
+						id="checkout-email"
+						type="email"
+						autoComplete="email"
+						required
+						maxLength={254}
+						disabled={busy}
+						value={email}
+						onChange={(event) => setEmail(event.target.value)}
+					/>
+				</Stack>
+			)}
+			<PaymentElement options={{ layout: 'tabs', wallets: { link: 'never' } }} />
+			{submission.status === 'error' && <Alert type="negative">{submission.message}</Alert>}
+			<Button className="w-full" size="lg" disabled={busy} type="submit">
+				{busy ? 'Confirming…' : (submitLabel ?? `Pay ${checkout.checkout.total.total.amount}`)}
+			</Button>
+			{back}
+		</form>
+	)
+}

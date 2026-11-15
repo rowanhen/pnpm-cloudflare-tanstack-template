@@ -3,8 +3,7 @@
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
 import { apiKeyEffectHandler } from '../contract/handler'
-import { listApiTodos } from '../features/metered/list-api-todos'
-import { createSummary } from '../features/metered/create-summary'
+import { listApiTodos, createSummary } from '../features/metered/handlers'
 const factory = createFactory()
 export const listApiTodosHandlers = factory.createHandlers(
 	apiKeyEffectHandler(operations.listApiTodos, listApiTodos),

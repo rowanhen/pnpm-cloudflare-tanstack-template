@@ -3,7 +3,7 @@
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
 import { publicEffectHandler } from '../contract/handler'
-import { receiveStripeWebhook } from '../features/webhooks/receive-stripe-webhook'
+import { receiveStripeWebhook } from '../features/webhooks/handlers'
 const factory = createFactory()
 export const receiveStripeWebhookHandlers = factory.createHandlers(
 	publicEffectHandler(operations.receiveStripeWebhook, receiveStripeWebhook),

@@ -5,10 +5,10 @@ export interface Env extends ServerConfig {
 	EMAIL?: SendEmail
 	EMAIL_FROM?: string
 	DB: D1Database
-	DATABASE_MAINTENANCE?: string
 	FILES: R2Bucket
 	ALLOWED_ORIGINS: string
 	AUTH_URL: string
+	SITE_URL: string
 	BETTER_AUTH_SECRET: string
 	GOOGLE_CLIENT_ID?: string
 	GOOGLE_CLIENT_SECRET?: string

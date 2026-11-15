@@ -3,8 +3,7 @@
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
 import { publicEffectHandler, effectHandler } from '../contract/handler'
-import { joinWaitlist } from '../features/waitlist/join-waitlist'
-import { getWaitlistStatus } from '../features/waitlist/get-waitlist-status'
+import { joinWaitlist, getWaitlistStatus } from '../features/waitlist/handlers'
 const factory = createFactory()
 export const joinWaitlistHandlers = factory.createHandlers(
 	publicEffectHandler(operations.joinWaitlist, joinWaitlist),

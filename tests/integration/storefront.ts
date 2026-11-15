@@ -37,6 +37,13 @@ export async function testStorefront(worker: LocalWorker) {
 	const first = await call('/api/storefront/checkouts', input)
 	assert.equal(first.status, 200, await first.clone().text())
 	const checkout = await first.json()
+	const stripeSession = await (
+		await fetch(`${worker.stripeUrl}/__test/${checkout.sessionId}`)
+	).json()
+	assert.equal(
+		stripeSession.return_url,
+		'http://localhost:3000/en/checkout/complete?session_id={CHECKOUT_SESSION_ID}',
+	)
 	const repeat = await call('/api/storefront/checkouts', input)
 	assert.deepEqual(await repeat.json(), checkout)
 	assert.ok(checkout.clientSecret.startsWith(checkout.sessionId + '_secret_'))
@@ -73,8 +80,7 @@ export async function testStorefront(worker: LocalWorker) {
 	assert.equal((await status(checkout.sessionId)).status, 503)
 	await patch(checkout.sessionId, { amount_total: 1200, currency: 'gbp' })
 	// Guest purchases deliberately never fulfil a workspace credit order.
-	const before = worker.query('SELECT SUM(balance) AS balance FROM credit_accounts', 'billing')[0]
-		.balance
+	const before = worker.query('SELECT SUM(balance) AS balance FROM credit_accounts')[0].balance
 	const payload = JSON.stringify({
 		id: 'evt_guest_' + randomUUID(),
 		type: 'checkout.session.completed',
@@ -92,7 +98,7 @@ export async function testStorefront(worker: LocalWorker) {
 	})
 	assert.equal(event.status, 200)
 	assert.equal(
-		worker.query('SELECT SUM(balance) AS balance FROM credit_accounts', 'billing')[0].balance,
+		worker.query('SELECT SUM(balance) AS balance FROM credit_accounts')[0].balance,
 		before,
 	)
 	for (let i = 0; i < 10; i++)

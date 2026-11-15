@@ -1,11 +1,18 @@
 {
 	"$schema": "https://raw.githubusercontent.com/nicolo-ribaudo/oxlint/refs/heads/main/.oxlintrc.json",
 	"plugins": ["react", "typescript", "jsx-a11y", "import"],
+	"jsPlugins": ["./lint/index.ts"],
 	"categories": {
 		"correctness": "warn",
 		"suspicious": "warn"
 	},
 	"rules": {
+		"project/prevent-code-comments": "warn",
+		"project/require-test-name": "off",
+		"project/require-test-suite": "off",
+		"project/require-feature-test-location": "error",
+		"project/no-cross-feature-test-imports": "error",
+		"project/require-module-test-location": "error",
 		"no-unused-vars": "warn",
 		"import/no-duplicates": "warn",
 		"react/no-array-index-key": "off",
@@ -41,6 +48,19 @@
 		}
 	},
 	"overrides": [
+		{
+			"files": ["**/*.test.ts", "**/*.spec.ts", "**/*.test.tsx", "**/*.spec.tsx"],
+			"rules": {
+				"project/require-test-name": "error",
+				"project/require-test-suite": "error"
+			}
+		},
+		{
+			"files": ["**/generated/**"],
+			"rules": {
+				"project/prevent-code-comments": "off"
+			}
+		},
 		{
 			"files": ["apps/api/src/**/*.ts"],
 			"rules": {

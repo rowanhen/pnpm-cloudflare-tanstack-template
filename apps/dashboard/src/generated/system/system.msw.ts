@@ -14,11 +14,7 @@ import type { AppConfig, GetHealth200 } from '../api.schemas'
 
 export const getGetHealthResponseMock = (
 	overrideResponse: Partial<Extract<GetHealth200, object>> = {},
-): GetHealth200 => ({
-	ok: faker.datatype.boolean(),
-	maintenance: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-	...overrideResponse,
-})
+): GetHealth200 => ({ ok: faker.datatype.boolean(), ...overrideResponse })
 
 export const getGetConfigResponseMock = (
 	overrideResponse: Partial<Extract<AppConfig, object>> = {},

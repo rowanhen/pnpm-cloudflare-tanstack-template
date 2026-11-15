@@ -1,6 +1,7 @@
 import { Effect, Schema } from 'effect'
 import { Stripe } from 'stripe'
 import { InvalidInput, ProviderFailure, Unavailable } from '../../errors'
+import { defaultLocale } from '@workspace/shared/lib/i18n'
 import { type PaymentGateway, PaymentSession, type CheckoutIntent } from './payments'
 
 const Price = Schema.Struct({
@@ -84,7 +85,7 @@ export const stripeGateway = (settings: {
 					...(intent.product === 'subscription'
 						? { subscription_data: { metadata: { example: 'storefront' } } }
 						: {}),
-					return_url: `${settings.origin}/checkout/complete?session_id={CHECKOUT_SESSION_ID}`,
+					return_url: `${settings.origin}/${defaultLocale}/checkout/complete?session_id={CHECKOUT_SESSION_ID}`,
 				}),
 	})
 	return {

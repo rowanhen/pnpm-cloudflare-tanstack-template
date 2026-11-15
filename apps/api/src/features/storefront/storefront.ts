@@ -58,6 +58,7 @@ export const makeStorefront = ({
 								return {
 									id,
 									name: product.name,
+									description: product.description,
 									amount: product.amount,
 									currency: product.currency,
 									interval: product.interval,

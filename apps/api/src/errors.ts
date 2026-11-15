@@ -30,3 +30,14 @@ export type ApplicationError =
 	| ProviderFailure
 	| RateLimited
 	| InsufficientCredits
+
+export const isApplicationError = (error: unknown): error is ApplicationError =>
+	error instanceof InvalidInput ||
+	error instanceof MissingRecord ||
+	error instanceof Conflict ||
+	error instanceof Forbidden ||
+	error instanceof Unauthorized ||
+	error instanceof Unavailable ||
+	error instanceof ProviderFailure ||
+	error instanceof RateLimited ||
+	error instanceof InsufficientCredits

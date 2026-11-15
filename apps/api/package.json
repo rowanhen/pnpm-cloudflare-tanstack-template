@@ -19,6 +19,7 @@
 		"@workspace/contracts": "workspace:*",
 		"@workspace/data": "workspace:*",
 		"@workspace/observability": "workspace:*",
+		"@workspace/shared": "workspace:*",
 		"better-auth": "^1.7.25",
 		"drizzle-orm": "0.45.4",
 		"effect": "4.1.4",

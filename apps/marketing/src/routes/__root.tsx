@@ -8,8 +8,10 @@ import {
 	useRouterState,
 } from '@tanstack/react-router'
 import type { QueryClient } from '@tanstack/react-query'
-import { ErrorPage, NotFoundPage } from '@workspace/shared'
 import styles from '@workspace/shared/styles.css?url'
+import { defaultLocale, isSupportedLocale } from '../lib/locale'
+import { NotFoundScreen } from './-components/not-found'
+import { ErrorScreen } from './-components/error'
 
 export const Route = createRootRouteWithContext<{
 	queryClient: QueryClient
@@ -26,8 +28,8 @@ export const Route = createRootRouteWithContext<{
 	}),
 	component: Outlet,
 	shellComponent: RootComponent,
-	notFoundComponent: NotFoundPage,
-	errorComponent: ({ error }) => <ErrorPage error={error} />,
+	notFoundComponent: NotFoundScreen,
+	errorComponent: ({ error, reset }) => <ErrorScreen error={error} retry={reset} />,
 })
 
 const analyticsConfig = {
@@ -35,12 +37,14 @@ const analyticsConfig = {
 	host: import.meta.env.VITE_POSTHOG_HOST,
 	app: 'marketing' as const,
 	environment: import.meta.env.VITE_APP_ENV ?? 'development',
-	privacyUrl: `${import.meta.env.VITE_SITE_URL ?? 'http://localhost:3000'}/privacy`,
+	privacyUrl: `${import.meta.env.VITE_SITE_URL ?? 'http://localhost:3000'}/${defaultLocale}/privacy`,
 }
 function RootComponent({ children }: { children: ReactNode }) {
 	const pathname = useRouterState({ select: (state) => state.location.pathname })
+	const requestedLocale = pathname.split('/')[1] ?? ''
+	const locale = isSupportedLocale(requestedLocale) ? requestedLocale : defaultLocale
 	return (
-		<html lang="en">
+		<html lang={locale}>
 			<head>
 				<HeadContent />
 			</head>

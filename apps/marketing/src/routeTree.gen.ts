@@ -10,23 +10,37 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SplatRouteImport } from './routes/$'
+import { Route as LocaleRouteRouteImport } from './routes/$locale/route'
+import { Route as R404RouteImport } from './routes/404'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
-import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as ApiWaitlistRouteImport } from './routes/api.waitlist'
-import { Route as WaitlistSuccessRouteImport } from './routes/waitlist.success'
+import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
+import { Route as LocaleIndexDotmdRouteImport } from './routes/$locale/index[.]md'
+import { Route as ApiStorefrontRouteImport } from './routes/api/storefront'
+import { Route as ApiWaitlistRouteImport } from './routes/api/waitlist'
+import { Route as LocaleCheckoutIndexRouteImport } from './routes/$locale/checkout/index'
+import { Route as LocaleCheckoutCompleteRouteImport } from './routes/$locale/checkout/complete'
+import { Route as LocalePrivacyIndexRouteImport } from './routes/$locale/privacy/index'
+import { Route as LocaleWaitlistSuccessRouteImport } from './routes/$locale/waitlist/success'
+import { Route as ApiStorefrontCheckoutsRouteImport } from './routes/api/storefront/checkouts'
+import { Route as ApiStorefrontStatusRouteImport } from './routes/api/storefront/status'
+import { Route as LocaleGuidesGettingStartedIndexRouteImport } from './routes/$locale/guides/getting-started/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SplatRoute = SplatRouteImport.update({
-  id: '/$',
-  path: '/$',
+const LocaleRouteRoute = LocaleRouteRouteImport.update({
+  id: '/$locale',
+  path: '/$locale',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const R404Route = R404RouteImport.update({
+  id: '/404',
+  path: '/404',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErrorRoute = ErrorRouteImport.update({
@@ -39,11 +53,6 @@ const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
   path: '/llms.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
   id: '/robots.txt',
   path: '/robots.txt',
@@ -54,97 +63,195 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleIndexRoute = LocaleIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
+const LocaleIndexDotmdRoute = LocaleIndexDotmdRouteImport.update({
+  id: '/index.md',
+  path: '/index.md',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
+const ApiStorefrontRoute = ApiStorefrontRouteImport.update({
+  id: '/api/storefront',
+  path: '/api/storefront',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWaitlistRoute = ApiWaitlistRouteImport.update({
   id: '/api/waitlist',
   path: '/api/waitlist',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WaitlistSuccessRoute = WaitlistSuccessRouteImport.update({
+const LocaleCheckoutIndexRoute = LocaleCheckoutIndexRouteImport.update({
+  id: '/checkout/',
+  path: '/checkout/',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
+const LocaleCheckoutCompleteRoute = LocaleCheckoutCompleteRouteImport.update({
+  id: '/checkout/complete',
+  path: '/checkout/complete',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
+const LocalePrivacyIndexRoute = LocalePrivacyIndexRouteImport.update({
+  id: '/privacy/',
+  path: '/privacy/',
+  getParentRoute: () => LocaleRouteRoute,
+} as any)
+const LocaleWaitlistSuccessRoute = LocaleWaitlistSuccessRouteImport.update({
   id: '/waitlist/success',
   path: '/waitlist/success',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => LocaleRouteRoute,
 } as any)
+const ApiStorefrontCheckoutsRoute = ApiStorefrontCheckoutsRouteImport.update({
+  id: '/checkouts',
+  path: '/checkouts',
+  getParentRoute: () => ApiStorefrontRoute,
+} as any)
+const ApiStorefrontStatusRoute = ApiStorefrontStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => ApiStorefrontRoute,
+} as any)
+const LocaleGuidesGettingStartedIndexRoute =
+  LocaleGuidesGettingStartedIndexRouteImport.update({
+    id: '/guides/getting-started/',
+    path: '/guides/getting-started/',
+    getParentRoute: () => LocaleRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/$': typeof SplatRoute
+  '/$locale': typeof LocaleRouteRouteWithChildren
+  '/404': typeof R404Route
   '/error': typeof ErrorRoute
   '/llms.txt': typeof LlmsDottxtRoute
-  '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$locale/index.md': typeof LocaleIndexDotmdRoute
+  '/api/storefront': typeof ApiStorefrontRouteWithChildren
   '/api/waitlist': typeof ApiWaitlistRoute
-  '/waitlist/success': typeof WaitlistSuccessRoute
+  '/$locale/': typeof LocaleIndexRoute
+  '/$locale/checkout/complete': typeof LocaleCheckoutCompleteRoute
+  '/$locale/waitlist/success': typeof LocaleWaitlistSuccessRoute
+  '/api/storefront/checkouts': typeof ApiStorefrontCheckoutsRoute
+  '/api/storefront/status': typeof ApiStorefrontStatusRoute
+  '/$locale/checkout/': typeof LocaleCheckoutIndexRoute
+  '/$locale/privacy/': typeof LocalePrivacyIndexRoute
+  '/$locale/guides/getting-started/': typeof LocaleGuidesGettingStartedIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/$': typeof SplatRoute
+  '/404': typeof R404Route
   '/error': typeof ErrorRoute
   '/llms.txt': typeof LlmsDottxtRoute
-  '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$locale/index.md': typeof LocaleIndexDotmdRoute
+  '/api/storefront': typeof ApiStorefrontRouteWithChildren
   '/api/waitlist': typeof ApiWaitlistRoute
-  '/waitlist/success': typeof WaitlistSuccessRoute
+  '/$locale': typeof LocaleIndexRoute
+  '/$locale/checkout/complete': typeof LocaleCheckoutCompleteRoute
+  '/$locale/waitlist/success': typeof LocaleWaitlistSuccessRoute
+  '/api/storefront/checkouts': typeof ApiStorefrontCheckoutsRoute
+  '/api/storefront/status': typeof ApiStorefrontStatusRoute
+  '/$locale/checkout': typeof LocaleCheckoutIndexRoute
+  '/$locale/privacy': typeof LocalePrivacyIndexRoute
+  '/$locale/guides/getting-started': typeof LocaleGuidesGettingStartedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/$': typeof SplatRoute
+  '/$locale': typeof LocaleRouteRouteWithChildren
+  '/404': typeof R404Route
   '/error': typeof ErrorRoute
   '/llms.txt': typeof LlmsDottxtRoute
-  '/privacy': typeof PrivacyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/$locale/index.md': typeof LocaleIndexDotmdRoute
+  '/api/storefront': typeof ApiStorefrontRouteWithChildren
   '/api/waitlist': typeof ApiWaitlistRoute
-  '/waitlist/success': typeof WaitlistSuccessRoute
+  '/$locale/': typeof LocaleIndexRoute
+  '/$locale/checkout/complete': typeof LocaleCheckoutCompleteRoute
+  '/$locale/waitlist/success': typeof LocaleWaitlistSuccessRoute
+  '/api/storefront/checkouts': typeof ApiStorefrontCheckoutsRoute
+  '/api/storefront/status': typeof ApiStorefrontStatusRoute
+  '/$locale/checkout/': typeof LocaleCheckoutIndexRoute
+  '/$locale/privacy/': typeof LocalePrivacyIndexRoute
+  '/$locale/guides/getting-started/': typeof LocaleGuidesGettingStartedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/$'
+    | '/$locale'
+    | '/404'
     | '/error'
     | '/llms.txt'
-    | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/$locale/index.md'
+    | '/api/storefront'
     | '/api/waitlist'
-    | '/waitlist/success'
+    | '/$locale/'
+    | '/$locale/checkout/complete'
+    | '/$locale/waitlist/success'
+    | '/api/storefront/checkouts'
+    | '/api/storefront/status'
+    | '/$locale/checkout/'
+    | '/$locale/privacy/'
+    | '/$locale/guides/getting-started/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/$'
+    | '/404'
     | '/error'
     | '/llms.txt'
-    | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/$locale/index.md'
+    | '/api/storefront'
     | '/api/waitlist'
-    | '/waitlist/success'
+    | '/$locale'
+    | '/$locale/checkout/complete'
+    | '/$locale/waitlist/success'
+    | '/api/storefront/checkouts'
+    | '/api/storefront/status'
+    | '/$locale/checkout'
+    | '/$locale/privacy'
+    | '/$locale/guides/getting-started'
   id:
     | '__root__'
     | '/'
-    | '/$'
+    | '/$locale'
+    | '/404'
     | '/error'
     | '/llms.txt'
-    | '/privacy'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/$locale/index.md'
+    | '/api/storefront'
     | '/api/waitlist'
-    | '/waitlist/success'
+    | '/$locale/'
+    | '/$locale/checkout/complete'
+    | '/$locale/waitlist/success'
+    | '/api/storefront/checkouts'
+    | '/api/storefront/status'
+    | '/$locale/checkout/'
+    | '/$locale/privacy/'
+    | '/$locale/guides/getting-started/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  SplatRoute: typeof SplatRoute
+  LocaleRouteRoute: typeof LocaleRouteRouteWithChildren
+  R404Route: typeof R404Route
   ErrorRoute: typeof ErrorRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
-  PrivacyRoute: typeof PrivacyRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiStorefrontRoute: typeof ApiStorefrontRouteWithChildren
   ApiWaitlistRoute: typeof ApiWaitlistRoute
-  WaitlistSuccessRoute: typeof WaitlistSuccessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -156,11 +263,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$': {
-      id: '/$'
-      path: '/$'
-      fullPath: '/$'
-      preLoaderRoute: typeof SplatRouteImport
+    '/$locale': {
+      id: '/$locale'
+      path: '/$locale'
+      fullPath: '/$locale'
+      preLoaderRoute: typeof LocaleRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/404': {
+      id: '/404'
+      path: '/404'
+      fullPath: '/404'
+      preLoaderRoute: typeof R404RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error': {
@@ -177,13 +291,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LlmsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/robots.txt': {
       id: '/robots.txt'
       path: '/robots.txt'
@@ -198,6 +305,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale/': {
+      id: '/$locale/'
+      path: '/'
+      fullPath: '/$locale/'
+      preLoaderRoute: typeof LocaleIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/index.md': {
+      id: '/$locale/index.md'
+      path: '/index.md'
+      fullPath: '/$locale/index.md'
+      preLoaderRoute: typeof LocaleIndexDotmdRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/api/storefront': {
+      id: '/api/storefront'
+      path: '/api/storefront'
+      fullPath: '/api/storefront'
+      preLoaderRoute: typeof ApiStorefrontRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/waitlist': {
       id: '/api/waitlist'
       path: '/api/waitlist'
@@ -205,26 +333,106 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWaitlistRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/waitlist/success': {
-      id: '/waitlist/success'
+    '/$locale/checkout/': {
+      id: '/$locale/checkout/'
+      path: '/checkout'
+      fullPath: '/$locale/checkout/'
+      preLoaderRoute: typeof LocaleCheckoutIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/checkout/complete': {
+      id: '/$locale/checkout/complete'
+      path: '/checkout/complete'
+      fullPath: '/$locale/checkout/complete'
+      preLoaderRoute: typeof LocaleCheckoutCompleteRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/privacy/': {
+      id: '/$locale/privacy/'
+      path: '/privacy'
+      fullPath: '/$locale/privacy/'
+      preLoaderRoute: typeof LocalePrivacyIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/$locale/waitlist/success': {
+      id: '/$locale/waitlist/success'
       path: '/waitlist/success'
-      fullPath: '/waitlist/success'
-      preLoaderRoute: typeof WaitlistSuccessRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale/waitlist/success'
+      preLoaderRoute: typeof LocaleWaitlistSuccessRouteImport
+      parentRoute: typeof LocaleRouteRoute
+    }
+    '/api/storefront/checkouts': {
+      id: '/api/storefront/checkouts'
+      path: '/checkouts'
+      fullPath: '/api/storefront/checkouts'
+      preLoaderRoute: typeof ApiStorefrontCheckoutsRouteImport
+      parentRoute: typeof ApiStorefrontRoute
+    }
+    '/api/storefront/status': {
+      id: '/api/storefront/status'
+      path: '/status'
+      fullPath: '/api/storefront/status'
+      preLoaderRoute: typeof ApiStorefrontStatusRouteImport
+      parentRoute: typeof ApiStorefrontRoute
+    }
+    '/$locale/guides/getting-started/': {
+      id: '/$locale/guides/getting-started/'
+      path: '/guides/getting-started'
+      fullPath: '/$locale/guides/getting-started/'
+      preLoaderRoute: typeof LocaleGuidesGettingStartedIndexRouteImport
+      parentRoute: typeof LocaleRouteRoute
     }
   }
 }
 
+interface LocaleRouteRouteChildren {
+  LocaleIndexDotmdRoute: typeof LocaleIndexDotmdRoute
+  LocaleIndexRoute: typeof LocaleIndexRoute
+  LocaleCheckoutCompleteRoute: typeof LocaleCheckoutCompleteRoute
+  LocaleWaitlistSuccessRoute: typeof LocaleWaitlistSuccessRoute
+  LocaleCheckoutIndexRoute: typeof LocaleCheckoutIndexRoute
+  LocalePrivacyIndexRoute: typeof LocalePrivacyIndexRoute
+  LocaleGuidesGettingStartedIndexRoute: typeof LocaleGuidesGettingStartedIndexRoute
+}
+
+const LocaleRouteRouteChildren: LocaleRouteRouteChildren = {
+  LocaleIndexDotmdRoute: LocaleIndexDotmdRoute,
+  LocaleIndexRoute: LocaleIndexRoute,
+  LocaleCheckoutCompleteRoute: LocaleCheckoutCompleteRoute,
+  LocaleWaitlistSuccessRoute: LocaleWaitlistSuccessRoute,
+  LocaleCheckoutIndexRoute: LocaleCheckoutIndexRoute,
+  LocalePrivacyIndexRoute: LocalePrivacyIndexRoute,
+  LocaleGuidesGettingStartedIndexRoute: LocaleGuidesGettingStartedIndexRoute,
+}
+
+const LocaleRouteRouteWithChildren = LocaleRouteRoute._addFileChildren(
+  LocaleRouteRouteChildren,
+)
+
+interface ApiStorefrontRouteChildren {
+  ApiStorefrontCheckoutsRoute: typeof ApiStorefrontCheckoutsRoute
+  ApiStorefrontStatusRoute: typeof ApiStorefrontStatusRoute
+}
+
+const ApiStorefrontRouteChildren: ApiStorefrontRouteChildren = {
+  ApiStorefrontCheckoutsRoute: ApiStorefrontCheckoutsRoute,
+  ApiStorefrontStatusRoute: ApiStorefrontStatusRoute,
+}
+
+const ApiStorefrontRouteWithChildren = ApiStorefrontRoute._addFileChildren(
+  ApiStorefrontRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  SplatRoute: SplatRoute,
+  LocaleRouteRoute: LocaleRouteRouteWithChildren,
+  R404Route: R404Route,
   ErrorRoute: ErrorRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
-  PrivacyRoute: PrivacyRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiStorefrontRoute: ApiStorefrontRouteWithChildren,
   ApiWaitlistRoute: ApiWaitlistRoute,
-  WaitlistSuccessRoute: WaitlistSuccessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

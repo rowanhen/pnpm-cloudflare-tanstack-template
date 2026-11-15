@@ -3,8 +3,7 @@
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
 import { effectHandler } from '../contract/handler'
-import { getEmailStatus } from '../features/emails/get-email-status'
-import { sendTestEmail } from '../features/emails/send-test-email'
+import { getEmailStatus, sendTestEmail } from '../features/emails/handlers'
 const factory = createFactory()
 export const getEmailStatusHandlers = factory.createHandlers(
 	effectHandler(operations.getEmailStatus, getEmailStatus),

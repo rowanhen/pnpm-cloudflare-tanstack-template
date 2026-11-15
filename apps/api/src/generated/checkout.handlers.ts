@@ -3,9 +3,7 @@
 import { createFactory } from 'hono/factory'
 import * as operations from '@workspace/contracts/operations'
 import { effectHandler } from '../contract/handler'
-import { getCheckoutConfig } from '../features/checkout/get-checkout-config'
-import { createCheckout } from '../features/checkout/create-checkout'
-import { getOrder } from '../features/checkout/get-order'
+import { getCheckoutConfig, createCheckout, getOrder } from '../features/checkout/handlers'
 const factory = createFactory()
 export const getCheckoutConfigHandlers = factory.createHandlers(
 	effectHandler(operations.getCheckoutConfig, getCheckoutConfig),

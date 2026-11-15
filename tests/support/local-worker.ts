@@ -1,4 +1,3 @@
-import { type Domain } from '../../packages/data/src/domains.ts'
 import { observabilityFixture } from './observability-fixture.ts'
 import { z } from 'zod'
 import type { ChildProcess } from 'node:child_process'
@@ -36,8 +35,15 @@ export async function localWorker(
 	async function closeResources() {
 		if (child && child.exitCode === null && child.pid) {
 			const exited = once(child, 'exit')
-			process.kill(-child.pid, 'SIGTERM')
-			await exited
+			child.kill('SIGINT')
+			const force = setTimeout(() => {
+				if (child?.exitCode === null && child.pid) process.kill(-child.pid, 'SIGTERM')
+			}, 10_000)
+			try {
+				await exited
+			} finally {
+				clearTimeout(force)
+			}
 		}
 		await stripe?.stop()
 		await telemetry?.stop()
@@ -55,10 +61,9 @@ export async function localWorker(
 		telemetry = await observabilityFixture()
 		const wrapper = join(root, 'tests/support/workers/test-worker.ts')
 		child = spawn(
-			'pnpm',
+			process.execPath,
 			[
-				'exec',
-				'wrangler',
+				join(root, 'node_modules/wrangler/bin/wrangler.js'),
 				'dev',
 				wrapper,
 				...common,
@@ -66,6 +71,8 @@ export async function localWorker(
 				String(port),
 				'--var',
 				`AUTH_URL:${origins.dashboard}`,
+				'--var',
+				`SITE_URL:${origins.marketing}`,
 				'--var',
 				`ALLOWED_ORIGINS:${origins.marketing},${origins.dashboard}`,
 				'--var',
@@ -108,7 +115,7 @@ export async function localWorker(
 			stripeUrl: stripe.url,
 			telemetry,
 			stop,
-			query(statement: string, _domain: Domain) {
+			query(statement: string) {
 				const result: unknown = JSON.parse(
 					execFileSync(
 						'pnpm',

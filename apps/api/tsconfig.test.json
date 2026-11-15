@@ -1,0 +1,14 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"types": ["@cloudflare/workers-types", "node"],
+		"allowImportingTsExtensions": true
+	},
+	"include": [
+		"src/features/**/tests/**/*.test.ts",
+		"src/features/**/tests/**/*.test.tsx",
+		"src/contract/tests/**/*.test.ts",
+		"tests/**/*.test.ts"
+	],
+	"exclude": []
+}

@@ -5,6 +5,7 @@
 		"moduleResolution": "Bundler",
 		"lib": ["ES2022", "DOM", "DOM.Iterable"],
 		"types": ["node"],
+		"jsx": "react-jsx",
 		"strict": true,
 		"noEmit": true,
 		"allowJs": false,
@@ -16,11 +17,19 @@
 		"resolveJsonModule": true
 	},
 	"include": [
+		"lint/**/*.ts",
 		"scripts/**/*.ts",
 		"codegen/**/*.ts",
 		"tests/**/*.ts",
+		"apps/marketing/src/**/*.test.ts",
+		"apps/marketing/src/**/*.test.tsx",
+		"apps/dashboard/src/**/*.test.ts",
+		"apps/dashboard/src/**/*.test.tsx",
+		"packages/*/src/**/*.test.ts",
+		"packages/*/src/**/*.test.tsx",
+		"vitest.config.ts",
 		"packages/data/drizzle.config.ts",
 		"orval.config.ts"
 	],
-	"exclude": ["node_modules", "tests/support/workers"]
+	"exclude": ["node_modules", "tests/support/workers", "tests/workers"]
 }
