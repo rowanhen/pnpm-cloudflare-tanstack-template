@@ -11,9 +11,9 @@
 		"deploy": "wrangler deploy"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^5.20261116.1",
+		"@cloudflare/workers-types": "^5.20261117.1",
 		"typescript": "^7.0.2",
-		"wrangler": "^4.162.0"
+		"wrangler": "^4.163.0"
 	},
 	"dependencies": {
 		"@workspace/contracts": "workspace:*",
@@ -23,7 +23,7 @@
 		"better-auth": "^1.7.25",
 		"drizzle-orm": "0.45.4",
 		"effect": "4.1.4",
-		"hono": "4.13.18",
+		"hono": "4.13.19",
 		"stripe": "^23.1.0"
 	}
 }
