@@ -25,8 +25,12 @@ function CheckoutSuccess() {
 	if (!session_id || status.isError)
 		return (
 			<PageState kind="error" title="We couldn't find that order.">
-				{session_id && <Button onClick={() => void status.refetch()}>Check again</Button>}
-				<LinkButton variant="outline" aria-label="Back to checkout" to="/credits">
+				{session_id && (
+					<Button variant="primary" onClick={() => void status.refetch()}>
+						Check again
+					</Button>
+				)}
+				<LinkButton variant="default" aria-label="Back to checkout" to="/credits">
 					Back to checkout
 				</LinkButton>
 			</PageState>
@@ -39,7 +43,7 @@ function CheckoutSuccess() {
 				{...paymentView('paid')}
 				description={`${order.credits.toLocaleString('en-GB')} credits added · ${money(order.amount, order.currency)}.`}
 			>
-				<LinkButton aria-label="Back to workspace" to="/">
+				<LinkButton variant="primary" aria-label="Back to workspace" to="/">
 					Back to workspace
 				</LinkButton>
 			</PageState>
@@ -47,17 +51,17 @@ function CheckoutSuccess() {
 	if (order.status === 'expired')
 		return (
 			<PageState {...paymentView('expired')} description="No payment was confirmed.">
-				<LinkButton aria-label="Start a new checkout" to="/credits">
+				<LinkButton variant="primary" aria-label="Start a new checkout" to="/credits">
 					Start a new checkout
 				</LinkButton>
 			</PageState>
 		)
 	return (
 		<PageState {...paymentView(status.data.checkoutStatus === 'open' ? 'open' : 'pending')}>
-			<Button onClick={() => void status.refetch()} disabled={status.isFetching}>
+			<Button variant="primary" onClick={() => void status.refetch()} disabled={status.isFetching}>
 				Check payment status
 			</Button>
-			<LinkButton variant="outline" aria-label="Back to checkout" to="/credits">
+			<LinkButton variant="default" aria-label="Back to checkout" to="/credits">
 				Back to checkout
 			</LinkButton>
 		</PageState>

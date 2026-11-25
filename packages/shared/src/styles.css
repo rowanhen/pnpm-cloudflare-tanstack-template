@@ -36,3 +36,9 @@
 		}
 	}
 }
+
+@layer components {
+	.page-container {
+		@apply mx-auto w-full min-w-0 max-w-(--container-md) px-4 sm:px-6 lg:px-8;
+	}
+}

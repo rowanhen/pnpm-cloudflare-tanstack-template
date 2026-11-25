@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Container, Section, Stack, Typography } from '@leitware/composables'
+import { Typography } from '@leitware/composables'
 import { t } from '@workspace/shared/lib/i18n'
 import { seo, site } from '../../../lib/seo'
 import { MarketingFooter } from '../../-components/footer'
@@ -31,7 +31,7 @@ function PrivacyPage() {
 
 	return (
 		<div className="min-h-svh">
-			<Container maxWidth="md">
+			<div className="page-container">
 				<MarketingHeader />
 				<main>
 					<div className="mx-auto max-w-2xl">
@@ -40,8 +40,8 @@ function PrivacyPage() {
 								{copy.title}
 							</Typography>
 						</header>
-						<Section spacing="lg" id="privacy" aria-labelledby="privacy-title" className="border-t">
-							<Stack gap={8}>
+						<section id="privacy" aria-labelledby="privacy-title" className="py-24 border-t">
+							<div className="flex min-w-0 flex-col gap-8">
 								<Typography as="h2" variant="heading-400" id="privacy-title">
 									{copy.sectionTitle}
 								</Typography>
@@ -55,8 +55,8 @@ function PrivacyPage() {
 										{paragraph}
 									</Typography>
 								))}
-							</Stack>
-						</Section>
+							</div>
+						</section>
 						<script
 							type="application/ld+json"
 							dangerouslySetInnerHTML={{
@@ -66,7 +66,7 @@ function PrivacyPage() {
 					</div>
 				</main>
 				<MarketingFooter />
-			</Container>
+			</div>
 		</div>
 	)
 }

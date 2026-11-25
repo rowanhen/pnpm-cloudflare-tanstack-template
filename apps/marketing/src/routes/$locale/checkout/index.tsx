@@ -1,14 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import {
-	Alert,
-	Button,
-	Container,
-	Section,
-	Skeleton,
-	Stack,
-	Typography,
-} from '@leitware/composables'
+import { Alert, Button, Skeleton, Typography } from '@leitware/composables'
 import { AnchorButton, useHydrated } from '@workspace/shared'
 import { money, priceAmount } from '@workspace/shared/lib/money'
 import { lazy, Suspense } from 'react'
@@ -79,11 +71,11 @@ function StorefrontPage() {
 
 	return (
 		<div className="min-h-svh">
-			<Container maxWidth="md">
+			<div className="page-container">
 				<MarketingHeader />
 				<main>
 					<header className="py-16">
-						<Stack gap={5}>
+						<div className="flex min-w-0 flex-col gap-5">
 							<Typography as="h1" variant="hero-300">
 								Test checkout
 							</Typography>
@@ -91,11 +83,11 @@ function StorefrontPage() {
 								Try a guest purchase or subscription with Stripe test products. This example does
 								not grant workspace credits.
 							</Typography>
-						</Stack>
+						</div>
 					</header>
-					<Section spacing="lg" className="border-t">
+					<section className="py-24 border-t">
 						{state.status === 'ready' ? (
-							<Stack gap={8}>
+							<div className="flex min-w-0 flex-col gap-8">
 								<Typography as="h2" variant="heading-400">
 									{state.product.name}
 								</Typography>
@@ -131,13 +123,13 @@ function StorefrontPage() {
 										}
 									/>
 								</Suspense>
-							</Stack>
+							</div>
 						) : !catalogue.enabled ? (
 							<Typography as="h2" variant="heading-400">
 								Checkout isn't configured.
 							</Typography>
 						) : (
-							<Stack gap={8}>
+							<div className="flex min-w-0 flex-col gap-8">
 								{catalogue.products.map((product) => (
 									<article key={product.id} className="space-y-4 border-b pb-8">
 										<Typography as="h2" variant="heading-400">
@@ -153,6 +145,7 @@ function StorefrontPage() {
 											{product.interval ? ` / ${product.interval}` : ''}
 										</Typography>
 										<Button
+											variant="primary"
 											disabled={!hydrated || state.status === 'creating'}
 											onClick={() => checkout.open(product)}
 										>
@@ -167,17 +160,17 @@ function StorefrontPage() {
 								{state.status === 'error' && (
 									<Alert type="negative">Couldn't open checkout. Please try again.</Alert>
 								)}
-							</Stack>
+							</div>
 						)}
-					</Section>
-					<Section spacing="lg" className="border-t">
-						<AnchorButton href={`${site.dashboard}/credits`} variant="link">
+					</section>
+					<section className="py-24 border-t">
+						<AnchorButton href={`${site.dashboard}/credits`} variant="ghost">
 							Buy workspace credits
 						</AnchorButton>
-					</Section>
+					</section>
 				</main>
 				<MarketingFooter />
-			</Container>
+			</div>
 		</div>
 	)
 }

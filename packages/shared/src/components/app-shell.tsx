@@ -1,5 +1,5 @@
 import { LinkButton } from './link-button'
-import { Container, Typography, Stack, Section } from '@leitware/composables'
+import { Typography } from '@leitware/composables'
 
 import type { ReactNode } from 'react'
 
@@ -18,7 +18,7 @@ export function AppShell({
 }) {
 	return (
 		<div className="min-h-svh">
-			<Container maxWidth="md">
+			<div className="page-container">
 				<header className="flex flex-wrap items-center justify-between gap-4 border-b py-6">
 					<LinkButton variant="ghost" aria-label={APP_NAME} to="/">
 						{APP_NAME}
@@ -30,8 +30,8 @@ export function AppShell({
 					)}
 				</header>
 				<main className="py-12 sm:py-16">
-					<Stack gap={10}>
-						<Stack gap={3}>
+					<div className="flex min-w-0 flex-col gap-10">
+						<div className="flex min-w-0 flex-col gap-3">
 							<Typography as="h1" variant="heading-500">
 								{title}
 							</Typography>
@@ -40,11 +40,11 @@ export function AppShell({
 									{description}
 								</Typography>
 							)}
-						</Stack>
+						</div>
 						{children}
-					</Stack>
+					</div>
 				</main>
-			</Container>
+			</div>
 		</div>
 	)
 }
@@ -59,9 +59,9 @@ export function PageSection({
 	children: ReactNode
 }) {
 	return (
-		<Section spacing="sm" className="border-t">
-			<Stack gap={5}>
-				<Stack gap={2}>
+		<section className="py-6 border-t">
+			<div className="flex min-w-0 flex-col gap-5">
+				<div className="flex min-w-0 flex-col gap-2">
 					<Typography as="h2" variant="heading-400">
 						{title}
 					</Typography>
@@ -70,9 +70,9 @@ export function PageSection({
 							{description}
 						</Typography>
 					)}
-				</Stack>
+				</div>
 				{children}
-			</Stack>
-		</Section>
+			</div>
+		</section>
 	)
 }

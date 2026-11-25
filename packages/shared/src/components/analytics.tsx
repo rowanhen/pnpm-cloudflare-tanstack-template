@@ -1,5 +1,5 @@
 import { AnchorButton } from './link-button'
-import { Container, Checkbox, Label, Button, Typography, Stack } from '@leitware/composables'
+import { FormCheckbox, Button, Typography } from '@leitware/composables'
 import { useEffect, useState } from 'react'
 import {
 	identifyUser,
@@ -79,14 +79,14 @@ export function Analytics({ config, pathname }: { config: BrowserConfig; pathnam
 	if (!config.key || !config.host || !ready) return null
 	return (
 		<aside aria-label="Privacy preferences" className="ph-no-capture">
-			<Container maxWidth="md" className="pb-6">
+			<div className="page-container pb-6">
 				<Button className="px-0" size="sm" variant="ghost" onClick={manage}>
 					Privacy preferences
 				</Button>
-			</Container>
+			</div>
 			{((!consent && !signal) || open) && (
 				<div className="pointer-events-none fixed inset-x-0 bottom-4 z-50">
-					<Container maxWidth="md">
+					<div className="page-container">
 						<section
 							aria-labelledby="privacy-title"
 							className="pointer-events-auto max-h-[85svh] space-y-4 overflow-y-auto rounded-lg border bg-surface-default p-5 shadow-sm"
@@ -106,7 +106,7 @@ export function Analytics({ config, pathname }: { config: BrowserConfig; pathnam
 								</output>
 							)}
 							{managing && (
-								<Stack gap={4} className="border-y py-4">
+								<div className="flex min-w-0 flex-col gap-4 border-y py-4">
 									<Typography as="p" variant="caption-100" className="text-content-secondary">
 										Essential storage keeps sign-in and your preferences working.
 									</Typography>
@@ -116,56 +116,47 @@ export function Analytics({ config, pathname }: { config: BrowserConfig; pathnam
 											['replay', 'Session replay', 'Masked recordings of page interactions.'],
 										] as const
 									).map(([key, label, detail]) => (
-										<Stack gap={3} direction="horizontal" align="start" key={key}>
-											<Checkbox
-												id={`privacy-${key}`}
-												checked={draft[key]}
-												disabled={signal}
-												onCheckedChange={(checked) =>
-													setDraft((value) => ({ ...value, [key]: checked === true }))
-												}
-											/>
-											<div>
-												<Label htmlFor={`privacy-${key}`}>{label}</Label>
-												<Typography
-													as="p"
-													variant="caption-100"
-													className="mt-1 text-content-secondary"
-												>
-													{detail}
-												</Typography>
-											</div>
-										</Stack>
+										<FormCheckbox
+											key={key}
+											id={`privacy-${key}`}
+											label={label}
+											description={detail}
+											checked={draft[key]}
+											disabled={signal}
+											onCheckedChange={(checked) =>
+												setDraft((value) => ({ ...value, [key]: checked }))
+											}
+										/>
 									))}
-								</Stack>
+								</div>
 							)}
-							<Stack gap={3} direction="horizontal" align="center" wrap>
-								<Button size="sm" variant="outline" onClick={() => choose(rejected)}>
+							<div className="flex min-w-0 items-center flex-wrap gap-3">
+								<Button size="sm" variant="default" onClick={() => choose(rejected)}>
 									Reject all
 								</Button>
 								<Button
 									size="sm"
-									variant="outline"
+									variant="default"
 									disabled={signal}
 									onClick={() => choose({ analytics: true, replay: true })}
 								>
 									Accept all
 								</Button>
 								{managing ? (
-									<Button size="sm" variant="outline" onClick={() => choose(draft)}>
+									<Button size="sm" variant="default" onClick={() => choose(draft)}>
 										Save preferences
 									</Button>
 								) : (
-									<Button size="sm" variant="outline" onClick={manage}>
+									<Button size="sm" variant="default" onClick={manage}>
 										Manage
 									</Button>
 								)}
 								<AnchorButton variant="ghost" aria-label="Privacy" href={config.privacyUrl}>
 									Privacy
 								</AnchorButton>
-							</Stack>
+							</div>
 						</section>
-					</Container>
+					</div>
 				</div>
 			)}
 		</aside>

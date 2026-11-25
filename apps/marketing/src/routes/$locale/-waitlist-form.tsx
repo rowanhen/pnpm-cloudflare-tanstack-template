@@ -1,11 +1,13 @@
 import {
 	Button,
+	FormInput,
+	Field,
+	FieldLabel,
 	Card,
 	Input,
 	Label,
 	Checkbox,
 	Alert,
-	Stack,
 	Typography,
 } from '@leitware/composables'
 import { useHydrated } from '@workspace/shared'
@@ -61,12 +63,16 @@ export function WaitlistForm({ title }: { title: string }) {
 					})
 				}}
 			>
-				<Stack gap={2}>
-					<Label htmlFor="name">Name (optional)</Label>
-					<Input id="name" name="name" autoComplete="name" maxLength={100} disabled={disabled} />
-				</Stack>
-				<Stack gap={2}>
-					<Label htmlFor="email">Email address</Label>
+				<FormInput
+					label="Name (optional)"
+					id="name"
+					name="name"
+					autoComplete="name"
+					maxLength={100}
+					disabled={disabled}
+				/>
+				<Field>
+					<FieldLabel htmlFor="email">Email address</FieldLabel>
 					<Input
 						id="email"
 						name="email"
@@ -76,22 +82,22 @@ export function WaitlistForm({ title }: { title: string }) {
 						required
 						disabled={disabled}
 					/>
-				</Stack>
+				</Field>
 				<div aria-hidden="true" className="absolute -left-[10000px]">
 					<Label>
 						Website
 						<Input name="website" tabIndex={-1} autoComplete="off" />
 					</Label>
 				</div>
-				<Stack direction="horizontal" align="start" gap={3}>
+				<div className="flex min-w-0 items-start gap-3">
 					<Checkbox id="consent" name="consent" required disabled={disabled} />
 					<Label htmlFor="consent" className="block text-content-secondary">
 						<Typography as="span" variant="caption-100">
 							Save my email in this demo.
 						</Typography>{' '}
 					</Label>
-				</Stack>
-				<Button type="submit" disabled={disabled} className="w-full" size="lg">
+				</div>
+				<Button variant="primary" type="submit" disabled={disabled} className="w-full" size="lg">
 					{mutation.isPending ? 'Joining…' : 'Join the waitlist'}
 				</Button>
 				{error && <Alert type="negative" message={error} />}

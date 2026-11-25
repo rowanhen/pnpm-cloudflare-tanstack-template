@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Container, Section, Stack, Typography } from '@leitware/composables'
+import { Typography } from '@leitware/composables'
 import { AnchorButton } from '@workspace/shared'
 import { t } from '@workspace/shared/lib/i18n'
 import { repository, seo, site } from '../../../../lib/seo'
@@ -38,12 +38,12 @@ function GettingStartedPage() {
 
 	return (
 		<div className="min-h-svh">
-			<Container maxWidth="md">
+			<div className="page-container">
 				<MarketingHeader />
 				<main>
 					<div className="mx-auto max-w-2xl">
 						<header className="py-16">
-							<Stack gap={8}>
+							<div className="flex min-w-0 flex-col gap-8">
 								<Typography as="h1" variant="hero-300">
 									{copy.title}
 								</Typography>
@@ -54,10 +54,10 @@ function GettingStartedPage() {
 								>
 									{copy.intro}
 								</Typography>
-							</Stack>
+							</div>
 						</header>
-						<Section spacing="lg" id="local" aria-labelledby="local-title" className="border-t">
-							<Stack gap={8}>
+						<section id="local" aria-labelledby="local-title" className="py-24 border-t">
+							<div className="flex min-w-0 flex-col gap-8">
 								<Typography as="h2" variant="heading-400" id="local-title">
 									{copy.localTitle}
 								</Typography>
@@ -70,15 +70,10 @@ function GettingStartedPage() {
 										</li>
 									))}
 								</ol>
-							</Stack>
-						</Section>
-						<Section
-							spacing="lg"
-							id="providers"
-							aria-labelledby="providers-title"
-							className="border-t"
-						>
-							<Stack gap={8}>
+							</div>
+						</section>
+						<section id="providers" aria-labelledby="providers-title" className="py-24 border-t">
+							<div className="flex min-w-0 flex-col gap-8">
 								<Typography as="h2" variant="heading-400" id="providers-title">
 									{copy.providersTitle}
 								</Typography>
@@ -88,13 +83,13 @@ function GettingStartedPage() {
 								<nav aria-label={copy.nextStepsLabel} className="grid gap-4">
 									<AnchorButton
 										href={`${repository}/blob/main/docs/getting-started.md`}
-										variant="link"
+										variant="ghost"
 									>
 										{copy.setupLinkLabel}
 									</AnchorButton>
 								</nav>
-							</Stack>
-						</Section>
+							</div>
+						</section>
 						<script
 							type="application/ld+json"
 							dangerouslySetInnerHTML={{
@@ -104,7 +99,7 @@ function GettingStartedPage() {
 					</div>
 				</main>
 				<MarketingFooter />
-			</Container>
+			</div>
 		</div>
 	)
 }

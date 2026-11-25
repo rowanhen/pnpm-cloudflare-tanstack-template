@@ -8,7 +8,7 @@ export function NotFoundScreen() {
 	const locale = isSupportedLocale(requestedLocale) ? requestedLocale : defaultLocale
 	return (
 		<PageState kind="not-found" title="Page not found">
-			<LinkButton aria-label="Back to home" to="/$locale" params={{ locale }}>
+			<LinkButton variant="primary" aria-label="Back to home" to="/$locale" params={{ locale }}>
 				Back to home
 			</LinkButton>
 		</PageState>

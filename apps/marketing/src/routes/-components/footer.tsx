@@ -1,5 +1,4 @@
 import { useLoaderData, useParams } from '@tanstack/react-router'
-import { Stack } from '@leitware/composables'
 import { AnchorButton, LinkButton } from '@workspace/shared'
 import { site } from '../../lib/seo'
 
@@ -8,7 +7,7 @@ export function MarketingFooter() {
 	const copy = useLoaderData({ from: '/$locale' })
 	return (
 		<footer className="border-t py-8">
-			<Stack gap={4} direction="horizontal" justify="between" wrap>
+			<div className="flex min-w-0 justify-between flex-wrap gap-4">
 				<AnchorButton variant="ghost" aria-label={copy.footerBuiltBy} href="https://leitware.com">
 					{copy.footerBuiltBy} ↗
 				</AnchorButton>
@@ -25,7 +24,7 @@ export function MarketingFooter() {
 						{copy.footerSignIn}
 					</AnchorButton>
 				</nav>
-			</Stack>
+			</div>
 		</footer>
 	)
 }

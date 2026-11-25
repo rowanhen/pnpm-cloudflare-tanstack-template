@@ -1,11 +1,9 @@
 import {
 	Button,
-	Stack,
 	Label,
-	Input,
+	FormInput,
 	Alert,
 	NativeSelect,
-	Grid,
 	Typography,
 	CodeBlock,
 } from '@leitware/composables'
@@ -34,7 +32,7 @@ export function ApiKeys() {
 	})
 	return (
 		<PageSection title="API keys" description="30 requests/minute per key.">
-			<Stack gap={5}>
+			<div className="flex min-w-0 flex-col gap-5">
 				<form
 					className="flex flex-wrap items-end gap-3"
 					onSubmit={(event) => {
@@ -48,17 +46,15 @@ export function ApiKeys() {
 						})
 					}}
 				>
-					<Label className="grid gap-2">
-						Key name{' '}
-						<Input
-							disabled={!hydrated || mutation.isPending}
-							required
-							maxLength={60}
-							value={name}
-							onChange={(event) => setName(event.target.value)}
-						/>
-					</Label>{' '}
-					<Grid gap={2} columns={1}>
+					<FormInput
+						label="Key name"
+						disabled={!hydrated || mutation.isPending}
+						required
+						maxLength={60}
+						value={name}
+						onChange={(event) => setName(event.target.value)}
+					/>
+					<div className="grid grid-cols-1 gap-2">
 						<Label htmlFor="key-scope">Access</Label>
 						<NativeSelect
 							id="key-scope"
@@ -77,19 +73,20 @@ export function ApiKeys() {
 								{ value: 'summary:read', label: 'Summary · 1 credit' },
 							]}
 						/>
-					</Grid>
-					<Button disabled={!hydrated || mutation.isPending} type="submit">
+					</div>
+					<Button variant="primary" disabled={!hydrated || mutation.isPending} type="submit">
 						Create API key
 					</Button>
 				</form>
 				{newToken && (
-					<Stack gap={3} aria-live="polite" className="rounded-lg border bg-muted p-5">
+					<div
+						aria-live="polite"
+						className="flex min-w-0 flex-col gap-3 rounded-lg border bg-muted p-5"
+					>
 						<Typography as="p" variant="body-200">
 							Copy this key now. It will not be shown again.
 						</Typography>
-						<Label className="grid gap-2">
-							New API key <Input readOnly value={newToken} className="w-full font-mono" />
-						</Label>
+						<FormInput label="New API key" readOnly value={newToken} />
 						<CodeBlock>
 							{[
 								`curl ${typeof window === 'undefined' ? '' : window.location.origin}/api/v1/${newScope === 'summary:read' ? 'summary' : 'todos'}`,
@@ -103,8 +100,10 @@ export function ApiKeys() {
 									: []),
 							].join(' \\\n')}
 						</CodeBlock>
-						<Button onClick={() => setNewToken('')}>Hide key</Button>
-					</Stack>
+						<Button variant="primary" onClick={() => setNewToken('')}>
+							Hide key
+						</Button>
+					</div>
 				)}
 				{(mutation.error || keys.error) && (
 					<Alert type="negative">{(mutation.error ?? keys.error)?.message}</Alert>
@@ -137,7 +136,7 @@ export function ApiKeys() {
 						</li>
 					))}
 				</ul>
-			</Stack>
+			</div>
 		</PageSection>
 	)
 }

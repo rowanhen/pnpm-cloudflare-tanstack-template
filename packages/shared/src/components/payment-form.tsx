@@ -1,4 +1,4 @@
-import { Alert, Button, Skeleton, Input, Label, Stack } from '@leitware/composables'
+import { Alert, Button, Skeleton, Input, Field, FieldLabel } from '@leitware/composables'
 import { useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import {
@@ -82,25 +82,25 @@ function Form({
 	const busy = submission.status === 'confirming' || submission.status === 'redirecting'
 	const [email, setEmail] = useState('')
 	const back = onBack && (
-		<Button type="button" variant="link" disabled={busy} onClick={onBack}>
+		<Button type="button" variant="ghost" disabled={busy} onClick={onBack}>
 			Back to products
 		</Button>
 	)
 	if (checkout.type === 'loading')
 		return (
-			<Stack gap={5}>
+			<div className="flex min-w-0 flex-col gap-5">
 				<Skeleton className="h-60" aria-label="Loading payment form" />
 				{back}
-			</Stack>
+			</div>
 		)
 	if (checkout.type === 'error')
 		return (
-			<Stack gap={5}>
+			<div className="flex min-w-0 flex-col gap-5">
 				<Alert type="negative">
 					Unable to load the payment form. Please refresh and try again.
 				</Alert>
 				{back}
-			</Stack>
+			</div>
 		)
 	return (
 		<form
@@ -129,8 +129,8 @@ function Form({
 			}}
 		>
 			{collectEmail && (
-				<Stack gap={2}>
-					<Label htmlFor="checkout-email">Email</Label>
+				<Field>
+					<FieldLabel htmlFor="checkout-email">Email</FieldLabel>
 					<Input
 						id="checkout-email"
 						type="email"
@@ -141,11 +141,11 @@ function Form({
 						value={email}
 						onChange={(event) => setEmail(event.target.value)}
 					/>
-				</Stack>
+				</Field>
 			)}
 			<PaymentElement options={{ layout: 'tabs', wallets: { link: 'never' } }} />
 			{submission.status === 'error' && <Alert type="negative">{submission.message}</Alert>}
-			<Button className="w-full" size="lg" disabled={busy} type="submit">
+			<Button variant="primary" className="w-full" size="lg" disabled={busy} type="submit">
 				{busy ? 'Confirming…' : (submitLabel ?? `Pay ${checkout.checkout.total.total.amount}`)}
 			</Button>
 			{back}
