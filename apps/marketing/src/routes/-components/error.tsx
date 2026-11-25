@@ -14,8 +14,10 @@ export function ErrorScreen({ error, retry }: { error?: unknown; retry?: () => v
 	}, [error])
 	return (
 		<PageState kind="error" title="Couldn't load this page">
-			<Button onClick={retry ?? (() => window.location.reload())}>Try again</Button>
-			<LinkButton variant="outline" aria-label="Back to home" to="/$locale" params={{ locale }}>
+			<Button variant="primary" onClick={retry ?? (() => window.location.reload())}>
+				Try again
+			</Button>
+			<LinkButton variant="default" aria-label="Back to home" to="/$locale" params={{ locale }}>
 				Back to home
 			</LinkButton>
 		</PageState>

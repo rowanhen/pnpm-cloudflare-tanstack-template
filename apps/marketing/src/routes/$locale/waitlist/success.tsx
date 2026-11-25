@@ -18,10 +18,10 @@ function SuccessPage() {
 	return (
 		<div>
 			<PageState kind="success" title="You're on the list.">
-				<AnchorButton aria-label="Open workspace" href={site.dashboard}>
+				<AnchorButton variant="primary" aria-label="Open workspace" href={site.dashboard}>
 					Open workspace
 				</AnchorButton>
-				<LinkButton variant="outline" aria-label="Back to home" to="/$locale" params={{ locale }}>
+				<LinkButton variant="default" aria-label="Back to home" to="/$locale" params={{ locale }}>
 					Back to home
 				</LinkButton>
 			</PageState>

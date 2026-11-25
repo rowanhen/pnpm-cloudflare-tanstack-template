@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Button, Container } from '@leitware/composables'
+import { Button } from '@leitware/composables'
 import { LinkButton, PageState } from '@workspace/shared'
 import { usePaymentStatus } from '@workspace/shared/hooks/use-payment-status'
 import { checkoutSessionId } from '@workspace/shared/lib/checkout-session-id'
@@ -45,17 +45,21 @@ function Complete() {
 	const complete = view.kind === 'success'
 	return (
 		<div className="min-h-svh">
-			<Container maxWidth="md">
+			<div className="page-container">
 				<MarketingHeader />
 				<main className="py-16">
 					<PageState {...view}>
 						{!complete && !!session_id && (
-							<Button onClick={() => void status.refetch()} disabled={status.isFetching}>
+							<Button
+								variant="primary"
+								onClick={() => void status.refetch()}
+								disabled={status.isFetching}
+							>
 								Check again
 							</Button>
 						)}
 						<LinkButton
-							variant={complete ? 'default' : 'outline'}
+							variant={complete ? 'primary' : 'default'}
 							aria-label="Back to products"
 							to="/$locale/checkout"
 							params={{ locale }}
@@ -65,7 +69,7 @@ function Complete() {
 					</PageState>
 				</main>
 				<MarketingFooter />
-			</Container>
+			</div>
 		</div>
 	)
 }

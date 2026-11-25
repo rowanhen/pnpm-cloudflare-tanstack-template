@@ -1,6 +1,6 @@
 # pnpm-cloudflare-tanstack-template
 
-A TypeScript starter with a waitlist website, Google sign-in, a private dashboard and a REST API on Cloudflare. Uses TanStack Start, Drizzle, D1, R2 and Composables with the Kumo preset.
+A TypeScript starter with a waitlist website, Google sign-in, a private dashboard and a REST API on Cloudflare. Uses TanStack Start, Drizzle, D1, R2 and Composables v6. Both frontends load the Kumo preset from `@leitware/composables/presets/kumo.css` through `packages/shared/src/styles.css`.
 
 [Live example](https://devtemplate.leitware.com) · [Beginner setup](docs/getting-started.md) · [Integration verification](docs/verification.md)
 

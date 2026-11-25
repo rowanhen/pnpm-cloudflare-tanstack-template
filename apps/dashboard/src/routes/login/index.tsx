@@ -1,4 +1,4 @@
-import { Button, Stack, Alert, Typography } from '@leitware/composables'
+import { Button, Alert, Typography } from '@leitware/composables'
 import { AppShell, appTitle } from '@workspace/shared'
 import { getConfig } from '../../generated/system'
 import { useEffect, useState } from 'react'
@@ -65,8 +65,13 @@ function LoginPage() {
 	return (
 		<AppShell title="Sign in">
 			<div className="max-w-sm">
-				<Stack gap={4}>
-					<Button className="w-full" disabled={!ready || !googleEnabled || busy} onClick={signIn}>
+				<div className="flex min-w-0 flex-col gap-4">
+					<Button
+						variant="primary"
+						className="w-full"
+						disabled={!ready || !googleEnabled || busy}
+						onClick={signIn}
+					>
 						{busy ? 'Redirecting…' : 'Continue with Google'}
 					</Button>
 					{ready && !googleEnabled && (
@@ -77,7 +82,7 @@ function LoginPage() {
 					{(error || (!busy && callbackError)) && (
 						<Alert type="negative">{error || callbackError}</Alert>
 					)}
-				</Stack>
+				</div>
 			</div>
 		</AppShell>
 	)

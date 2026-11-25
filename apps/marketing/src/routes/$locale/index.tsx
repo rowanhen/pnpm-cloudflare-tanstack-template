@@ -1,14 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import {
-	Badge,
-	ClipboardText,
-	Container,
-	Grid,
-	LayerCard,
-	Section,
-	Stack,
-	Typography,
-} from '@leitware/composables'
+import { Badge, CodeBlock, Card, Typography } from '@leitware/composables'
 import { AnchorButton, LinkButton, useHydrated } from '@workspace/shared'
 import { track } from '@workspace/observability/browser'
 import { t } from '@workspace/shared/lib/i18n'
@@ -56,11 +47,11 @@ function HomePage() {
 
 	return (
 		<div className="min-h-svh">
-			<Container maxWidth="md">
+			<div className="page-container">
 				<MarketingHeader />
 				<main>
 					<header className="py-16">
-						<Stack gap={8}>
+						<div className="flex min-w-0 flex-col gap-8">
 							<Badge variant="outline">{copy.eyebrow}</Badge>
 							<Typography as="h1" variant="hero-300">
 								{copy.title}
@@ -78,24 +69,25 @@ function HomePage() {
 							</Typography>
 							<div className="flex flex-wrap gap-3">
 								<AnchorButton
+									variant="primary"
 									href={`${repository}/generate`}
 									size="lg"
 									onClick={() => track('template.opened', {})}
 								>
 									{copy.templateAction}
 								</AnchorButton>
-								<LinkButton to="." hash="examples" variant="outline" size="lg">
+								<LinkButton to="." hash="examples" variant="default" size="lg">
 									{copy.exploreExamples}
 								</LinkButton>
 							</div>
-						</Stack>
+						</div>
 					</header>
-					<Section spacing="lg" id="setup" aria-labelledby="setup-title" className="border-t">
-						<Stack gap={8}>
+					<section id="setup" aria-labelledby="setup-title" className="py-24 border-t">
+						<div className="flex min-w-0 flex-col gap-8">
 							<Typography as="h2" variant="heading-400" id="setup-title">
 								{copy.setupTitle}
 							</Typography>
-							<LayerCard
+							<Card
 								footer={
 									<Typography as="p" variant="caption-100">
 										{copy.setupNote}
@@ -105,30 +97,28 @@ function HomePage() {
 								<ol className="space-y-6">
 									{commands.map((command) => (
 										<li key={command.label} className="space-y-2">
-											<Typography as="p" variant="body-100">
-												{command.label}
-											</Typography>
-											<ClipboardText
-												disabled={!hydrated}
-												text={command.value}
-												tooltip={false}
-												labels={{ copyAction: `Copy ${command.label.toLowerCase()} command` }}
-											/>
+											<CodeBlock
+												title={command.label}
+												lineNumbers={false}
+												showCopyButton={hydrated}
+											>
+												{command.value}
+											</CodeBlock>
 										</li>
 									))}
 								</ol>
-							</LayerCard>
+							</Card>
 							<Typography as="p" variant="body-200" className="text-content-secondary leading-7">
 								{copy.stack}
 							</Typography>
-						</Stack>
-					</Section>
-					<Section spacing="lg" id="included" aria-labelledby="included-title" className="border-t">
-						<Stack gap={8}>
+						</div>
+					</section>
+					<section id="included" aria-labelledby="included-title" className="py-24 border-t">
+						<div className="flex min-w-0 flex-col gap-8">
 							<Typography as="h2" variant="heading-400" id="included-title">
 								{copy.includedTitle}
 							</Typography>
-							<Grid columns={1} className="sm:grid-cols-2 lg:grid-cols-3" gap={8}>
+							<div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
 								{copy.features.map((feature) => (
 									<article key={feature.title} className="space-y-3">
 										<Badge variant="outline">{feature.tag}</Badge>
@@ -140,19 +130,23 @@ function HomePage() {
 										</Typography>
 									</article>
 								))}
-							</Grid>
+							</div>
 							<nav aria-label={copy.docsLabel} className="grid gap-4">
-								<AnchorButton href={repository} variant="link">
+								<AnchorButton href={repository} variant="ghost">
 									{copy.readDocs}
 								</AnchorButton>
-								<LinkButton to="/$locale/guides/getting-started" params={{ locale }} variant="link">
+								<LinkButton
+									to="/$locale/guides/getting-started"
+									params={{ locale }}
+									variant="ghost"
+								>
 									{copy.gettingStarted}
 								</LinkButton>
 							</nav>
-						</Stack>
-					</Section>
-					<Section spacing="lg" id="examples" aria-labelledby="examples-title" className="border-t">
-						<Stack gap={8}>
+						</div>
+					</section>
+					<section id="examples" aria-labelledby="examples-title" className="py-24 border-t">
+						<div className="flex min-w-0 flex-col gap-8">
 							<Typography as="h2" variant="heading-400" id="examples-title">
 								{copy.examplesTitle}
 							</Typography>
@@ -160,11 +154,11 @@ function HomePage() {
 								{copy.examplesIntro}
 							</Typography>
 							<nav aria-label={copy.examplesTitle} className="grid gap-4">
-								<AnchorButton href={`${site.dashboard}/login`} variant="link">
+								<AnchorButton href={`${site.dashboard}/login`} variant="ghost">
 									{copy.examples.signIn}
 								</AnchorButton>
 								<div>
-									<AnchorButton href={site.dashboard} variant="link">
+									<AnchorButton href={site.dashboard} variant="ghost">
 										{copy.examples.dashboard}
 									</AnchorButton>
 									<Typography as="p" variant="body-100" className="text-content-secondary">
@@ -172,20 +166,20 @@ function HomePage() {
 									</Typography>
 								</div>
 								<div>
-									<LinkButton to="/$locale/checkout" params={{ locale }} variant="link">
+									<LinkButton to="/$locale/checkout" params={{ locale }} variant="ghost">
 										{copy.examples.checkout}
 									</LinkButton>
 									<Typography as="p" variant="body-100" className="text-content-secondary">
 										{copy.examples.checkoutDetail}
 									</Typography>
 								</div>
-								<LinkButton to="/$locale/waitlist/success" params={{ locale }} variant="link">
+								<LinkButton to="/$locale/waitlist/success" params={{ locale }} variant="ghost">
 									{copy.examples.waitlistSuccess}
 								</LinkButton>
-								<LinkButton to="/404" variant="link">
+								<LinkButton to="/404" variant="ghost">
 									{copy.examples.notFound}
 								</LinkButton>
-								<LinkButton to="/error" variant="link">
+								<LinkButton to="/error" variant="ghost">
 									{copy.examples.error}
 								</LinkButton>
 							</nav>
@@ -195,10 +189,10 @@ function HomePage() {
 							<div className="max-w-xl">
 								<WaitlistForm title={copy.waitlistTitle} />
 							</div>
-						</Stack>
-					</Section>
-					<Section spacing="lg" id="tests" aria-labelledby="tests-title" className="border-t">
-						<Stack gap={8}>
+						</div>
+					</section>
+					<section id="tests" aria-labelledby="tests-title" className="py-24 border-t">
+						<div className="flex min-w-0 flex-col gap-8">
 							<Typography as="h2" variant="heading-400" id="tests-title">
 								{copy.testsTitle}
 							</Typography>
@@ -206,12 +200,16 @@ function HomePage() {
 								{copy.testsDescription}
 							</Typography>
 							<nav aria-label="Setup documentation">
-								<LinkButton to="/$locale/guides/getting-started" params={{ locale }} variant="link">
+								<LinkButton
+									to="/$locale/guides/getting-started"
+									params={{ locale }}
+									variant="ghost"
+								>
 									{copy.setupDocs}
 								</LinkButton>
 							</nav>
-						</Stack>
-					</Section>
+						</div>
+					</section>
 					<script
 						type="application/ld+json"
 						dangerouslySetInnerHTML={{
@@ -220,7 +218,7 @@ function HomePage() {
 					/>
 				</main>
 				<MarketingFooter />
-			</Container>
+			</div>
 		</div>
 	)
 }

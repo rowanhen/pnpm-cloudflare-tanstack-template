@@ -1,4 +1,4 @@
-import { Alert, Button, Skeleton, Stack, Typography } from '@leitware/composables'
+import { Alert, Button, Skeleton, Typography } from '@leitware/composables'
 import { LinkButton, AppShell, appTitle, PageSection } from '@workspace/shared'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 
@@ -31,7 +31,7 @@ function CheckoutPage() {
 			) : availability.isError || config.isError ? (
 				<PageSection title="Checkout is unavailable.">
 					<Button
-						variant="outline"
+						variant="default"
 						onClick={() => void (availability.isError ? availability.refetch() : config.refetch())}
 					>
 						Try again
@@ -39,29 +39,29 @@ function CheckoutPage() {
 				</PageSection>
 			) : !availability.data?.checkoutEnabled ? (
 				<PageSection title="Checkout isn't configured.">
-					<Button variant="outline" onClick={() => void availability.refetch()}>
+					<Button variant="default" onClick={() => void availability.refetch()}>
 						Check again
 					</Button>
 				</PageSection>
 			) : config.data ? (
-				<Stack gap={10}>
+				<div className="flex min-w-0 flex-col gap-10">
 					<PageSection title={config.data.offer.name}>
-						<Stack gap={5}>
-							<Stack gap={2} direction="horizontal" align="baseline" wrap>
+						<div className="flex min-w-0 flex-col gap-5">
+							<div className="flex min-w-0 items-baseline flex-wrap gap-2">
 								<Typography variant="heading-500">
 									{money(config.data.offer.amount, config.data.offer.currency)}
 								</Typography>
 								<Typography as="span" variant="body-200" className="text-content-secondary">
 									one time
 								</Typography>
-							</Stack>
+							</div>
 							<Typography as="p" variant="body-200">
 								{config.data.offer.credits.toLocaleString('en-GB')} credits
 							</Typography>
-						</Stack>
+						</div>
 					</PageSection>
 					<PageSection title="Payment details">
-						<Stack gap={5}>
+						<div className="flex min-w-0 flex-col gap-5">
 							{create.data?.clientSecret ? (
 								<Suspense
 									fallback={<Skeleton className="h-60" aria-label="Loading payment form" />}
@@ -79,6 +79,7 @@ function CheckoutPage() {
 								</Suspense>
 							) : (
 								<Button
+									variant="primary"
 									className="w-full"
 									size="lg"
 									onClick={() => create.mutate()}
@@ -90,9 +91,9 @@ function CheckoutPage() {
 							{create.error && (
 								<Alert type="negative" message="Couldn't start checkout. Please try again." />
 							)}
-						</Stack>
+						</div>
 					</PageSection>
-				</Stack>
+				</div>
 			) : null}
 		</AppShell>
 	)

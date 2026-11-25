@@ -1,13 +1,8 @@
 import {
 	Button,
-	Stack,
+	Empty,
 	Input,
 	DropZone,
-	DropZoneArea,
-	DropZoneInput,
-	DropZoneContent,
-	DropZoneFile,
-	getRejectionMessage,
 	Label,
 	Checkbox,
 	Alert,
@@ -51,7 +46,7 @@ function DashboardHomePage() {
 			actions={
 				<Button
 					disabled={!hydrated || signOut.isPending}
-					variant="outline"
+					variant="default"
 					size="sm"
 					onClick={() => signOut.mutate()}
 				>
@@ -62,9 +57,9 @@ function DashboardHomePage() {
 			{(error || signOut.error) && (
 				<Alert type="negative">{(error ?? signOut.error)?.message}</Alert>
 			)}
-			<Stack gap={10}>
+			<div className="flex min-w-0 flex-col gap-10">
 				<PageSection title="Todos">
-					<Stack gap={6}>
+					<div className="flex min-w-0 flex-col gap-6">
 						<form
 							className="flex items-end gap-3"
 							onSubmit={(event) => {
@@ -72,7 +67,7 @@ function DashboardHomePage() {
 								todoMutations.create.mutate({ data: { title } }, { onSuccess: () => setTitle('') })
 							}}
 						>
-							<Stack gap={2} className="min-w-0 flex-1">
+							<div className="flex min-w-0 flex-col gap-2 flex-1">
 								<Label htmlFor="todo-title" className="sr-only">
 									Todo title
 								</Label>
@@ -85,8 +80,8 @@ function DashboardHomePage() {
 									maxLength={200}
 									placeholder="New todo"
 								/>
-							</Stack>
-							<Button disabled={busy} type="submit">
+							</div>
+							<Button variant="primary" disabled={busy} type="submit">
 								Add todo
 							</Button>
 						</form>
@@ -94,7 +89,7 @@ function DashboardHomePage() {
 						<ul className="divide-y">
 							{todos.data?.todos.map((item) => (
 								<li key={item.id} className="flex items-center justify-between gap-3 py-3">
-									<Stack gap={3} direction="horizontal" align="center" className="min-w-0">
+									<div className="flex min-w-0 items-center gap-3">
 										<Checkbox
 											id={`todo-${item.id}`}
 											checked={item.completed}
@@ -112,7 +107,7 @@ function DashboardHomePage() {
 										>
 											{item.title}
 										</Label>
-									</Stack>
+									</div>
 									<Button
 										variant="destructive"
 										size="sm"
@@ -125,15 +120,11 @@ function DashboardHomePage() {
 								</li>
 							))}
 						</ul>
-						{todos.data?.todos.length === 0 && (
-							<Typography as="p" variant="body-100" className="text-content-secondary">
-								No todos yet.
-							</Typography>
-						)}
-					</Stack>
+						{todos.data?.todos.length === 0 && <Empty title="No todos yet." />}
+					</div>
 				</PageSection>
 				<PageSection title="Files" description="Up to 5 MiB per file.">
-					<Stack gap={6}>
+					<div className="flex min-w-0 flex-col gap-6">
 						<form
 							className="space-y-3"
 							onSubmit={(event) => {
@@ -148,53 +139,42 @@ function DashboardHomePage() {
 									)
 							}}
 						>
-							<Stack gap={2}>
+							<div className="flex min-w-0 flex-col gap-2">
 								<DropZone
-									accept={{}}
-									multiple={false}
-									maxSizeBytes={5 * 1024 * 1024}
+									prompt="Upload a file"
+									value={file ? [file] : []}
+									maxSize={5 * 1024 * 1024}
 									disabled={busy}
-									hasFiles={!!file}
-									hasError={!!fileError}
-									validator={(candidate) =>
+									validate={(candidate) =>
 										/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,199}$/.test(candidate.name)
 											? null
-											: {
-													code: 'invalid-name',
-													message:
-														'Use a 1–200 character filename with letters, numbers, dots, underscores or hyphens.',
-												}
+											: 'Use a 1–200 character filename with letters, numbers, dots, underscores or hyphens.'
 									}
-									onDrop={(accepted, rejected) => {
+									onValueChange={(accepted) => {
 										setFile(accepted[0] ?? null)
-										const rejection = rejected[0]?.errors[0]
+										setFileError('')
+									}}
+									onReject={([rejected]) => {
+										setFile(null)
+										const reason = rejected?.reasons[0]
 										setFileError(
-											rejection
-												? rejection.code === 'invalid-name'
-													? rejection.message
-													: getRejectionMessage(rejection.code, 5 * 1024 * 1024, {}, 1)
-												: '',
+											reason === 'file-too-large'
+												? 'Files must be 5 MiB or smaller.'
+												: reason === 'too-many-files'
+													? 'Choose one file at a time.'
+													: (reason ?? 'File rejected.'),
 										)
 									}}
-								>
-									<DropZoneArea>
-										<DropZoneInput />
-										{file ? (
-											<DropZoneFile file={file} disabled={busy} onRemove={() => setFile(null)} />
-										) : (
-											<DropZoneContent title="Upload a file" description="Up to 5 MiB." />
-										)}
-									</DropZoneArea>
-								</DropZone>
+								/>
 								{fileError && <Alert type="negative">{fileError}</Alert>}
 								<Typography as="p" variant="caption-100" className="text-content-secondary">
 									Filenames: letters, numbers, . _ - only. Matching names replace existing files.
 								</Typography>
-							</Stack>
+							</div>
 							<Button
 								disabled={busy || !file}
 								type="submit"
-								variant={replacingFile ? 'destructive' : 'secondary'}
+								variant={replacingFile ? 'destructive' : 'default'}
 							>
 								{replacingFile ? 'Replace file' : 'Upload file'}
 							</Button>
@@ -214,7 +194,7 @@ function DashboardHomePage() {
 											{item.size} bytes
 										</Typography>
 									</div>
-									<Stack gap={1} direction="horizontal">
+									<div className="flex min-w-0 gap-1">
 										<Button
 											variant="ghost"
 											size="sm"
@@ -243,23 +223,19 @@ function DashboardHomePage() {
 										>
 											Delete
 										</Button>
-									</Stack>
+									</div>
 								</li>
 							))}
 						</ul>
-						{files.data?.files.length === 0 && (
-							<Typography as="p" variant="body-100" className="text-content-secondary">
-								No files yet.
-							</Typography>
-						)}
+						{files.data?.files.length === 0 && <Empty title="No files yet." />}
 						{files.data?.cursor && (
 							<Typography as="p" variant="body-100" className="text-content-secondary">
 								Showing the first 100 files.
 							</Typography>
 						)}
-					</Stack>
+					</div>
 				</PageSection>
-			</Stack>
+			</div>
 			<Billing />
 			<ApiKeys />
 			<Email />

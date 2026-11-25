@@ -1,5 +1,5 @@
 import { LinkButton } from './link-button'
-import { Button, Stack } from '@leitware/composables'
+import { Button } from '@leitware/composables'
 import { useEffect } from 'react'
 import { reportError } from '@workspace/observability/browser'
 import type { ReactNode } from 'react'
@@ -18,16 +18,13 @@ export function PageState({
 }) {
 	return (
 		<AppShell title={title} description={description}>
-			<Stack
-				gap={3}
-				direction="horizontal"
-				align="center"
-				wrap
+			<div
 				data-page-state={kind}
 				aria-busy={kind === 'loading'}
+				className="flex min-w-0 items-center flex-wrap gap-3"
 			>
 				{children}
-			</Stack>
+			</div>
 		</AppShell>
 	)
 }
@@ -35,7 +32,7 @@ export function PageState({
 export function NotFoundPage() {
 	return (
 		<PageState kind="not-found" title="Page not found">
-			<LinkButton aria-label="Back to home" to="/">
+			<LinkButton variant="primary" aria-label="Back to home" to="/">
 				Back to home
 			</LinkButton>
 		</PageState>
@@ -48,8 +45,10 @@ export function ErrorPage({ retry, error }: { retry?: () => void; error?: unknow
 	}, [error])
 	return (
 		<PageState kind="error" title="Couldn't load this page">
-			<Button onClick={retry ?? (() => window.location.reload())}>Try again</Button>
-			<LinkButton variant="outline" aria-label="Back to home" to="/">
+			<Button variant="primary" onClick={retry ?? (() => window.location.reload())}>
+				Try again
+			</Button>
+			<LinkButton variant="default" aria-label="Back to home" to="/">
 				Back to home
 			</LinkButton>
 		</PageState>

@@ -1,4 +1,4 @@
-import { Alert, Button, Stack, Typography } from '@leitware/composables'
+import { Alert, Button, Typography } from '@leitware/composables'
 import { PageSection } from '@workspace/shared'
 
 import { useEmail } from '../hooks/use-email'
@@ -7,9 +7,9 @@ export function Email() {
 	const { status, send, disabled } = useEmail()
 	return (
 		<PageSection title="Email">
-			<Stack gap={3}>
+			<div className="flex min-w-0 flex-col gap-3">
 				<div>
-					<Button disabled={disabled} onClick={() => send.mutate()}>
+					<Button variant="primary" disabled={disabled} onClick={() => send.mutate()}>
 						{send.isPending ? 'Sending…' : 'Send me a test'}
 					</Button>
 				</div>
@@ -44,7 +44,7 @@ export function Email() {
 						))}
 					</ul>
 				) : null}
-			</Stack>
+			</div>
 		</PageSection>
 	)
 }
